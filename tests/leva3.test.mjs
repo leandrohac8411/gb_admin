@@ -67,7 +67,7 @@ test("validação do backup", () => {
 
 test("dados novos de exemplo", () => {
   const d = gerarDados(H);
-  assert.equal(d.versao, 5);
+  assert.equal(d.versao, 6);
   assert.ok(d.despesas.some(x => x.data.startsWith("2026-11")));
   assert.ok(d.eventos.length >= 4 && d.eventos.some(e => e.tipo === "Graduação" && e.publico === "kids"));
   const kidsAtivos = d.alunos.filter(a => a.categoria === "kids" && a.status === "ativo");

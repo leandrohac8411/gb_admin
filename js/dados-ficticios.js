@@ -2,7 +2,7 @@
 import { somarDias, diasEntre, diaSemana, deISO } from "./logica/datas.js";
 import { gerarExtras, COLECOES_EXTRAS } from "./dados-extras.js";
 
-export const VERSAO = 5;
+export const VERSAO = 6;
 export const DIAS_CHECKIN = 120;
 export const COLECOES = ["professores", "turmas", "alunos", "checkins", "mensalidades", "graduacoes", ...COLECOES_EXTRAS];
 
@@ -158,6 +158,12 @@ export function gerarDados(hojeISO, semente = 7) {
   };
   const kidsLista = alunos.filter(a => a.categoria === "kids");
   irmanar(kidsLista[1], kidsLista[6]); irmanar(kidsLista[9], kidsLista[12]);
+
+  // Mais dois aniversariantes do mês (um adulto e uma criança), mantendo o ano de nascimento.
+  const mesHoje = hojeISO.slice(5, 7), diaHoje = Number(hojeISO.slice(8));
+  const niver = (a, dia) => { a.nascimento = `${a.nascimento.slice(0, 4)}-${mesHoje}-${String(dia).padStart(2, "0")}`; };
+  niver(alunos[3], diaHoje);                       // adulto: aniversário hoje
+  niver(kidsLista[3], Math.min(28, diaHoje + 5));  // criança: daqui a 5 dias
 
   // Motivo de saída de quem está trancado.
   const MOTIVOS = ["Mudança", "Financeiro", "Lesão", "Horário", "Falta de tempo"];

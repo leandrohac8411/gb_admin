@@ -8,7 +8,7 @@ const mapa = (o = {}) => ({ getItem: k => (k in o ? o[k] : null), setItem: (k, v
 
 test("dados parcialmente quebrados são refeitos", () => {
   const d = gerarDados("2026-11-20"); delete d.checkins;
-  const s = criarStore("2026-11-20", mapa({ "gb-admin:v5": JSON.stringify(d) }));
+  const s = criarStore("2026-11-20", mapa({ "gb-admin:v6": JSON.stringify(d) }));
   assert.ok(Array.isArray(s.dados.checkins) && s.dados.checkins.length > 0);
 });
 

@@ -13,6 +13,7 @@ export function cabecalho(titulo, sub = "", acoes = "") {
 export function etiquetaPrograma(p) {
   const tag = x => `<span class="tag ${x.toLowerCase()}">${x}</span>`;
   if (p === "GB1+GB2") return `<span class="tags">${tag("GB1")}${tag("GB2")}</span>`;
+  if (p === "Kids") return `<span class="tag kids">Kids</span>`;
   return p === "GB1" || p === "GB2" ? tag(p) : `<span class="tag">${esc(p || "—")}</span>`;
 }
 
@@ -35,3 +36,21 @@ export const PILL_STATUS = {
   trancado: '<span class="pill">Trancado</span>',
   inadimplente: '<span class="pill ruim">Inadimplente</span>'
 };
+
+// Abas Adultos | Kids: a escolha fica lembrada ao trocar de tela.
+let categoriaAtual = "adulto";
+export const aba = () => categoriaAtual;
+export const daAba = a => (a.categoria || "adulto") === categoriaAtual;
+
+export function abasCategoria(d) {
+  const n = c => d.alunos.filter(a => (a.categoria || "adulto") === c && a.status === "ativo").length;
+  return `<div class="abas" role="tablist">${[["adulto", "Adultos"], ["kids", "Kids"]].map(([c, nome]) =>
+    `<button role="tab" aria-selected="${c === categoriaAtual}" class="${c === categoriaAtual ? "on" : ""}" data-cat="${c}">${nome} <span>${n(c)}</span></button>`).join("")}</div>`;
+}
+
+export function ligarAbas(el, ctx, antes) {
+  el.querySelectorAll("[data-cat]").forEach(b => b.onclick = () => {
+    if (b.dataset.cat === categoriaAtual) return;
+    categoriaAtual = b.dataset.cat; antes?.(); ctx.redesenhar();
+  });
+}

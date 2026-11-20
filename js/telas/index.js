@@ -17,13 +17,13 @@ import * as admin from "./admin.js";
 
 const store = criarStore(hojeISO());
 store.salvar();
-aplicarRegras(store.dados.config.regras);
+aplicarRegras(store.dados.config.regras, store.dados.config.regrasKids);
 definirStore(store);
 
 quandoRestaurar(async () => {
   if (!await perguntar("Restaurar dados de exemplo?", "Tudo o que foi cadastrado ou alterado aqui volta para a academia de exemplo.", "Restaurar", "Cancelar")) return;
   store.restaurar(hojeISO());
-  aplicarRegras(store.dados.config.regras);
+  aplicarRegras(store.dados.config.regras, store.dados.config.regrasKids);
   desenhar();
   toast("Dados de exemplo restaurados");
 });
@@ -31,7 +31,7 @@ quandoRestaurar(async () => {
 Object.entries({ dashboard, alunos, aluno, agenda, checkins, graduacoes, financeiro,
   professores: gestao.professores, acompanhamentos: gestao.acompanhamentos, cronogramas: gestao.cronogramas,
   "modelos-aula": gestao.modelosAula, habilidades: gestao.habilidades,
-  planos: operacao.planos, produtos: operacao.produtos, contratos: operacao.contratos, prospects: operacao.prospects,
+  planos: operacao.planos, contratos: operacao.contratos, prospects: operacao.prospects,
   comunicacao: operacao.comunicacao, relatorios: operacao.relatorios,
   documentos: admin.documentos, mensagens: admin.mensagens, permissoes: admin.permissoes, portal: admin.portal, config: admin.config }).forEach(([rota, tela]) => registrar(rota, tela));
 

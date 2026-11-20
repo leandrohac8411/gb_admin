@@ -56,3 +56,9 @@ export function ligarAbas(el, ctx, antes) {
     categoriaAtual = b.dataset.cat; antes?.(); ctx.redesenhar();
   });
 }
+
+// Estrelas de 0 a 5 (aceita meia: 3,5 → ★★★½☆ em visual simplificado).
+export function estrelas(n) {
+  const v = Math.max(0, Math.min(5, Math.round(Number(n) || 0)));
+  return `<span class="estrelas" role="img" aria-label="${String(n ?? 0).replace(".", ",")} de 5">${"★".repeat(v)}<i>${"★".repeat(5 - v)}</i></span>`;
+}

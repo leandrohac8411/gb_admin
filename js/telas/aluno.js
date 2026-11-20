@@ -1,5 +1,6 @@
 // Ficha do aluno: dados, categoria IBJJF, frequência, próximo passo, mensalidades, graduações e check-ins.
-import { esc, iniciais, dataLonga, dataCurta, horaTexto, perguntar, toast } from "../ui/util.js";
+import { esc, iniciais, dataLonga, dataCurta, horaTexto, perguntar, toast, abrirFolha } from "../ui/util.js";
+import { irmaos, mediaComportamento, CRITERIOS, NOMES_CRITERIOS } from "../logica/familia.js";
 import { reais, anelClaroSVG, competenciaTexto } from "../ui/util-admin.js";
 import { faixaSVG, nomeFaixa, faixasDe, corBase } from "../ui/faixa.js";
 import { hojeISO } from "../logica/datas.js";
@@ -7,9 +8,11 @@ import { categoriaIdade, categoriaPeso } from "../logica/categorias.js";
 import { aptidao, regrasDe, mesesEntre, idadeEm, passaParaAdulto, ehKids } from "../logica/graduacao.js";
 import { statusMensalidade, inadimplentes } from "../logica/financeiro.js";
 import { icone } from "../menu.js";
-import { etiquetaPrograma, porId, PILL_STATUS, DIAS_CURTOS } from "./comum.js";
+import { etiquetaPrograma, porId, PILL_STATUS, DIAS_CURTOS, estrelas } from "./comum.js";
 import { aulas30, abrirFormAluno } from "./alunos.js";
 
+
+const MOTIVOS = ["Mudança", "Financeiro", "Lesão", "Horário", "Falta de tempo", "Insatisfação", "Outro"];
 
 export default {
   titulo: "Ficha do aluno",
@@ -21,6 +24,8 @@ export default {
       return;
     }
     const kids = ehKids(a), R = regrasDe(a), anos = idadeEm(a.nascimento, hoje);
+    const avs = (d.avaliacoes || []).filter(v => v.alunoId === a.id).sort((x, y) => y.mes.localeCompare(x.mes)).slice(0, 3);
+    const media = mediaComportamento(d.avaliacoes || [], a.id);
     const idade = categoriaIdade(a.nascimento, hoje), peso = categoriaPeso(a.peso, a.sexo);
     const lista = faixasDe(a.categoria), proximaCor = lista[lista.indexOf(a.faixa) + 1];
     const minMeses = kids ? R.mesesMinFaixa : R.mesesMinFaixa[a.faixa];
@@ -65,11 +70,20 @@ export default {
       ${kids ? `<div class="grade2">
         <div class="card"><div class="card-cab"><h3>Responsável</h3></div><div class="lista">
           <div><div class="cresce"><b>${esc(a.responsavel?.nome || "—")}</b><small>${esc(a.responsavel?.parentesco || "")} · ${esc(a.responsavel?.telefone || "sem telefone")}</small></div></div>
-          <div><div class="cresce"><b>Quem pode buscar</b><small>${esc(a.responsavel?.buscam || "não informado")}</small></div></div></div></div>
+          <div><div class="cresce"><b>Quem pode buscar</b><small>${esc(a.responsavel?.buscam || "não informado")}</small></div></div>
+          ${irmaos(a, d.alunos).length ? `<div><div class="cresce"><b>Irmãos na academia</b><small>${irmaos(a, d.alunos).map(i => `<a class="link" href="#aluno/${encodeURIComponent(i.id)}">${esc(i.nome.split(" ")[0])}</a>`).join(", ")} · desconto de ${d.config.descontoIrmaos ?? 10}% a partir do 2º filho</small></div></div>` : ""}</div></div>
         <div class="card"><div class="card-cab"><h3>Saúde e autorizações</h3></div><div class="lista">
           <div><div class="cresce"><b>Alergias e observações</b><small>${esc(a.saude || "Nada informado")}</small></div>${a.saude ? '<span class="pill alerta">Atenção</span>' : ""}</div>
           <div><div class="cresce"><b>Uso de imagem</b><small>${a.autorizaImagem ? "Autorizado" : "Não autorizado: não postar fotos"}</small></div>${a.autorizaImagem ? '<span class="pill ok">Sim</span>' : '<span class="pill ruim">Não</span>'}</div></div></div>
+        <div class="card"><div class="card-cab"><h3>Comportamento</h3><button class="btn sec peq" id="avaliar">Avaliar ${competenciaTexto(hoje.slice(0, 7)).split(" ")[0].toLowerCase()}</button></div>
+          ${avs.length ? `<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px"><b style="font-size:30px">${String(media).replace(".", ",")}</b>
+            <div>${estrelas(media)}<br><small class="muted">média de ${competenciaTexto(avs[0].mes).toLowerCase()}${media < 3 ? " · conversar com a família" : ""}</small></div></div>
+            <div class="lista">${CRITERIOS.map(c => `<div><div class="cresce"><b>${NOMES_CRITERIOS[c]}</b></div>${estrelas(avs[0].notas[c])}</div>`).join("")}</div>
+            ${avs[0].obs ? `<p class="aviso" style="margin-top:10px;background:var(--soft);color:var(--muted2)">${esc(avs[0].obs)}</p>` : ""}
+            ${avs.length > 1 ? `<small class="muted">Meses anteriores: ${avs.slice(1).map(v => `${competenciaTexto(v.mes).split(" ")[0].slice(0, 3)} ${String(mediaComportamento(d.avaliacoes, a.id, v.mes)).replace(".", ",")}`).join(" · ")}</small>` : ""}`
+            : `<div class="vazio">Ainda sem avaliação. Avalie respeito, disciplina, atenção e coleguismo.</div>`}</div>
       </div>` : ""}
+      ${a.status === "trancado" && a.trancamento ? `<div class="aviso">Matrícula trancada em ${dataLonga(a.trancamento.data)} · motivo: <b>${esc(a.trancamento.motivo)}</b>${a.trancamento.obs ? ` · ${esc(a.trancamento.obs)}` : ""}</div>` : ""}
       <div class="grade2">
         <div class="card"><div class="card-cab"><h3>Frequência</h3><small>últimos 30 dias</small></div>
           <div style="display:flex;align-items:center;gap:18px"><div class="anel">${anelClaroSVG(n30 / META_30_DIAS)}<b>${n30}<small>de ${META_30_DIAS} aulas</small></b></div>
@@ -91,12 +105,47 @@ export default {
 
     el.querySelector("#editar").onclick = () => abrirFormAluno(store, a, () => ctx.redesenhar());
     el.querySelector("#status").onclick = async () => {
-      const trancar = a.status === "ativo";
-      if (!await perguntar(trancar ? "Trancar matrícula?" : "Reativar matrícula?",
-        trancar ? `${a.nome} deixa de contar como ativo e sai das cobranças.` : `${a.nome} volta a contar como ativo.`,
-        trancar ? "Trancar" : "Reativar", "Cancelar")) return;
-      a.status = trancar ? "trancado" : "ativo";
-      store.salvar(); toast(trancar ? "Matrícula trancada" : "Matrícula reativada"); ctx.redesenhar();
+      if (a.status !== "ativo") {
+        if (!await perguntar("Reativar matrícula?", `${a.nome} volta a contar como ativo.`, "Reativar", "Cancelar")) return;
+        a.status = "ativo"; delete a.trancamento;
+        store.salvar(); toast("Matrícula reativada"); ctx.redesenhar(); return;
+      }
+      abrirFolha((f, fechar) => {
+        f.innerHTML = `<h3>Trancar matrícula</h3><p class="muted" style="margin:0">${esc(a.nome)} deixa de contar como ativo e sai das cobranças.</p>
+          <div class="field"><label>Por que está saindo?</label><div class="chips">${MOTIVOS.map(m => `<button type="button" class="chip" data-m="${m}">${m}</button>`).join("")}</div></div>
+          <div class="field"><label for="tr-obs">Observação (opcional)</label><input class="input" id="tr-obs" placeholder="Ex.: volta em março"></div>
+          <p class="aviso" id="tr-erro" hidden></p>
+          <div class="acoes"><button class="btn ghost" id="tr-x">Cancelar</button><button class="btn" id="tr-ok">Trancar</button></div>`;
+        let motivo = null;
+        f.querySelectorAll("[data-m]").forEach(b => b.onclick = () => { motivo = b.dataset.m; f.querySelectorAll("[data-m]").forEach(c => c.classList.toggle("on", c === b)); });
+        f.querySelector("#tr-x").onclick = fechar;
+        f.querySelector("#tr-ok").onclick = () => {
+          if (!motivo) { const e = f.querySelector("#tr-erro"); e.textContent = "Escolha o motivo."; e.hidden = false; return; }
+          a.status = "trancado"; a.trancamento = { data: hoje, motivo, obs: f.querySelector("#tr-obs").value.trim() };
+          store.salvar(); fechar(); toast("Matrícula trancada"); ctx.redesenhar();
+        };
+      });
     };
+    el.querySelector("#avaliar")?.addEventListener("click", () => {
+      const mes = hoje.slice(0, 7), atual = (d.avaliacoes || []).find(v => v.alunoId === a.id && v.mes === mes);
+      const notas = { ...(atual?.notas || { respeito: 3, disciplina: 3, atencao: 3, coleguismo: 3 }) };
+      abrirFolha((f, fechar) => {
+        f.innerHTML = `<h3>Comportamento de ${esc(a.nome.split(" ")[0])}</h3><p class="muted" style="margin:0">${competenciaTexto(mes)}</p>
+          <div class="lista">${CRITERIOS.map(c => `<div><div class="cresce"><b>${NOMES_CRITERIOS[c]}</b></div><div class="estrelas-edit" data-c="${c}">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-n="${n}" aria-label="${NOMES_CRITERIOS[c]}: ${n} de 5" class="${n <= notas[c] ? "on" : ""}">★</button>`).join("")}</div></div>`).join("")}</div>
+          <div class="field"><label for="av-obs">Observação (opcional)</label><input class="input" id="av-obs" value="${esc(atual?.obs || "")}"></div>
+          <div class="acoes"><button class="btn ghost" id="av-x">Cancelar</button><button class="btn" id="av-ok">Salvar</button></div>`;
+        f.querySelectorAll(".estrelas-edit").forEach(g => g.querySelectorAll("[data-n]").forEach(b => b.onclick = () => {
+          notas[g.dataset.c] = Number(b.dataset.n);
+          g.querySelectorAll("[data-n]").forEach(x => x.classList.toggle("on", Number(x.dataset.n) <= notas[g.dataset.c]));
+        }));
+        f.querySelector("#av-x").onclick = fechar;
+        f.querySelector("#av-ok").onclick = () => {
+          const obs = f.querySelector("#av-obs").value.trim();
+          if (atual) Object.assign(atual, { notas, obs });
+          else d.avaliacoes.push({ id: store.novoId("av"), alunoId: a.id, mes, notas, obs });
+          store.salvar(); fechar(); toast("Avaliação salva"); ctx.redesenhar();
+        };
+      });
+    });
   }
 };

@@ -5,6 +5,7 @@ import { faixasDe, nomeFaixa, CORES_FAIXA } from "../ui/faixa.js";
 import { hojeISO, somarDias, dataValida } from "../logica/datas.js";
 import { inadimplentes } from "../logica/financeiro.js";
 import { idadeEm } from "../logica/graduacao.js";
+import { irmaos, valorComDesconto } from "../logica/familia.js";
 import { icone } from "../menu.js";
 import { cabecalho, pessoa, faixaCelula, PILL_STATUS, aba, daAba, abasCategoria, ligarAbas, anosTexto } from "./comum.js";
 
@@ -73,6 +74,8 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
       if (novo) {
         const graus = Number(f.graus) || 0;
         alvo = { id: store.novoId(kids ? "k" : "a"), categoria, ...campos, faixa: f.faixa, graus, desde: hoje, desdeFaixa: hoje, ultimaGraduacao: hoje, status: "ativo", vencimentoDia: d.config.vencimentoPadrao || 10 };
+        const manos = irmaos(alvo, d.alunos);
+        if (manos.length) { alvo.valor = valorComDesconto(alvo.valor, manos.length, d.config.descontoIrmaos ?? 10); toast(`Irmão de ${manos.map(x => x.nome.split(" ")[0]).join(", ")}: desconto de ${d.config.descontoIrmaos ?? 10}%`); }
         d.alunos.unshift(alvo);
         if (f.faixa !== "branca" || graus) d.graduacoes.push({ alunoId: alvo.id, data: hoje, faixa: f.faixa, graus });
         const comp = hoje.slice(0, 7), dv = String(alvo.vencimentoDia).padStart(2, "0"), venc = `${comp}-${dv}` < hoje ? hoje : `${comp}-${dv}`;

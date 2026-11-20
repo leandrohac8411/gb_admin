@@ -8,8 +8,9 @@ import { aptidao, aplicarRegras, regrasDe } from "../logica/graduacao.js";
 import { statusMensalidade } from "../logica/financeiro.js";
 import { aulasNosUltimos } from "../logica/relatorios.js";
 import { MODULOS } from "../dados-extras.js";
+import { irmaos, mediaComportamento } from "../logica/familia.js";
 import { icone } from "../menu.js";
-import { cabecalho, etiquetaPrograma, nomeProfessor, PILL_STATUS, DIAS_LONGOS } from "./comum.js";
+import { cabecalho, etiquetaPrograma, nomeProfessor, PILL_STATUS, DIAS_LONGOS, estrelas } from "./comum.js";
 
 const erroEm = (el, sel, msg) => { const e = el.querySelector(sel); e.textContent = msg; e.hidden = false; };
 const opcoes = (lista, atual) => lista.map(v => Array.isArray(v) ? v : [v, v]).map(([v, t]) => `<option value="${esc(v)}"${v === atual ? " selected" : ""}>${esc(t)}</option>`).join("");
@@ -142,6 +143,37 @@ const porIdLocal = l => Object.fromEntries(l.map(x => [x.id, x]));
 // ---------- Portal do aluno ----------
 const estadoPt = { alunoId: null };
 
+// Visão do responsável: um cartão por filho (irmãos juntos) e o total das mensalidades.
+function portalResponsavel(el, ctx, crianca, seletor) {
+  const { store } = ctx, d = store.dados, hoje = hojeISO(), r = crianca.responsavel || {};
+  const filhos = [crianca, ...irmaos(crianca, d.alunos)].sort((x, y) => x.nascimento.localeCompare(y.nascimento));
+  const agora = new Date(), hhmm = `${String(agora.getHours()).padStart(2, "0")}:${String(agora.getMinutes()).padStart(2, "0")}`;
+  const abertas = d.mensalidades.filter(m => filhos.some(f => f.id === m.alunoId) && !m.pagoEm);
+  const total = abertas.reduce((s, m) => s + (Number(m.valor) || 0), 0);
+  const atrasada = abertas.some(m => statusMensalidade(m, hoje) === "atrasado");
+  el.innerHTML = cabecalho("Portal do aluno", "Visão do responsável: tudo dos filhos num lugar só.") + seletor +
+    `<div class="celular"><div class="cel-tela">
+      <div class="cel-topo"><span class="av">${esc(iniciais(r.nome || "?"))}</span><div><small>${saudacao()}</small><b>${esc((r.nome || "Responsável").split(" ")[0])}</b></div><img src="img/logo-gb.png" alt=""></div>
+      ${filhos.map(f => {
+        const apt = aptidao(f, d.checkins, hoje), R = regrasDe(f), m = mediaComportamento(d.avaliacoes || [], f.id);
+        const prox = d.turmas.filter(t => t.categoria === "kids" && t.diaSemana === diaSemana(hoje) && t.horario >= hhmm).sort((x, y) => x.horario.localeCompare(y.horario))
+          .find(t => d.checkins.some(c => c.alunoId === f.id && c.turmaId === t.id));
+        return `<div class="cel-card">
+          <div class="linha"><b style="font-size:16px">${esc(f.nome.split(" ")[0])}</b><span class="tag kids">${idadeEmTexto(f, hoje)}</span></div>
+          <div class="cel-faixa" style="border:1px solid var(--line)">${faixaSVG(f.faixa, f.graus)}</div>
+          <small class="muted">${nomeFaixa(f.faixa)}${f.graus ? ` · ${f.graus}º grau` : ""} · ${apt.tipo ? "pronta(o) para graduar! 🥋" : `${Math.min(apt.aulas, R.aulasPorGrau)} de ${R.aulasPorGrau} aulas para o próximo grau`}</small>
+          <div class="linha"><span>Treinos em 30 dias</span><b style="font-size:15px">${aulasNosUltimos(f.id, d.checkins, hoje, 30)}</b></div>
+          <div class="linha"><span>Comportamento</span>${m == null ? '<span class="muted">—</span>' : estrelas(m)}</div>
+          <div class="linha"><span>Próxima aula hoje</span><b style="font-size:13px">${prox ? horaTexto(prox.horario) : "—"}</b></div>
+        </div>`;
+      }).join("")}
+      <div class="cel-card"><small>Mensalidades em aberto</small><b>${reais(total)}</b>${abertas.length ? (atrasada ? PILL_STATUS.atrasado : PILL_STATUS.pendente) : PILL_STATUS.pago}
+        <small>${filhos.length > 1 ? `${filhos.length} filhos · desconto de irmãos aplicado` : "1 filho"}</small></div>
+    </div></div>`;
+  el.querySelector("#pt-aluno").onchange = e => { estadoPt.alunoId = e.target.value; ctx.redesenhar(); };
+}
+const idadeEmTexto = (f, hoje) => { const n = Math.floor((Date.parse(hoje) - Date.parse(f.nascimento)) / (365.25 * 864e5)); return Number.isFinite(n) ? `${n} anos` : "Kids"; };
+
 export const portal = {
   titulo: "Portal do aluno",
   montar(el, params, ctx) {
@@ -150,6 +182,8 @@ export const portal = {
     const a = ativos.find(x => x.id === estadoPt.alunoId);
     if (!a) { el.innerHTML = cabecalho("Portal do aluno") + `<div class="card vazio">Nenhum aluno ativo.</div>`; return; }
     const meta = d.config.metaAulas30 || 12, n30 = aulasNosUltimos(a.id, d.checkins, hoje, 30), apt = aptidao(a, d.checkins, hoje);
+    const seletor = `<div class="card filtros"><label for="pt-aluno" class="forte" style="font-size:13px">Ver como</label><select class="input" id="pt-aluno" style="max-width:320px">${opcoes(ativos.map(x => [x.id, x.categoria === "kids" ? `${x.nome} (responsável: ${x.responsavel?.nome || "—"})` : x.nome]), a.id)}</select></div>`;
+    if (a.categoria === "kids") return portalResponsavel(el, ctx, a, seletor);
     const agora = new Date(), hhmm = `${String(agora.getHours()).padStart(2, "0")}:${String(agora.getMinutes()).padStart(2, "0")}`;
     const R = regrasDe(a), lista = faixasDe(a.categoria), proximaCor = lista[lista.indexOf(a.faixa) + 1];
     const deHoje = d.turmas.filter(t => t.diaSemana === diaSemana(hoje) && (t.categoria || "adulto") === (a.categoria || "adulto")).sort((x, y) => x.horario.localeCompare(y.horario));
@@ -157,9 +191,8 @@ export const portal = {
     const jaFez = proxima && d.checkins.some(c => c.alunoId === a.id && c.turmaId === proxima.id && c.data === hoje);
     const mens = d.mensalidades.filter(m => m.alunoId === a.id).sort((x, y) => y.competencia.localeCompare(x.competencia))[0];
     const ultimas = d.checkins.filter(c => c.alunoId === a.id).sort((x, y) => (y.data + y.hora).localeCompare(x.data + x.hora)).slice(0, 4);
-    el.innerHTML = cabecalho("Portal do aluno", "Como o aluno vê o app dele. Escolha um aluno para simular.") +
-      `<div class="card filtros"><label for="pt-aluno" class="forte" style="font-size:13px">Ver como</label><select class="input" id="pt-aluno" style="max-width:320px">${opcoes(ativos.map(x => [x.id, x.nome]), a.id)}</select></div>
-      <div class="celular"><div class="cel-tela">
+    el.innerHTML = cabecalho("Portal do aluno", "Como o aluno vê o app dele. Escolha um aluno para simular; criança mostra a visão do responsável.") + seletor +
+      `<div class="celular"><div class="cel-tela">
         <div class="cel-topo"><span class="av">${esc(iniciais(a.nome))}</span><div><small>${saudacao()}</small><b>${esc(a.nome.split(" ")[0])}</b></div><img src="img/logo-gb.png" alt=""></div>
         <div class="cel-prog"><small>Rumo ${apt.tipo === "faixa" || a.graus === 4 ? `à faixa ${a.faixa === "preta" ? "preta" : nomeFaixa(proximaCor || a.faixa).toLowerCase()}` : `ao ${a.graus + 1}º grau`}</small>
           <b>${a.faixa === "preta" ? "Faixa preta" : apt.tipo ? "Pronto para graduar! 🥋" : `${Math.min(apt.aulas, R.aulasPorGrau)} de ${R.aulasPorGrau} aulas`}</b>

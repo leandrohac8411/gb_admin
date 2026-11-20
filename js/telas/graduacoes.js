@@ -4,7 +4,8 @@ import { esc, perguntar, toast, dataLonga } from "../ui/util.js";
 import { faixaSVG, nomeFaixa, faixasDe, CORES_FAIXA, corBase } from "../ui/faixa.js";
 import { hojeISO } from "../logica/datas.js";
 import { aptidao, regrasDe, mesesEntre, idadeEm, passaParaAdulto, REGRAS, REGRAS_KIDS } from "../logica/graduacao.js";
-import { cabecalho, pessoa, faixaCelula, porId, aba, daAba, abasCategoria, ligarAbas, anosTexto } from "./comum.js";
+import { cabecalho, pessoa, faixaCelula, porId, aba, daAba, abasCategoria, ligarAbas, anosTexto, estrelas } from "./comum.js";
+import { mediaComportamento } from "../logica/familia.js";
 
 const estado = { aba: "Aptos" };
 
@@ -56,6 +57,8 @@ export default {
           return `<div class="card" style="display:flex;flex-direction:column;gap:12px">
             <a href="#aluno/${encodeURIComponent(a.id)}">${pessoa(a, `${kids ? `${anosTexto(idadeEm(a.nascimento, hoje))} · ` : ""}${apt.aulas} aulas desde ${dataLonga(a.ultimaGraduacao)}`)}</a>
             <div class="promo">${faixaSVG(a.faixa, a.graus)}<span class="seta">→</span>${faixaSVG(nova.faixa, nova.graus)}</div>
+            ${kids ? (() => { const m = mediaComportamento(d.avaliacoes || [], a.id); return m == null ? '<small class="muted">Sem avaliação de comportamento</small>'
+              : `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><small class="muted">Comportamento</small>${estrelas(m)}<b style="font-size:13px">${String(m).replace(".", ",")}</b>${m < 3 ? '<span class="pill alerta">abaixo de 3</span>' : ""}</div>`; })() : ""}
             <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">${situacao(a, apt, hoje)}
               <button class="btn peq" data-graduar="${esc(a.id)}">${apt.tipo === "faixa" ? "Trocar faixa" : "Dar grau"}</button></div></div>`;
         }).join("")}</div>` : `<div class="card vazio">Ninguém apto agora. ${regraTexto}</div>`)

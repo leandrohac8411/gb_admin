@@ -8,6 +8,8 @@ import alunos from "./alunos.js";
 import aluno from "./aluno.js";
 import agenda from "./agenda.js";
 import checkins from "./checkins.js";
+import graduacoes from "./graduacoes.js";
+import financeiro from "./financeiro.js";
 
 const store = criarStore(hojeISO());
 store.salvar();
@@ -20,6 +22,6 @@ quandoRestaurar(async () => {
   toast("Dados de exemplo restaurados");
 });
 
-Object.entries({ dashboard, alunos, aluno, agenda, checkins }).forEach(([rota, tela]) => registrar(rota, tela));
+Object.entries({ dashboard, alunos, aluno, agenda, checkins, graduacoes, financeiro }).forEach(([rota, tela]) => registrar(rota, tela));
 
 desenhar();

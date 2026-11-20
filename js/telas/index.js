@@ -15,7 +15,7 @@ quandoRestaurar(async () => {
   toast("Dados de exemplo restaurados");
 });
 
-const TELAS = [["dashboard", "./dashboard.js"]];
+const TELAS = [["dashboard", "./dashboard.js"], ["alunos", "./alunos.js"], ["aluno", "./aluno.js"]];
 for (const [rota, caminho] of TELAS) registrar(rota, (await import(caminho)).default);
 
 desenhar();

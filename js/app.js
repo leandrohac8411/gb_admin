@@ -4,7 +4,7 @@ import { esc } from "./ui/util.js";
 import embreve from "./telas/embreve.js";
 
 const TELAS = {};
-const ctx = { store: null, ir: rota => { location.hash = "#" + rota; } };
+const ctx = { store: null, ir: rota => { location.hash = "#" + rota; }, redesenhar: () => desenhar() };
 
 const lateral = document.getElementById("lateral");
 const fundoMenu = document.getElementById("fundo-menu");

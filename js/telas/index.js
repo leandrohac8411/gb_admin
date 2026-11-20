@@ -3,6 +3,11 @@ import { registrar, desenhar, definirStore, quandoRestaurar } from "../app.js";
 import { criarStore } from "../store.js";
 import { hojeISO } from "../logica/datas.js";
 import { perguntar, toast } from "../ui/util.js";
+import dashboard from "./dashboard.js";
+import alunos from "./alunos.js";
+import aluno from "./aluno.js";
+import agenda from "./agenda.js";
+import checkins from "./checkins.js";
 
 const store = criarStore(hojeISO());
 store.salvar();
@@ -15,7 +20,6 @@ quandoRestaurar(async () => {
   toast("Dados de exemplo restaurados");
 });
 
-const TELAS = [["dashboard", "./dashboard.js"], ["alunos", "./alunos.js"], ["aluno", "./aluno.js"]];
-for (const [rota, caminho] of TELAS) registrar(rota, (await import(caminho)).default);
+Object.entries({ dashboard, alunos, aluno, agenda, checkins }).forEach(([rota, tela]) => registrar(rota, tela));
 
 desenhar();

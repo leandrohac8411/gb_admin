@@ -2,7 +2,7 @@
 import { somarDias, diasEntre, diaSemana, deISO } from "./logica/datas.js";
 import { gerarExtras, COLECOES_EXTRAS } from "./dados-extras.js";
 
-export const VERSAO = 4;
+export const VERSAO = 5;
 export const DIAS_CHECKIN = 120;
 export const COLECOES = ["professores", "turmas", "alunos", "checkins", "mensalidades", "graduacoes", ...COLECOES_EXTRAS];
 
@@ -151,6 +151,20 @@ export function gerarDados(hojeISO, semente = 7) {
     });
   });
 
+  // Dois pares de irmãos (mesmo responsável); o segundo filho tem 10% de desconto.
+  const irmanar = (a, b) => {
+    b.responsavel = { ...a.responsavel }; b.telefone = a.telefone;
+    b.nome = `${b.nome.split(" ")[0]} ${a.nome.split(" ").slice(1).join(" ")}`; b.valor = 198;
+  };
+  const kidsLista = alunos.filter(a => a.categoria === "kids");
+  irmanar(kidsLista[1], kidsLista[6]); irmanar(kidsLista[9], kidsLista[12]);
+
+  // Motivo de saída de quem está trancado.
+  const MOTIVOS = ["Mudança", "Financeiro", "Lesão", "Horário", "Falta de tempo"];
+  alunos.filter(a => a.status === "trancado").forEach((a, n) => {
+    a.trancamento = { data: somarDias(hojeISO, -(20 + n * 17)), motivo: MOTIVOS[n % MOTIVOS.length], obs: "" };
+  });
+
   // Check-ins: cada aluno tem 2 ou 3 turmas preferidas (da sua categoria e idade) e vai em ~70% delas.
   const checkins = [];
   const inicio = somarDias(hojeISO, -(DIAS_CHECKIN - 1));
@@ -191,5 +205,5 @@ export function gerarDados(hojeISO, semente = 7) {
     }
   }
 
-  return { versao: VERSAO, geradoEm: hojeISO, professores: PROFESSORES.map(p => ({ ...p })), turmas, alunos, checkins, mensalidades, graduacoes, ...gerarExtras(hojeISO, alunos) };
+  return { versao: VERSAO, geradoEm: hojeISO, professores: PROFESSORES.map(p => ({ ...p })), turmas, alunos, checkins, mensalidades, graduacoes, ...gerarExtras(hojeISO, alunos, turmas) };
 }

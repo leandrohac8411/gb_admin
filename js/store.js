@@ -4,13 +4,18 @@ import { gerarDados, VERSAO, COLECOES } from "./dados-ficticios.js";
 
 const CHAVE = `gb-admin:v${VERSAO}`;
 
+// Estrutura mínima de uma academia válida (usada também para importar backup).
+export function validarDados(d) {
+  return !!d && typeof d === "object" && d.versao === VERSAO && COLECOES.every(c => Array.isArray(d[c])) && !!d.config && typeof d.config === "object";
+}
+
 // Dados de outro mês são refeitos: a vitrine sempre mostra o mês atual "vivo".
 function ler(armazenamento, hojeISO) {
   try {
     const bruto = armazenamento?.getItem(CHAVE);
     if (!bruto) return null;
     const d = JSON.parse(bruto);
-    return d && d.versao === VERSAO && COLECOES.every(c => Array.isArray(d[c])) && d.config && typeof d.config === "object" && String(d.geradoEm || "").slice(0, 7) === hojeISO.slice(0, 7) ? d : null;
+    return validarDados(d) && String(d.geradoEm || "").slice(0, 7) === hojeISO.slice(0, 7) ? d : null;
   } catch { return null; }
 }
 

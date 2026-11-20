@@ -1,5 +1,5 @@
 // Coleções das telas da segunda leva (fictícias, fixas e relativas a "hoje").
-import { somarDias } from "./logica/datas.js";
+import { somarDias, diaSemana } from "./logica/datas.js";
 
 export const CATEGORIAS_TECNICAS = ["Guarda", "Raspagem", "Passagem", "Costas", "Finalização", "Defesa de costas", "4 apoios", "Quedas"];
 export const MODULOS = [
@@ -20,8 +20,15 @@ const TEMAS = [
   ["Finalização", "Kimura e americana"]
 ];
 
-export function gerarExtras(hojeISO, alunos) {
+// Próxima data (depois de hoje) que cai no dia da semana pedido (0 = domingo).
+const proximo = (hojeISO, dia) => { let x = somarDias(hojeISO, 1); while (diaSemana(x) !== dia) x = somarDias(x, 1); return x; };
+
+export function gerarExtras(hojeISO, alunos, turmas = []) {
   const d = n => somarDias(hojeISO, -n);
+  const comp = n => { let [a, m] = hojeISO.slice(0, 7).split("-").map(Number); m -= n; while (m < 1) { m += 12; a--; } return `${a}-${String(m).padStart(2, "0")}`; };
+  const kidsAtivos = alunos.filter(a => a.categoria === "kids" && a.status === "ativo");
+  const adultosAtivos = alunos.filter(a => a.categoria !== "kids" && a.status === "ativo");
+  const turmaId = (dia, hora) => turmas.find(t => t.diaSemana === dia && t.horario === hora)?.id || null;
   const cronograma = ["GB1", "GB2"].flatMap(programa => TEMAS.map(([categoria, tema], i) => ({
     id: `${programa}-${i + 1}`, programa, semana: i + 1, categoria,
     tema: programa === "GB2" ? tema.replace(/^(\S+)/, "$1 avançado:").replace(":", "") : tema
@@ -48,8 +55,8 @@ export function gerarExtras(hojeISO, alunos) {
     prospects: [
       { id: "r1", nome: "Juliana Martins", telefone: "(61) 98123-4410", interesse: "Adulto iniciante", origem: "Instagram", etapa: "novo", criadoEm: d(1), obs: "" },
       { id: "r2", nome: "Carlos Eduardo Reis", telefone: "(61) 99654-0021", interesse: "Adulto iniciante", origem: "Indicação", etapa: "contato", criadoEm: d(4), obs: "Indicado pelo Lucas" },
-      { id: "r3", nome: "Patrícia Moura", telefone: "(61) 98876-1123", interesse: "Feminino", origem: "Google", etapa: "experimental", criadoEm: d(6), obs: "Aula experimental sábado 10h" },
-      { id: "r4", nome: "Rafael Assis", telefone: "(61) 99111-7788", interesse: "Volta aos treinos (azul)", origem: "Passou na porta", etapa: "experimental", criadoEm: d(9), obs: "" },
+      { id: "r3", nome: "Patrícia Moura", telefone: "(61) 98876-1123", interesse: "Feminino", origem: "Google", etapa: "experimental", criadoEm: d(6), obs: "Aula experimental sábado 10h", experimental: { data: proximo(hojeISO, 6), turmaId: turmaId(6, "10:00") } },
+      { id: "r4", nome: "Rafael Assis", telefone: "(61) 99111-7788", interesse: "Volta aos treinos (azul)", origem: "Passou na porta", etapa: "experimental", criadoEm: d(9), obs: "" , experimental: { data: proximo(hojeISO, 2), turmaId: turmaId(2, "19:00") } },
       { id: "r5", nome: "Thiago Brandão", telefone: "(61) 98450-3399", interesse: "Adulto iniciante", origem: "Instagram", etapa: "novo", criadoEm: d(0), obs: "" },
       { id: "r6", nome: "Letícia Campos", telefone: "(61) 99302-5566", interesse: "Feminino", origem: "Indicação", etapa: "matriculado", criadoEm: d(20), obs: "Fechou plano trimestral" },
       { id: "r7", nome: "Marcos Vinícius", telefone: "(61) 98777-2200", interesse: "Adulto iniciante", origem: "Site", etapa: "perdido", criadoEm: d(30), obs: "Achou o horário ruim" }
@@ -113,15 +120,44 @@ export function gerarExtras(hojeISO, alunos) {
       emissao: a.desde, status: a.desde >= d(30) ? "pendente" : "assinado"
     })),
     cronograma,
+    despesas: [0, 1, 2].flatMap(n => {
+      const c = comp(n), dia = dd => `${c}-${dd}`;
+      return [
+        ["Aluguel", "Aluguel do espaço", 4500, "05"], ["Professores", "Repasse dos professores", 6200, "05"],
+        ["Contas", "Luz, água e internet", 780 + n * 45, "10"], ["Manutenção", "Limpeza e higienização do tatame", 420, "15"],
+        ["Marketing", "Anúncios no Instagram", 300, "20"]
+      ].map(([categoria, descricao, valor, dd], k) => ({ id: `dp${n}${k}`, data: dia(dd), categoria, descricao, valor, pago: dia(dd) <= hojeISO }));
+    }).concat([
+      { id: "dpx1", data: `${comp(1)}-18`, categoria: "Manutenção", descricao: "Conserto de placa do tatame", valor: 850, pago: true },
+      { id: "dpx2", data: `${comp(0)}-08`, categoria: "Outros", descricao: "Faixas para a graduação kids", valor: 360, pago: true }
+    ]),
+    eventos: [
+      { id: "ev1", titulo: "Graduação Kids", tipo: "Graduação", publico: "kids", data: proximo(hojeISO, 6), hora: "09:00", local: "Tatame principal", vagas: 30,
+        inscritos: kidsAtivos.slice(0, 9).map(a => a.id), descricao: "Troca de faixas e graus das turmas infantis. Família convidada!" },
+      { id: "ev2", titulo: "Seminário com professor convidado", tipo: "Seminário", publico: "adulto", data: somarDias(hojeISO, 15), hora: "10:00", local: "Tatame principal", vagas: 40,
+        inscritos: adultosAtivos.slice(0, 14).map(a => a.id), descricao: "Passagem de guarda e controle de costas." },
+      { id: "ev3", titulo: "Copa GB Sobradinho (interna)", tipo: "Campeonato", publico: "todos", data: somarDias(hojeISO, 30), hora: "08:00", local: "Ginásio da academia", vagas: 80,
+        inscritos: [...adultosAtivos.slice(5, 20), ...kidsAtivos.slice(3, 12)].map(a => a.id), descricao: "Lutas por faixa e idade, adultos e kids." },
+      { id: "ev4", titulo: "Confraternização de fim de ano", tipo: "Confraternização", publico: "todos", data: somarDias(hojeISO, 26), hora: "18:00", local: "Área externa", vagas: 120,
+        inscritos: adultosAtivos.slice(0, 22).map(a => a.id), descricao: "Churrasco e entrega de certificados." },
+      { id: "ev5", titulo: "Graduação de adultos", tipo: "Graduação", publico: "adulto", data: d(40), hora: "10:00", local: "Tatame principal", vagas: 50,
+        inscritos: adultosAtivos.slice(10, 28).map(a => a.id), descricao: "Graduação do segundo semestre." }
+    ],
+    avaliacoes: kidsAtivos.flatMap((a, k) => [2, 1, 0].map(n => {
+      const base = k === 8 ? 2 : 3 + (k % 3 === 0 ? 1 : 0), nota = i => Math.min(5, Math.max(1, base + ((k + i + n) % 3 === 0 ? 1 : 0) - (k === 8 && i === 1 ? 1 : 0)));
+      return { id: `av${a.id}${n}`, alunoId: a.id, mes: comp(n), notas: { respeito: nota(0), disciplina: nota(1), atencao: nota(2), coleguismo: nota(3) },
+        obs: k === 8 && n === 0 ? "Disperso nas últimas aulas; conversar com a família." : "" };
+    })),
     config: {
       academia: { nome: "GB Sobradinho", endereco: "Sobradinho, Distrito Federal", telefone: "(61) 3000-0000", email: "contato@exemplo.com" },
       regras: { aulasPorGrau: 30, mesesPorGrau: 3, mesesMinFaixa: { branca: 12, azul: 24, roxa: 18, marrom: 12 } },
       regrasKids: { aulasPorGrau: 20, mesesPorGrau: 2, mesesMinFaixa: 6, idadeMin: { cinza: 4, amarela: 7, laranja: 10, verde: 13 } },
       metaAulas30: 12,
       vencimentoPadrao: 10,
+      descontoIrmaos: 10,
       ancoras: [{ programa: "GB1", data: "2026-11-16", semana: 12 }, { programa: "GB2", data: "2026-11-16", semana: 12 }]
     }
   };
 }
 
-export const COLECOES_EXTRAS = ["planos", "produtos", "prospects", "modelosAula", "habilidades", "modelosDoc", "modelosMsg", "perfis", "usuarios", "comunicacoes", "acompanhamentos", "contratos", "cronograma"];
+export const COLECOES_EXTRAS = ["despesas", "eventos", "avaliacoes", "planos", "produtos", "prospects", "modelosAula", "habilidades", "modelosDoc", "modelosMsg", "perfis", "usuarios", "comunicacoes", "acompanhamentos", "contratos", "cronograma"];

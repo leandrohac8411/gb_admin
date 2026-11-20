@@ -6,7 +6,7 @@ import { semanaDoCiclo, CICLO_SEMANAS } from "../logica/ciclo.js";
 import { aptidao } from "../logica/graduacao.js";
 import { CATEGORIAS_TECNICAS } from "../dados-extras.js";
 import { icone } from "../menu.js";
-import { cabecalho, pessoa, faixaCelula, etiquetaPrograma, porId, DIAS_CURTOS } from "./comum.js";
+import { cabecalho, pessoa, faixaCelula, etiquetaPrograma, porId, DIAS_CURTOS, daAba, abasCategoria, ligarAbas } from "./comum.js";
 import { aulas30 } from "./alunos.js";
 
 const erroEm = (el, sel, msg) => { const e = el.querySelector(sel); e.textContent = msg; e.hidden = false; };
@@ -94,7 +94,7 @@ export const acompanhamentos = {
   titulo: "Acompanhamentos",
   montar(el, params, ctx) {
     const { store } = ctx, d = store.dados, hoje = hojeISO(), alunos = porId(d.alunos);
-    const ativos = d.alunos.filter(a => a.status === "ativo");
+    const ativos = d.alunos.filter(a => a.status === "ativo" && daAba(a));
     const info = ativos.map(a => ({ a, ult: ultimoTreino(a.id, d.checkins), n30: aulas30(a.id, d.checkins, hoje), apt: aptidao(a, d.checkins, hoje) }));
     const grupos = {
       Sumidos: info.filter(x => (x.ult ? diasEntre(x.ult, hoje) : diasEntre(x.a.desde, hoje)) >= 14).sort((x, y) => (x.ult || "").localeCompare(y.ult || "")),
@@ -106,16 +106,17 @@ export const acompanhamentos = {
       : estadoAc.aba === "Frequência baixa" ? `${x.n30} aula${x.n30 === 1 ? "" : "s"} em 30 dias`
       : estadoAc.aba === "Novos (30 dias)" ? `entrou em ${dataLonga(x.a.desde)} · ${x.n30} aulas`
       : x.apt.tipo === "faixa" ? `apto à faixa ${x.apt.proximaFaixa}` : `apto ao ${x.a.graus + 1}º grau`;
-    const notas = d.acompanhamentos;
+    const notas = d.acompanhamentos.filter(n => alunos[n.alunoId] && daAba(alunos[n.alunoId]));
     const lista = estadoAc.aba === "Anotações"
       ? (notas.length ? `<div class="lista">${notas.map(n => `<div><span class="pill info">${esc(n.tipo)}</span><div class="cresce"><b>${esc(alunos[n.alunoId]?.nome || "Aluno removido")}</b><small>${esc(n.texto)}</small></div><span class="muted" style="white-space:nowrap">${dataLonga(n.data)}</span></div>`).join("")}</div>` : `<div class="vazio">Nenhuma anotação ainda.</div>`)
       : (grupos[estadoAc.aba].length ? `<div class="lista">${grupos[estadoAc.aba].map(x => `<div><a href="#aluno/${encodeURIComponent(x.a.id)}" class="cresce">${pessoa(x.a, motivo(x))}</a>
           <span class="muted" style="font-size:12px">${notas.filter(n => n.alunoId === x.a.id).length || ""}</span>
           <button class="btn sec peq" data-anotar="${esc(x.a.id)}">Anotar</button></div>`).join("")}</div>` : `<div class="vazio">Ninguém nesta lista. 👏</div>`);
-    el.innerHTML = cabecalho("Acompanhamentos", "Quem precisa de atenção agora, com anotações da equipe.") +
+    el.innerHTML = cabecalho("Acompanhamentos", "Quem precisa de atenção agora, com anotações da equipe.") + abasCategoria(d) +
       `<div class="kpis">${Object.entries(grupos).map(([nome, l]) => `<button class="kpi${nome === estadoAc.aba ? " destaque" : ""}" data-aba="${nome}" style="text-align:left"><div class="kpi-top"><span>${nome}</span></div><b>${l.length}</b><small>alunos</small></button>`).join("")}</div>
       <div class="chips">${[...Object.keys(grupos), "Anotações"].map(t => `<button class="chip${estadoAc.aba === t ? " on" : ""}" data-aba="${t}">${t}${t === "Anotações" ? ` · ${notas.length}` : ""}</button>`).join("")}</div>
       <div class="card">${lista}</div>`;
+    ligarAbas(el, ctx);
     el.querySelectorAll("[data-aba]").forEach(b => b.onclick = () => { estadoAc.aba = b.dataset.aba; ctx.redesenhar(); });
     el.querySelectorAll("[data-anotar]").forEach(b => b.onclick = () => formNota(store, alunos[b.dataset.anotar], ctx.redesenhar));
   }

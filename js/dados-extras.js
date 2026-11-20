@@ -83,7 +83,8 @@ export function gerarExtras(hojeISO, alunos) {
       { id: "msg2", nome: "Sentimos sua falta", finalidade: "Retenção", texto: "Oi, {{primeiro}}! Faz um tempinho que não te vemos no tatame. Está tudo bem? Bora voltar esta semana? 💪" },
       { id: "msg3", nome: "Lembrete de pagamento", finalidade: "Financeiro", texto: "Oi, {{primeiro}}! Lembrete: a mensalidade de {{valor}} está em aberto. Qualquer dúvida, fale com a recepção." },
       { id: "msg4", nome: "Feliz aniversário", finalidade: "Relacionamento", texto: "Parabéns, {{primeiro}}! 🎉 Toda a equipe da {{academia}} deseja um ótimo ano, dentro e fora do tatame." },
-      { id: "msg5", nome: "Graduação", finalidade: "Acadêmico", texto: "{{primeiro}}, você está apto(a) à próxima graduação! Fale com o professor no próximo treino. Oss!" }
+      { id: "msg5", nome: "Graduação", finalidade: "Acadêmico", texto: "{{primeiro}}, você está apto(a) à próxima graduação! Fale com o professor no próximo treino. Oss!" },
+      { id: "msg6", nome: "Aviso aos responsáveis", finalidade: "Kids", texto: "Olá, {{primeiro}}! Aviso da {{academia}}: no sábado tem aula especial de graduação na turma kids. Contamos com a presença de {{crianca}}! 🥋" }
     ],
     perfis: [
       { id: "admin", nome: "Administrador", descricao: "Acesso total", modulos: MODULOS.map(m => m[0]) },

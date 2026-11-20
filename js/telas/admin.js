@@ -183,6 +183,7 @@ export const config = {
   titulo: "Configurações",
   montar(el, params, ctx) {
     const { store } = ctx, d = store.dados, c = d.config, r = c.regras;
+    const rk = c.regrasKids || { aulasPorGrau: 20, mesesPorGrau: 2, mesesMinFaixa: 6, idadeMin: { cinza: 4, amarela: 7, laranja: 10, verde: 13 } };
     const num = (id, rot, val, min, max) => `<div class="field"><label for="${id}">${rot}</label><input class="input" type="number" inputmode="numeric" id="${id}" min="${min}" max="${max}" step="1" value="${esc(val)}"></div>`;
     el.innerHTML = cabecalho("Configurações", "Dados da academia e regras usadas em todo o painel.") +
       `<form id="cfg" novalidate class="grade2">
@@ -197,6 +198,11 @@ export const config = {
           ${num("cf-aulas", "Aulas por grau", r.aulasPorGrau, 1, 200)}${num("cf-meses", "Meses mínimos por grau", r.mesesPorGrau, 0, 24)}
           ${["branca", "azul", "roxa", "marrom"].map(f => num(`cf-min-${f}`, `Meses mínimos na ${f}`, r.mesesMinFaixa[f], 0, 120)).join("")}
         </div></div>
+        <div class="card"><div class="card-cab"><h3>Regras de graduação kids</h3><span class="tag kids">Kids</span></div><div class="campos">
+          ${num("cf-k-aulas", "Aulas por grau", rk.aulasPorGrau, 1, 200)}${num("cf-k-meses", "Meses mínimos por grau", rk.mesesPorGrau, 0, 24)}
+          ${num("cf-k-faixa", "Meses mínimos na faixa", rk.mesesMinFaixa, 0, 60)}
+          ${["cinza", "amarela", "laranja", "verde"].map(f => num(`cf-k-${f}`, `Idade mínima: ${f}`, rk.idadeMin[f], 3, 17)).join("")}
+        </div></div>
         <div class="card"><div class="card-cab"><h3>Ciclo do currículo</h3><a class="link" href="#cronogramas">Cronogramas</a></div>
           <div class="lista">${["GB1", "GB2"].map(p => { const an = c.ancoras.filter(a => a.programa === p).sort((x, y) => y.data.localeCompare(x.data))[0];
             return `<div><div class="cresce"><b>${p}</b><small>${an ? `semana ${an.semana} a partir de ${dataLonga(an.data)}` : "sem referência"}</small></div></div>`; }).join("")}</div></div>
@@ -210,14 +216,19 @@ export const config = {
     el.querySelector("#cfg").onsubmit = e => {
       e.preventDefault();
       const v = id => el.querySelector(id).value.trim(), n = id => Number(v(id));
-      const inteiros = ["#cf-venc", "#cf-meta", "#cf-aulas", "#cf-meses", "#cf-min-branca", "#cf-min-azul", "#cf-min-roxa", "#cf-min-marrom"];
+      const inteiros = ["#cf-venc", "#cf-meta", "#cf-aulas", "#cf-meses", "#cf-min-branca", "#cf-min-azul", "#cf-min-roxa", "#cf-min-marrom",
+        "#cf-k-aulas", "#cf-k-meses", "#cf-k-faixa", "#cf-k-cinza", "#cf-k-amarela", "#cf-k-laranja", "#cf-k-verde"];
       const ruim = inteiros.find(id => { const x = el.querySelector(id), k = Number(x.value); return x.value === "" || !Number.isInteger(k) || k < Number(x.min) || k > Number(x.max); });
       if (v("#cf-nome").length < 2) return erroEm(el, "#cf-erro", "Escreva o nome da academia.");
       if (ruim) return erroEm(el, "#cf-erro", `Confira o campo "${el.querySelector(`label[for="${ruim.slice(1)}"]`).textContent}".`);
+      const ik = ["cinza", "amarela", "laranja", "verde"].map(f => n(`#cf-k-${f}`));
+      if (!ik.every((v, i) => i === 0 || ik[i - 1] <= v)) return erroEm(el, "#cf-erro", "As idades mínimas kids precisam subir: cinza ≤ amarela ≤ laranja ≤ verde.");
       c.academia = { nome: v("#cf-nome"), endereco: v("#cf-end"), telefone: v("#cf-tel"), email: v("#cf-email") };
       c.vencimentoPadrao = n("#cf-venc"); c.metaAulas30 = n("#cf-meta");
       c.regras = { aulasPorGrau: n("#cf-aulas"), mesesPorGrau: n("#cf-meses"), mesesMinFaixa: Object.fromEntries(["branca", "azul", "roxa", "marrom"].map(f => [f, n(`#cf-min-${f}`)])) };
-      aplicarRegras(c.regras);
+      c.regrasKids = { aulasPorGrau: n("#cf-k-aulas"), mesesPorGrau: n("#cf-k-meses"), mesesMinFaixa: n("#cf-k-faixa"),
+        idadeMin: Object.fromEntries(["cinza", "amarela", "laranja", "verde"].map(f => [f, n(`#cf-k-${f}`)])) };
+      aplicarRegras(c.regras, c.regrasKids);
       store.salvar(); toast("Configurações salvas"); ctx.redesenhar();
     };
   }

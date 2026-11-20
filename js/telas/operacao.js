@@ -1,14 +1,14 @@
 // Operação (segunda leva): Planos, Produtos & estoque, Contratos, Prospects, Comunicação e Relatórios.
 import { esc, abrirFolha, perguntar, toast, dataLonga, horaTexto } from "../ui/util.js";
 import { reais, csv, competenciaTexto } from "../ui/util-admin.js";
-import { nomeFaixa, FAIXAS, CORES_FAIXA } from "../ui/faixa.js";
+import { nomeFaixa, faixasDe, CORES_FAIXA } from "../ui/faixa.js";
 import { hojeISO, diasEntre } from "../logica/datas.js";
 import { preencher, varsDoAluno } from "../logica/modelos.js";
 import { PUBLICOS, publico } from "../logica/publicos.js";
 import { presencaPorDia, presencaPorHorario, ranking, receitaPorPlano } from "../logica/relatorios.js";
 import { resumoFinanceiro } from "../logica/financeiro.js";
 import { icone } from "../menu.js";
-import { cabecalho, pessoa, porId, DIAS_CURTOS } from "./comum.js";
+import { cabecalho, pessoa, porId, DIAS_CURTOS, aba, daAba, abasCategoria, ligarAbas } from "./comum.js";
 import { abrirFormAluno } from "./alunos.js";
 
 const erroEm = (el, sel, msg) => { const e = el.querySelector(sel); e.textContent = msg; e.hidden = false; };
@@ -234,7 +234,7 @@ export const prospects = {
 // ---------- Comunicação ----------
 const estadoCm = { publico: "atrasados", modelo: null };
 // Modelo sugerido para cada público (o usuário pode trocar).
-const SUGESTAO = { ativos: "msg1", aniversariantes: "msg4", atrasados: "msg3", sumidos: "msg2", novos: "msg1", aptos: "msg5", prospects: "msg1" };
+const SUGESTAO = { ativos: "msg1", aniversariantes: "msg4", atrasados: "msg3", sumidos: "msg2", novos: "msg1", aptos: "msg5", prospects: "msg1", responsaveis: "msg6" };
 
 export const comunicacao = {
   titulo: "Comunicação",
@@ -276,17 +276,19 @@ export const relatorios = {
   titulo: "Relatórios",
   montar(el, params, ctx) {
     const { store } = ctx, d = store.dados, hoje = hojeISO();
-    const porDia = presencaPorDia(d.checkins, hoje, 30), porHora = presencaPorHorario(d.checkins, d.turmas, hoje, 30);
-    const top = ranking(d.checkins, d.alunos, hoje, 10), receita = receitaPorPlano(d.alunos, d.planos);
-    const ativos = d.alunos.filter(a => a.status === "ativo");
-    const novos90 = d.alunos.filter(a => diasEntre(a.desde, hoje) <= 90).length;
-    const fin = resumoFinanceiro(d.mensalidades, d.alunos, hoje.slice(0, 7), hoje);
-    const porFaixa = FAIXAS.map(f => [f, ativos.filter(a => a.faixa === f).length]), maxF = Math.max(1, ...porFaixa.map(x => x[1]));
+    const alunosAba = d.alunos.filter(daAba), ids = new Set(alunosAba.map(a => a.id));
+    const turmasAba = d.turmas.filter(t => (t.categoria || "adulto") === aba()), checkinsAba = d.checkins.filter(c => ids.has(c.alunoId));
+    const porDia = presencaPorDia(checkinsAba, hoje, 30), porHora = presencaPorHorario(checkinsAba, turmasAba, hoje, 30);
+    const top = ranking(checkinsAba, alunosAba, hoje, 10), receita = receitaPorPlano(alunosAba, d.planos).filter(r => r.alunos);
+    const ativos = alunosAba.filter(a => a.status === "ativo");
+    const novos90 = alunosAba.filter(a => diasEntre(a.desde, hoje) <= 90).length;
+    const fin = resumoFinanceiro(d.mensalidades, alunosAba, hoje.slice(0, 7), hoje);
+    const porFaixa = faixasDe(aba()).map(f => [f, ativos.filter(a => a.faixa === f).length]), maxF = Math.max(1, ...porFaixa.map(x => x[1]));
     const maxHora = porHora.reduce((m, h) => (h.n > m.n ? h : m), porHora[0] || { n: 0 });
-    el.innerHTML = cabecalho("Relatórios", "Últimos 30 dias, salvo indicação.", `<button class="btn sec" id="csv">${icone("documentos")}Exportar frequência (CSV)</button>`) +
+    el.innerHTML = cabecalho("Relatórios", "Últimos 30 dias, salvo indicação.", `<button class="btn sec" id="csv">${icone("documentos")}Exportar frequência (CSV)</button>`) + abasCategoria(d) +
       `<div class="kpis">${kpi("Presenças (30 dias)", porDia.reduce((s, n) => s + n, 0), `${(porDia.reduce((s, n) => s + n, 0) / Math.max(1, ativos.length)).toFixed(1).replace(".", ",")} por aluno ativo`, "destaque")}
         ${kpi("Horário mais cheio", horaTexto(maxHora.horario || ""), `${maxHora.n} presenças`)}
-        ${kpi("Novos (90 dias)", novos90, `${d.alunos.filter(a => a.status === "trancado").length} trancados no total`)}
+        ${kpi("Novos (90 dias)", novos90, `${alunosAba.filter(a => a.status === "trancado").length} trancados no total`)}
         ${kpi("Recebido do mês", `${fin.previsto ? Math.round(fin.recebido / fin.previsto * 100) : 0}%`, competenciaTexto(hoje.slice(0, 7)))}</div>
       <div class="grade2">
         <div class="card"><div class="card-cab"><h3>Presença por dia da semana</h3></div>${barras([1, 2, 3, 4, 5, 6].map(i => ({ rotulo: DIAS_CURTOS[i], n: porDia[i] })))}</div>
@@ -299,6 +301,7 @@ export const relatorios = {
         <div class="card"><div class="card-cab"><h3>Quem mais treinou</h3><small>top 10</small></div>
           <div class="lista">${top.map((t, i) => `<a href="#aluno/${encodeURIComponent(t.aluno.id)}"><span class="hora">${i + 1}º</span><div class="cresce"><b>${esc(t.aluno.nome)}</b><small>${nomeFaixa(t.aluno.faixa)}</small></div><span class="pill info">${t.n} aulas</span></a>`).join("")}</div></div>
       </div>`;
-    el.querySelector("#csv").onclick = () => baixar(`frequencia-${hoje}.csv`, csv([["Aluno", "Faixa", "Aulas 30 dias"], ...ranking(d.checkins, d.alunos, hoje, 9999).map(t => [t.aluno.nome, nomeFaixa(t.aluno.faixa), t.n])]));
+    ligarAbas(el, ctx);
+    el.querySelector("#csv").onclick = () => baixar(`frequencia-${aba()}-${hoje}.csv`, csv([["Aluno", "Faixa", "Aulas 30 dias"], ...ranking(checkinsAba, alunosAba, hoje, 9999).map(t => [t.aluno.nome, nomeFaixa(t.aluno.faixa), t.n])]));
   }
 };

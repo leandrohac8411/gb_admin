@@ -27,7 +27,7 @@ export default {
     el.innerHTML = cabecalho("Dashboard", `${saudacao().replace(",", "!")} Hoje é ${DIAS_LONGOS[new Date().getDay()].toLowerCase()}, ${dataLonga(hoje)}.`,
       `<a class="btn sec" href="#checkins">${icone("checkins")}Check-ins de hoje</a><a class="btn" href="#alunos/novo">${icone("prospects")}Novo aluno</a>`) +
       `<div class="kpis">
-        ${kpi("Alunos ativos", r.ativos, `${d.alunos.length - r.ativos} trancados`, "alunos", "destaque")}
+        ${kpi("Alunos ativos", r.ativos, `${r.ativos - r.kids} adultos · ${r.kids} kids`, "alunos", "destaque")}
         ${kpi("Check-ins no mês", r.checkinsMes, variacao(r.checkinsMes, r.checkinsMesAnterior), "checkins")}
         ${kpi("Entrou no caixa", reais(r.recebidoMes), "pagamentos feitos este mês", "financeiro")}
         ${kpi("Inadimplentes", r.inadimplentes, r.inadimplentes ? `<a class="link" href="#financeiro">ver mensalidades</a>` : "tudo em dia", "permissoes", r.inadimplentes ? "ruim" : "")}
@@ -42,7 +42,8 @@ export default {
             <span class="pill info">${checkinsHoje(t)} presente${checkinsHoje(t) === 1 ? "" : "s"}</span></a>`).join("")}</div>` : `<div class="vazio">Sem aulas hoje. Bom descanso!</div>`}
         </div>
         <div class="card"><div class="card-cab"><h3>Atenção</h3></div><div class="lista">
-          <a href="#graduacoes"><span class="kpi-ic">${icone("graduacoes")}</span><div class="cresce"><b>${r.aptos} aluno${r.aptos === 1 ? "" : "s"} apto${r.aptos === 1 ? "" : "s"} a graduar</b><small>pelas aulas e pelo tempo desde a última graduação</small></div><span class="link">Ver</span></a>
+          <a href="#graduacoes"><span class="kpi-ic">${icone("graduacoes")}</span><div class="cresce"><b>${r.aptos} aluno${r.aptos === 1 ? "" : "s"} apto${r.aptos === 1 ? "" : "s"} a graduar</b><small>${r.aptos - r.aptosKids} adultos e ${r.aptosKids} kids, pelas aulas e pelo tempo</small></div><span class="link">Ver</span></a>
+          ${r.viramAdultos ? `<a href="#graduacoes"><span class="kpi-ic">${icone("alunos")}</span><div class="cresce"><b>${r.viramAdultos} criança${r.viramAdultos === 1 ? "" : "s"} fez 16 anos</b><small>passa${r.viramAdultos === 1 ? "" : "m"} para a turma de Adultos</small></div><span class="link">Ver</span></a>` : ""}
           <a href="#financeiro"><span class="kpi-ic">${icone("financeiro")}</span><div class="cresce"><b>${r.inadimplentes} com mensalidade atrasada</b><small>cobre pelo WhatsApp ou na recepção</small></div><span class="link">Ver</span></a>
         </div></div>
         <div class="card"><div class="card-cab"><h3>Aniversariantes do mês</h3><small>${r.aniversariantes.length}</small></div>

@@ -1,6 +1,6 @@
 // Números do Dashboard.
 import { segundaDaSemana, somarDias, diaSemana } from "./datas.js";
-import { aptidao } from "./graduacao.js";
+import { aptidao, passaParaAdulto } from "./graduacao.js";
 import { inadimplentes } from "./financeiro.js";
 
 const mesAnterior = comp => { let [a, m] = comp.split("-").map(Number); m--; if (m < 1) { m = 12; a--; } return `${a}-${String(m).padStart(2, "0")}`; };
@@ -30,6 +30,9 @@ export function resumoDashboard(dados, hojeISO) {
     presencaSemanas, semanas,
     aulasHoje: turmas.filter(t => t.diaSemana === diaSemana(hojeISO)).sort((a, b) => a.horario.localeCompare(b.horario)),
     aptos: ativos.filter(a => aptidao(a, checkins, hojeISO).tipo).length,
+    kids: ativos.filter(a => a.categoria === "kids").length,
+    aptosKids: ativos.filter(a => a.categoria === "kids" && aptidao(a, checkins, hojeISO).tipo).length,
+    viramAdultos: ativos.filter(a => passaParaAdulto(a, hojeISO)).length,
     aniversariantes: ativos.filter(a => a.nascimento.slice(5, 7) === comp.slice(5)).sort((a, b) => a.nascimento.slice(8).localeCompare(b.nascimento.slice(8)))
   };
 }

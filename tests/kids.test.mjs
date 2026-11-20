@@ -50,3 +50,20 @@ test("16 anos passa para adultos", () => {
   assert.equal(passaParaAdulto(kid({ nascimento: "2010-11-21" }), H), false);
   assert.equal(passaParaAdulto({ categoria: "adulto", nascimento: "1990-01-01" }, H), false);
 });
+
+test("comunicação para crianças vai ao responsável", async () => {
+  const { gerarDados } = await import("../js/dados-ficticios.js");
+  const { publico } = await import("../js/logica/publicos.js");
+  const d = gerarDados(H);
+  const kidsAtivos = d.alunos.filter(a => a.categoria === "kids" && a.status === "ativo");
+  const r = publico("responsaveis", d, H);
+  assert.equal(r.length, kidsAtivos.length);
+  const k = kidsAtivos[0], item = r.find(x => x.id === k.id);
+  assert.equal(item.telefone, k.responsavel.telefone);
+  assert.equal(item.vars.primeiro, k.responsavel.nome.split(" ")[0]);
+  assert.equal(item.vars.crianca, k.nome.split(" ")[0]);
+  assert.match(item.nome, new RegExp(k.responsavel.nome));
+  // qualquer público com criança também fala com o responsável
+  const todos = publico("ativos", d, H).find(x => x.id === k.id);
+  assert.equal(todos.vars.primeiro, k.responsavel.nome.split(" ")[0]);
+});

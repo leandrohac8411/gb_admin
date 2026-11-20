@@ -10,12 +10,11 @@ import { icone } from "../menu.js";
 import { etiquetaPrograma, porId, PILL_STATUS, DIAS_CURTOS } from "./comum.js";
 import { aulas30, abrirFormAluno } from "./alunos.js";
 
-const META_30_DIAS = 12;
 
 export default {
   titulo: "Ficha do aluno",
   montar(el, params, ctx) {
-    const { store } = ctx, d = store.dados, hoje = hojeISO();
+    const { store } = ctx, d = store.dados, hoje = hojeISO(), META_30_DIAS = d.config.metaAulas30 || 12;
     const a = d.alunos.find(x => x.id === params[0]);
     if (!a) {
       el.innerHTML = `<div class="card vazio grande">${icone("alunos")}<h2>Aluno não encontrado</h2><p>Talvez ele tenha sido removido ou o endereço esteja errado.</p><a class="btn" href="#alunos">Ver alunos</a></div>`;

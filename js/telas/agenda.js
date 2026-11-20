@@ -5,7 +5,6 @@ import { semanaDoCiclo, aulaPadrao } from "../logica/ciclo.js";
 import { icone } from "../menu.js";
 import { cabecalho, etiquetaPrograma, nomeProfessor, DIAS_CURTOS, DIAS_LONGOS } from "./comum.js";
 
-export const ANCORAS = [{ programa: "GB1", data: "2026-11-16", semana: 12 }, { programa: "GB2", data: "2026-11-16", semana: 12 }];
 const estado = { semana: 0 };
 
 const programaDe = (gb1, gb2) => (gb1 && gb2 ? "GB1+GB2" : gb1 ? "GB1" : gb2 ? "GB2" : null);
@@ -72,8 +71,8 @@ export default {
           <button class="btn sec peq" id="prox" aria-label="Próxima semana">›</button>
           ${estado.semana ? `<button class="link" id="hoje">Voltar para esta semana</button>` : ""}
         </div>
-        <div class="ciclo"><span class="pill gb1-p" style="background:var(--red-soft);color:var(--red)">GB1 · semana ${semanaDoCiclo(segunda, ANCORAS, "GB1")} de 16</span>
-          <span class="pill info">GB2 · semana ${semanaDoCiclo(segunda, ANCORAS, "GB2")} de 16</span></div>
+        <div class="ciclo"><span class="pill gb1-p" style="background:var(--red-soft);color:var(--red)">GB1 · semana ${semanaDoCiclo(segunda, d.config.ancoras, "GB1")} de 16</span>
+          <span class="pill info">GB2 · semana ${semanaDoCiclo(segunda, d.config.ancoras, "GB2")} de 16</span></div>
       </div>
       <div class="semana">${dias.map(({ i, data }) => {
         const turmas = d.turmas.filter(t => t.diaSemana === i).sort((a, b) => a.horario.localeCompare(b.horario));

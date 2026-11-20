@@ -1,9 +1,10 @@
 // Academia fictícia para a vitrine. Determinística: mesma data + mesma semente = mesmos dados.
 import { somarDias, diasEntre, diaSemana, deISO } from "./logica/datas.js";
+import { gerarExtras, COLECOES_EXTRAS } from "./dados-extras.js";
 
-export const VERSAO = 2;
+export const VERSAO = 3;
 export const DIAS_CHECKIN = 120;
-export const COLECOES = ["professores", "turmas", "alunos", "checkins", "mensalidades", "graduacoes"];
+export const COLECOES = ["professores", "turmas", "alunos", "checkins", "mensalidades", "graduacoes", ...COLECOES_EXTRAS];
 
 function mulberry32(a) {
   return () => {
@@ -51,7 +52,9 @@ const DISTRIBUICAO = [
 ];
 const PLANOS = { Mensal: 280, Trimestral: 750, Anual: 2700 };
 const TRANCADOS = new Set([5, 18, 30]);
-const ATRASADOS = new Set([2, 11, 23, 34]);   // índices de alunos ativos de plano Mensal
+const ATRASADOS = new Set([2, 11, 23, 34]);
+const NOVOS = new Map([[0, 9], [9, 21]]);          // matriculados há N dias
+const SUMIDOS = new Map([[7, 19], [15, 27], [26, 41]]); // pararam de treinar há N dias   // índices de alunos ativos de plano Mensal
 
 const competenciaDe = iso => iso.slice(0, 7);
 function mesesAntes(competencia, n) {
@@ -76,9 +79,9 @@ export function gerarDados(hojeISO, semente = 7) {
       const sexo = i % 3 === 1 ? "F" : "M";
       const primeiro = sexo === "F" ? MULHERES[(i * 7) % MULHERES.length] : HOMENS[(i * 5) % HOMENS.length];
       const nome = `${primeiro} ${SOBRENOMES[(i * 3) % SOBRENOMES.length]} ${SOBRENOMES[(i * 7 + 5) % SOBRENOMES.length]}`;
-      const desde = anosAtras(entre(...treino));
+      const desde = NOVOS.has(i) ? (entre(...treino), somarDias(hojeISO, -NOVOS.get(i))) : anosAtras(entre(...treino));
       const desdeFaixa = naFaixa ? anosAtras(Math.min(entre(...naFaixa), diasEntre(desde, hojeISO) / 365 - 0.1)) : desde;
-      const graus = inteiro(0, 4);
+      const graus = NOVOS.has(i) ? (inteiro(0, 4), 0) : inteiro(0, 4);
       const intervalo = Math.floor(diasEntre(desdeFaixa, hojeISO) / (graus + 1.4));
       const ultimaGraduacao = graus ? somarDias(desdeFaixa, graus * intervalo) : desdeFaixa;
       if (faixa !== "branca") graduacoes.push({ alunoId: `a${String(i + 1).padStart(2, "0")}`, data: desdeFaixa, faixa, graus: 0 });
@@ -92,7 +95,8 @@ export function gerarDados(hojeISO, semente = 7) {
         telefone: `(61) 9${inteiro(8100, 9999)}-${inteiro(1000, 9999)}`,
         faixa, graus, desde, desdeFaixa, ultimaGraduacao,
         status: TRANCADOS.has(i) ? "trancado" : "ativo",
-        plano, valor: PLANOS[plano], vencimentoDia: [5, 10, 15][i % 3]
+        plano, valor: PLANOS[plano], vencimentoDia: [5, 10, 15][i % 3],
+        parouEm: SUMIDOS.has(i) ? somarDias(hojeISO, -SUMIDOS.get(i)) : null
       });
     }
   }
@@ -110,7 +114,7 @@ export function gerarDados(hojeISO, semente = 7) {
   for (let d = inicio; d <= hojeISO; d = somarDias(d, 1)) {
     const ds = diaSemana(d);
     for (const a of alunos) {
-      if (a.status !== "ativo" || a.desde > d) continue;
+      if (a.status !== "ativo" || a.desde > d || (a.parouEm && d > a.parouEm)) continue;
       for (const t of preferidas.get(a.id)) {
         if (t.diaSemana === ds && rnd() < 0.7) checkins.push({ id: `c${checkins.length + 1}`, alunoId: a.id, turmaId: t.id, data: d, hora: t.horario });
       }
@@ -137,5 +141,5 @@ export function gerarDados(hojeISO, semente = 7) {
     }
   }
 
-  return { versao: VERSAO, geradoEm: hojeISO, professores: PROFESSORES.map(p => ({ ...p })), turmas, alunos, checkins, mensalidades, graduacoes };
+  return { versao: VERSAO, geradoEm: hojeISO, professores: PROFESSORES.map(p => ({ ...p })), turmas, alunos, checkins, mensalidades, graduacoes, ...gerarExtras(hojeISO, alunos) };
 }

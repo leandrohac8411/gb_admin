@@ -11,7 +11,6 @@ export const ICONES = {
   cronogramas: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4"/>',
   "modelos-aula": '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/>',
   habilidades: '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
-  videoaulas: '<rect x="2" y="6" width="14" height="12" rx="2"/><path d="m16 10 6-3v10l-6-3"/>',
   financeiro: '<rect x="2" y="6" width="20" height="14" rx="3"/><path d="M2 10h20"/><circle cx="16" cy="15" r="1.5"/>',
   planos: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h4"/>',
   produtos: '<path d="m12 3 8 4v10l-8 4-8-4V7z"/><path d="m4 7 8 4 8-4M12 11v10"/>',
@@ -27,13 +26,13 @@ export const ICONES = {
   restaurar: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>'
 };
 
-const item = (rota, nome, pronto = false) => ({ rota, nome, pronto });
+const item = (rota, nome, pronto = true) => ({ rota, nome, pronto });
 
 export const MENU = [
   { grupo: "Visão geral", itens: [item("dashboard", "Dashboard", true), item("agenda", "Agenda & turmas", true), item("checkins", "Check-ins", true)] },
   { grupo: "Gestão acadêmica", itens: [item("alunos", "Alunos", true), item("graduacoes", "Graduações", true), item("professores", "Professores"),
     item("acompanhamentos", "Acompanhamentos"), item("cronogramas", "Cronogramas"), item("modelos-aula", "Modelos de aula"),
-    item("habilidades", "Habilidades"), item("videoaulas", "Vídeo aulas")] },
+    item("habilidades", "Habilidades")] },
   { grupo: "Operação", itens: [item("financeiro", "Financeiro", true), item("planos", "Planos"), item("produtos", "Produtos & estoque"),
     item("contratos", "Contratos"), item("prospects", "Prospects"), item("comunicacao", "Comunicação"), item("relatorios", "Relatórios")] },
   { grupo: "Administração", itens: [item("documentos", "Modelos de documentos"), item("mensagens", "Modelos de mensagens"),

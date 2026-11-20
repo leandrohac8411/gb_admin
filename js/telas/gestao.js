@@ -1,0 +1,267 @@
+// Gestão acadêmica (segunda leva): Professores, Acompanhamentos, Cronogramas, Modelos de aula e Habilidades.
+import { esc, abrirFolha, perguntar, toast, dataLonga, horaTexto, iniciais } from "../ui/util.js";
+import { faixaSVG, nomeFaixa, FAIXAS } from "../ui/faixa.js";
+import { hojeISO, somarDias, segundaDaSemana, diasEntre } from "../logica/datas.js";
+import { semanaDoCiclo, CICLO_SEMANAS } from "../logica/ciclo.js";
+import { aptidao } from "../logica/graduacao.js";
+import { CATEGORIAS_TECNICAS } from "../dados-extras.js";
+import { icone } from "../menu.js";
+import { cabecalho, pessoa, faixaCelula, etiquetaPrograma, porId, DIAS_CURTOS } from "./comum.js";
+import { aulas30 } from "./alunos.js";
+
+const erroEm = (el, sel, msg) => { const e = el.querySelector(sel); e.textContent = msg; e.hidden = false; };
+const opcoes = (lista, atual) => lista.map(v => Array.isArray(v) ? v : [v, v]).map(([v, t]) => `<option value="${esc(v)}"${v === atual ? " selected" : ""}>${esc(t)}</option>`).join("");
+
+// ---------- Professores ----------
+function formProfessor(store, prof, pronto) {
+  const p = prof || { nome: "", faixa: "preta", graus: 0 };
+  abrirFolha((el, fechar) => {
+    el.innerHTML = `<h3>${prof ? "Editar professor" : "Novo professor"}</h3><form class="campos" novalidate>
+      <div class="field cheio"><label for="pr-nome">Nome</label><input class="input" id="pr-nome" value="${esc(p.nome)}" autocomplete="off"></div>
+      <div class="field"><label for="pr-faixa">Faixa</label><select class="input" id="pr-faixa">${opcoes(FAIXAS.map(f => [f, nomeFaixa(f)]), p.faixa)}</select></div>
+      <div class="field"><label for="pr-graus">Graus</label><select class="input" id="pr-graus">${opcoes(["0", "1", "2", "3", "4", "5", "6"], String(p.graus))}</select></div>
+      <p class="aviso cheio" id="pr-erro" hidden></p>
+      <div class="acoes cheio"><button type="button" class="btn ghost" id="pr-x">Cancelar</button><button class="btn">${prof ? "Salvar" : "Cadastrar"}</button></div></form>`;
+    el.querySelector("#pr-x").onclick = fechar;
+    el.querySelector("form").onsubmit = e => {
+      e.preventDefault();
+      const nome = el.querySelector("#pr-nome").value.trim().replace(/\s+/g, " ");
+      if (nome.length < 3) return erroEm(el, "#pr-erro", "Escreva o nome do professor.");
+      const campos = { nome, faixa: el.querySelector("#pr-faixa").value, graus: Number(el.querySelector("#pr-graus").value) };
+      if (prof) Object.assign(prof, campos); else store.dados.professores.push({ id: store.novoId("p"), ...campos });
+      store.salvar(); fechar(); toast(prof ? "Professor salvo" : "Professor cadastrado"); pronto();
+    };
+  });
+}
+
+export const professores = {
+  titulo: "Professores",
+  montar(el, params, ctx) {
+    const { store } = ctx, d = store.dados, hoje = hojeISO(), desde = somarDias(hoje, -30);
+    el.innerHTML = cabecalho("Professores", "Equipe técnica, turmas e alunos atendidos.", `<button class="btn" id="novo">${icone("professores")}Novo professor</button>`) +
+      `<div class="grade3">${d.professores.map(p => {
+        const turmas = d.turmas.filter(t => t.professorId === p.id).sort((a, b) => a.diaSemana - b.diaSemana || a.horario.localeCompare(b.horario));
+        const ids = new Set(turmas.map(t => t.id));
+        const cks = d.checkins.filter(c => ids.has(c.turmaId) && c.data > desde);
+        const alunosUnicos = new Set(cks.map(c => c.alunoId)).size;
+        return `<div class="card" style="display:flex;flex-direction:column;gap:12px">
+          <div class="pessoa"><span class="av">${esc(iniciais(p.nome))}</span><div><b>Prof. ${esc(p.nome)}</b><small>${nomeFaixa(p.faixa)}${p.graus ? ` · ${p.graus}º grau` : ""}</small></div></div>
+          ${faixaSVG(p.faixa === "preta" ? "preta" : p.faixa, Math.min(4, p.graus))}
+          <div class="dados" style="grid-template-columns:repeat(3,1fr)"><div><small>Turmas</small><b>${turmas.length}</b></div><div><small>Alunos 30d</small><b>${alunosUnicos}</b></div><div><small>Presenças 30d</small><b>${cks.length}</b></div></div>
+          <div class="chips">${turmas.length ? turmas.map(t => `<span class="chip">${DIAS_CURTOS[t.diaSemana]} ${horaTexto(t.horario)}</span>`).join("") : '<span class="muted" style="font-size:12px">Sem turmas</span>'}</div>
+          <div style="display:flex;gap:8px"><button class="btn sec peq" data-editar="${esc(p.id)}">Editar</button>${turmas.length ? "" : `<button class="btn sec peq" data-excluir="${esc(p.id)}">Excluir</button>`}</div>
+        </div>`;
+      }).join("")}</div>`;
+    el.querySelector("#novo").onclick = () => formProfessor(store, null, ctx.redesenhar);
+    el.querySelectorAll("[data-editar]").forEach(b => b.onclick = () => formProfessor(store, d.professores.find(p => p.id === b.dataset.editar), ctx.redesenhar));
+    el.querySelectorAll("[data-excluir]").forEach(b => b.onclick = async () => {
+      if (!await perguntar("Excluir professor?", "Ele não tem turmas, então pode sair da equipe.", "Excluir", "Cancelar")) return;
+      d.professores = d.professores.filter(p => p.id !== b.dataset.excluir); store.salvar(); toast("Professor excluído"); ctx.redesenhar();
+    });
+  }
+};
+
+// ---------- Acompanhamentos ----------
+const TIPOS_NOTA = ["Contato", "Técnico", "Graduação", "Saúde", "Financeiro"];
+const estadoAc = { aba: "Sumidos" };
+
+function formNota(store, aluno, pronto) {
+  abrirFolha((el, fechar) => {
+    el.innerHTML = `<h3>Anotação</h3><p class="muted" style="margin:0">${esc(aluno.nome)}</p><form class="campos" novalidate>
+      <div class="field cheio"><label for="n-tipo">Tipo</label><select class="input" id="n-tipo">${opcoes(TIPOS_NOTA, "Contato")}</select></div>
+      <div class="field cheio"><label for="n-txt">O que aconteceu</label><textarea class="input" id="n-txt" rows="3" placeholder="Ex.: liguei, está machucado, volta semana que vem"></textarea></div>
+      <p class="aviso cheio" id="n-erro" hidden></p>
+      <div class="acoes cheio"><button type="button" class="btn ghost" id="n-x">Cancelar</button><button class="btn">Salvar</button></div></form>`;
+    el.querySelector("#n-x").onclick = fechar;
+    el.querySelector("#n-txt").focus();
+    el.querySelector("form").onsubmit = e => {
+      e.preventDefault();
+      const texto = el.querySelector("#n-txt").value.trim();
+      if (texto.length < 3) return erroEm(el, "#n-erro", "Escreva a anotação.");
+      store.dados.acompanhamentos.unshift({ id: store.novoId("ac"), alunoId: aluno.id, data: hojeISO(), tipo: el.querySelector("#n-tipo").value, texto });
+      store.salvar(); fechar(); toast("Anotação salva"); pronto();
+    };
+  });
+}
+
+export function ultimoTreino(alunoId, checkins) {
+  let ult = null;
+  for (const c of checkins) if (c.alunoId === alunoId && (!ult || c.data > ult)) ult = c.data;
+  return ult;
+}
+
+export const acompanhamentos = {
+  titulo: "Acompanhamentos",
+  montar(el, params, ctx) {
+    const { store } = ctx, d = store.dados, hoje = hojeISO(), alunos = porId(d.alunos);
+    const ativos = d.alunos.filter(a => a.status === "ativo");
+    const info = ativos.map(a => ({ a, ult: ultimoTreino(a.id, d.checkins), n30: aulas30(a.id, d.checkins, hoje), apt: aptidao(a, d.checkins, hoje) }));
+    const grupos = {
+      Sumidos: info.filter(x => !x.ult || diasEntre(x.ult, hoje) >= 14).sort((x, y) => (x.ult || "").localeCompare(y.ult || "")),
+      "Frequência baixa": info.filter(x => x.n30 >= 1 && x.n30 <= 4 && x.ult && diasEntre(x.ult, hoje) < 14).sort((x, y) => x.n30 - y.n30),
+      "Novos (30 dias)": info.filter(x => diasEntre(x.a.desde, hoje) <= 30),
+      "Aptos a graduar": info.filter(x => x.apt.tipo)
+    };
+    const motivo = x => estadoAc.aba === "Sumidos" ? (x.ult ? `sem treinar há ${diasEntre(x.ult, hoje)} dias` : "nunca treinou")
+      : estadoAc.aba === "Frequência baixa" ? `${x.n30} aula${x.n30 === 1 ? "" : "s"} em 30 dias`
+      : estadoAc.aba === "Novos (30 dias)" ? `entrou em ${dataLonga(x.a.desde)} · ${x.n30} aulas`
+      : x.apt.tipo === "faixa" ? `apto à faixa ${x.apt.proximaFaixa}` : `apto ao ${x.a.graus + 1}º grau`;
+    const notas = d.acompanhamentos;
+    const lista = estadoAc.aba === "Anotações"
+      ? (notas.length ? `<div class="lista">${notas.map(n => `<div><span class="pill info">${esc(n.tipo)}</span><div class="cresce"><b>${esc(alunos[n.alunoId]?.nome || "Aluno removido")}</b><small>${esc(n.texto)}</small></div><span class="muted" style="white-space:nowrap">${dataLonga(n.data)}</span></div>`).join("")}</div>` : `<div class="vazio">Nenhuma anotação ainda.</div>`)
+      : (grupos[estadoAc.aba].length ? `<div class="lista">${grupos[estadoAc.aba].map(x => `<div><a href="#aluno/${encodeURIComponent(x.a.id)}" class="cresce">${pessoa(x.a, motivo(x))}</a>
+          <span class="muted" style="font-size:12px">${notas.filter(n => n.alunoId === x.a.id).length || ""}</span>
+          <button class="btn sec peq" data-anotar="${esc(x.a.id)}">Anotar</button></div>`).join("")}</div>` : `<div class="vazio">Ninguém nesta lista. 👏</div>`);
+    el.innerHTML = cabecalho("Acompanhamentos", "Quem precisa de atenção agora, com anotações da equipe.") +
+      `<div class="kpis">${Object.entries(grupos).map(([nome, l]) => `<button class="kpi${nome === estadoAc.aba ? " destaque" : ""}" data-aba="${nome}" style="text-align:left"><div class="kpi-top"><span>${nome}</span></div><b>${l.length}</b><small>alunos</small></button>`).join("")}</div>
+      <div class="chips">${[...Object.keys(grupos), "Anotações"].map(t => `<button class="chip${estadoAc.aba === t ? " on" : ""}" data-aba="${t}">${t}${t === "Anotações" ? ` · ${notas.length}` : ""}</button>`).join("")}</div>
+      <div class="card">${lista}</div>`;
+    el.querySelectorAll("[data-aba]").forEach(b => b.onclick = () => { estadoAc.aba = b.dataset.aba; ctx.redesenhar(); });
+    el.querySelectorAll("[data-anotar]").forEach(b => b.onclick = () => formNota(store, alunos[b.dataset.anotar], ctx.redesenhar));
+  }
+};
+
+// ---------- Cronogramas ----------
+const estadoCr = { programa: "GB1" };
+
+export const cronogramas = {
+  titulo: "Cronogramas",
+  montar(el, params, ctx) {
+    const { store } = ctx, d = store.dados, hoje = hojeISO(), prog = estadoCr.programa;
+    const atual = semanaDoCiclo(hoje, d.config.ancoras, prog), segunda = segundaDaSemana(hoje);
+    const inicioDa = n => somarDias(segunda, 7 * ((((n - atual) % CICLO_SEMANAS) + CICLO_SEMANAS) % CICLO_SEMANAS));
+    const semanas = d.cronograma.filter(s => s.programa === prog).sort((a, b) => a.semana - b.semana);
+    const fmt = iso => `${iso.slice(8)}/${iso.slice(5, 7)}`;
+    el.innerHTML = cabecalho("Cronogramas", "Ciclo de 16 semanas de cada currículo. Temas fictícios e editáveis.",
+      `<button class="btn sec" id="ajustar">${icone("agenda")}Ajustar semana atual</button>`) +
+      `<div class="chips">${["GB1", "GB2"].map(p => `<button class="chip${p === prog ? " on" : ""}" data-p="${p}">${p} · semana ${semanaDoCiclo(hoje, d.config.ancoras, p)}</button>`).join("")}</div>
+      <div class="card"><table class="tabela resp"><thead><tr><th>Semana</th><th>Posição</th><th>Tema</th><th>Próxima vez</th><th></th></tr></thead><tbody>${semanas.map(s => {
+        const ini = inicioDa(s.semana);
+        return `<tr${s.semana === atual ? ' style="background:var(--red-soft)"' : ""}><td><b>${s.semana === atual ? "▶ " : ""}Semana ${s.semana}</b></td><td><span class="pill">${esc(s.categoria)}</span></td>
+          <td class="cheia">${esc(s.tema)}</td><td data-l="Quando:">${s.semana === atual ? "esta semana" : `${fmt(ini)} a ${fmt(somarDias(ini, 5))}`}</td>
+          <td class="num"><button class="btn sec peq" data-editar="${esc(s.id)}">Editar</button></td></tr>`;
+      }).join("")}</tbody></table></div>`;
+    el.querySelectorAll("[data-p]").forEach(b => b.onclick = () => { estadoCr.programa = b.dataset.p; ctx.redesenhar(); });
+    el.querySelectorAll("[data-editar]").forEach(b => b.onclick = () => {
+      const s = d.cronograma.find(x => x.id === b.dataset.editar);
+      abrirFolha((f, fechar) => {
+        f.innerHTML = `<h3>${prog} · semana ${s.semana}</h3><form class="campos" novalidate>
+          <div class="field cheio"><label for="c-cat">Posição</label><select class="input" id="c-cat">${opcoes(CATEGORIAS_TECNICAS, s.categoria)}</select></div>
+          <div class="field cheio"><label for="c-tema">Tema</label><input class="input" id="c-tema" value="${esc(s.tema)}"></div>
+          <p class="aviso cheio" id="c-erro" hidden></p>
+          <div class="acoes cheio"><button type="button" class="btn ghost" id="c-x">Cancelar</button><button class="btn">Salvar</button></div></form>`;
+        f.querySelector("#c-x").onclick = fechar;
+        f.querySelector("form").onsubmit = e => {
+          e.preventDefault();
+          const tema = f.querySelector("#c-tema").value.trim();
+          if (tema.length < 3) return erroEm(f, "#c-erro", "Escreva o tema.");
+          Object.assign(s, { tema, categoria: f.querySelector("#c-cat").value });
+          store.salvar(); fechar(); toast("Tema salvo"); ctx.redesenhar();
+        };
+      });
+    });
+    el.querySelector("#ajustar").onclick = () => abrirFolha((f, fechar) => {
+      f.innerHTML = `<h3>Em que semana o ${prog} está?</h3><p class="muted" style="margin:0">Vale a partir desta semana (${fmt(segunda)}).</p>
+        <div class="chips">${Array.from({ length: 16 }, (_, i) => `<button class="chip${i + 1 === atual ? " on" : ""}" data-s="${i + 1}">${i + 1}</button>`).join("")}</div>
+        <button class="btn ghost bloco" id="a-x">Cancelar</button>`;
+      f.querySelector("#a-x").onclick = fechar;
+      f.querySelectorAll("[data-s]").forEach(c => c.onclick = () => {
+        d.config.ancoras = [...d.config.ancoras.filter(a => !(a.programa === prog && a.data === segunda)), { programa: prog, data: segunda, semana: Number(c.dataset.s) }];
+        store.salvar(); fechar(); toast(`${prog} na semana ${c.dataset.s}`); ctx.redesenhar();
+      });
+    });
+  }
+};
+
+// ---------- Modelos de aula ----------
+function formModeloAula(store, m, pronto) {
+  const x = m || { nome: "", publico: "GB1", blocos: [{ nome: "Aquecimento", min: 10 }, { nome: "Técnica", min: 20 }, { nome: "Rola", min: 20 }] };
+  abrirFolha((el, fechar) => {
+    el.innerHTML = `<h3>${m ? "Editar modelo" : "Novo modelo de aula"}</h3><form class="campos" novalidate>
+      <div class="field cheio"><label for="m-nome">Nome</label><input class="input" id="m-nome" value="${esc(x.nome)}"></div>
+      <div class="field cheio"><label for="m-pub">Turma</label><select class="input" id="m-pub">${opcoes(["GB1", "GB2", "GB1+GB2"], x.publico)}</select></div>
+      <div class="field cheio"><label for="m-blocos">Blocos (um por linha: nome | minutos)</label><textarea class="input" id="m-blocos" rows="6">${esc(x.blocos.map(b => `${b.nome} | ${b.min}`).join("\n"))}</textarea></div>
+      <p class="aviso cheio" id="m-erro" hidden></p>
+      <div class="acoes cheio"><button type="button" class="btn ghost" id="m-x">Cancelar</button><button class="btn">Salvar</button></div>
+      ${m ? '<button type="button" class="link cheio" id="m-del" style="justify-self:center">Excluir modelo</button>' : ""}</form>`;
+    el.querySelector("#m-x").onclick = fechar;
+    el.querySelector("#m-del")?.addEventListener("click", () => {
+      store.dados.modelosAula = store.dados.modelosAula.filter(y => y !== m); store.salvar(); fechar(); toast("Modelo excluído"); pronto();
+    });
+    el.querySelector("form").onsubmit = e => {
+      e.preventDefault();
+      const nome = el.querySelector("#m-nome").value.trim();
+      const blocos = el.querySelector("#m-blocos").value.split("\n").map(l => l.split("|")).filter(p => p[0].trim())
+        .map(([n, min]) => ({ nome: n.trim(), min: Math.round(Number(String(min ?? "").replace(",", "."))) }));
+      if (nome.length < 3) return erroEm(el, "#m-erro", "Dê um nome ao modelo.");
+      if (!blocos.length || blocos.some(b => !(b.min > 0 && b.min <= 120))) return erroEm(el, "#m-erro", "Cada bloco precisa de nome e minutos (1 a 120), ex.: Aquecimento | 10");
+      const campos = { nome, publico: el.querySelector("#m-pub").value, blocos };
+      if (m) Object.assign(m, campos); else store.dados.modelosAula.push({ id: store.novoId("ma"), ...campos });
+      store.salvar(); fechar(); toast("Modelo salvo"); pronto();
+    };
+  });
+}
+
+const CORES_BLOCO = ["#c8201b", "#2449c9", "#6b2fa8", "#1f8a5b", "#d98a16", "#151517"];
+export const modelosAula = {
+  titulo: "Modelos de aula",
+  montar(el, params, ctx) {
+    const { store } = ctx, d = store.dados;
+    el.innerHTML = cabecalho("Modelos de aula", "Como cada aula é dividida, do aquecimento ao rola.", `<button class="btn" id="novo">${icone("modelos-aula")}Novo modelo</button>`) +
+      (d.modelosAula.length ? `<div class="grade2">${d.modelosAula.map(m => {
+        const total = m.blocos.reduce((s, b) => s + b.min, 0);
+        return `<div class="card" style="display:flex;flex-direction:column;gap:12px"><div class="card-cab" style="margin:0"><div><h3>${esc(m.nome)}</h3><small>${total} minutos</small></div>${etiquetaPrograma(m.publico)}</div>
+          <div style="display:flex;height:14px;border-radius:7px;overflow:hidden">${m.blocos.map((b, i) => `<i title="${esc(b.nome)}" style="width:${b.min / total * 100}%;background:${CORES_BLOCO[i % CORES_BLOCO.length]}"></i>`).join("")}</div>
+          <div class="lista">${m.blocos.map((b, i) => `<div><span class="bolinha" style="width:10px;height:10px;border-radius:50%;background:${CORES_BLOCO[i % CORES_BLOCO.length]}"></span><div class="cresce"><b>${esc(b.nome)}</b></div><span class="muted">${b.min} min</span></div>`).join("")}</div>
+          <button class="btn sec peq" data-editar="${esc(m.id)}" style="align-self:flex-start">Editar</button></div>`;
+      }).join("")}</div>` : `<div class="card vazio">Nenhum modelo ainda.</div>`);
+    el.querySelector("#novo").onclick = () => formModeloAula(store, null, ctx.redesenhar);
+    el.querySelectorAll("[data-editar]").forEach(b => b.onclick = () => formModeloAula(store, d.modelosAula.find(m => m.id === b.dataset.editar), ctx.redesenhar));
+  }
+};
+
+// ---------- Habilidades ----------
+const NIVEIS = ["Iniciante", "Intermediário", "Avançado"];
+const estadoHab = { cat: null };
+
+function formHabilidade(store, h, pronto) {
+  const x = h || { nome: "", categoria: CATEGORIAS_TECNICAS[0], nivel: "Iniciante", faixaMin: "branca" };
+  abrirFolha((el, fechar) => {
+    el.innerHTML = `<h3>${h ? "Editar habilidade" : "Nova habilidade"}</h3><form class="campos" novalidate>
+      <div class="field cheio"><label for="h-nome">Habilidade</label><input class="input" id="h-nome" value="${esc(x.nome)}"></div>
+      <div class="field"><label for="h-cat">Posição</label><select class="input" id="h-cat">${opcoes(CATEGORIAS_TECNICAS, x.categoria)}</select></div>
+      <div class="field"><label for="h-niv">Nível</label><select class="input" id="h-niv">${opcoes(NIVEIS, x.nivel)}</select></div>
+      <div class="field cheio"><label for="h-fx">A partir da faixa</label><select class="input" id="h-fx">${opcoes(FAIXAS.map(f => [f, nomeFaixa(f)]), x.faixaMin)}</select></div>
+      <p class="aviso cheio" id="h-erro" hidden></p>
+      <div class="acoes cheio"><button type="button" class="btn ghost" id="h-x">Cancelar</button><button class="btn">Salvar</button></div>
+      ${h ? '<button type="button" class="link cheio" id="h-del" style="justify-self:center">Excluir habilidade</button>' : ""}</form>`;
+    el.querySelector("#h-x").onclick = fechar;
+    el.querySelector("#h-del")?.addEventListener("click", () => { store.dados.habilidades = store.dados.habilidades.filter(y => y !== h); store.salvar(); fechar(); toast("Habilidade excluída"); pronto(); });
+    el.querySelector("form").onsubmit = e => {
+      e.preventDefault();
+      const nome = el.querySelector("#h-nome").value.trim();
+      if (nome.length < 3) return erroEm(el, "#h-erro", "Escreva o nome da habilidade.");
+      const campos = { nome, categoria: el.querySelector("#h-cat").value, nivel: el.querySelector("#h-niv").value, faixaMin: el.querySelector("#h-fx").value };
+      if (h) Object.assign(h, campos); else store.dados.habilidades.push({ id: store.novoId("h"), ...campos });
+      store.salvar(); fechar(); toast("Habilidade salva"); pronto();
+    };
+  });
+}
+
+export const habilidades = {
+  titulo: "Habilidades",
+  montar(el, params, ctx) {
+    const { store } = ctx, d = store.dados;
+    const lista = d.habilidades.filter(h => !estadoHab.cat || h.categoria === estadoHab.cat)
+      .sort((a, b) => FAIXAS.indexOf(a.faixaMin) - FAIXAS.indexOf(b.faixaMin) || a.nome.localeCompare(b.nome, "pt-BR"));
+    const pill = n => `<span class="pill ${n === "Iniciante" ? "ok" : n === "Intermediário" ? "info" : "alerta"}">${n}</span>`;
+    el.innerHTML = cabecalho("Habilidades", "O que se espera em cada posição e a partir de qual faixa.", `<button class="btn" id="novo">${icone("habilidades")}Nova habilidade</button>`) +
+      `<div class="chips">${CATEGORIAS_TECNICAS.map(c => `<button class="chip${estadoHab.cat === c ? " on" : ""}" data-c="${esc(c)}">${esc(c)} · ${d.habilidades.filter(h => h.categoria === c).length}</button>`).join("")}</div>
+      <div class="card">${lista.length ? `<table class="tabela resp"><thead><tr><th>Habilidade</th><th>Posição</th><th>Nível</th><th>A partir da</th></tr></thead><tbody>${lista.map(h =>
+        `<tr class="clica" data-id="${esc(h.id)}" tabindex="0"><td class="cheia"><b>${esc(h.nome)}</b></td><td>${esc(h.categoria)}</td><td>${pill(h.nivel)}</td><td>${faixaCelula({ faixa: h.faixaMin, graus: 0 })}</td></tr>`).join("")}</tbody></table>`
+        : `<div class="vazio">Nenhuma habilidade nesta posição.</div>`}</div>`;
+    el.querySelectorAll("[data-c]").forEach(b => b.onclick = () => { estadoHab.cat = estadoHab.cat === b.dataset.c ? null : b.dataset.c; ctx.redesenhar(); });
+    el.querySelector("#novo").onclick = () => formHabilidade(store, null, ctx.redesenhar);
+    el.querySelectorAll("tr[data-id]").forEach(tr => { const abrir = () => formHabilidade(store, d.habilidades.find(h => h.id === tr.dataset.id), ctx.redesenhar); tr.onclick = abrir; tr.onkeydown = e => { if (e.key === "Enter") abrir(); }; });
+  }
+};

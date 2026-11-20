@@ -7,7 +7,6 @@ import { inadimplentes } from "../logica/financeiro.js";
 import { icone } from "../menu.js";
 import { cabecalho, pessoa, faixaCelula, PILL_STATUS } from "./comum.js";
 
-const PLANOS = { Mensal: 280, Trimestral: 750, Anual: 2700 };
 const estado = { busca: "", status: "Todos", faixa: null };
 
 export function aulas30(alunoId, checkins, hoje) {
@@ -16,8 +15,9 @@ export function aulas30(alunoId, checkins, hoje) {
 }
 
 // Folha de cadastro/edição. aluno = null cria um novo.
-export function abrirFormAluno(store, aluno, aoSalvar) {
-  const hoje = hojeISO(), novo = !aluno, a = aluno || { sexo: "M", faixa: "branca", graus: 0, plano: "Mensal" };
+export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
+  const hoje = hojeISO(), novo = !aluno, planos = store.dados.planos.filter(p => p.ativo || p.id === aluno?.plano);
+  const a = aluno || { sexo: "M", faixa: "branca", graus: 0, plano: planos[0]?.id, ...inicial };
   abrirFolha((el, fechar) => {
     el.innerHTML = `<h3>${novo ? "Novo aluno" : "Editar aluno"}</h3>
       <form class="campos" novalidate>
@@ -28,7 +28,7 @@ export function abrirFormAluno(store, aluno, aoSalvar) {
         <div class="field"><label for="f-tel">Telefone</label><input class="input" id="f-tel" name="telefone" value="${esc(a.telefone || "")}" inputmode="tel"></div>
         ${novo ? `<div class="field"><label for="f-faixa">Faixa</label><select class="input" id="f-faixa" name="faixa">${FAIXAS.map(f => `<option value="${f}"${a.faixa === f ? " selected" : ""}>${nomeFaixa(f)}</option>`).join("")}</select></div>
         <div class="field"><label for="f-graus">Graus</label><select class="input" id="f-graus" name="graus">${[0, 1, 2, 3, 4].map(g => `<option${a.graus === g ? " selected" : ""}>${g}</option>`).join("")}</select></div>` : ""}
-        <div class="field cheio"><label for="f-plano">Plano</label><select class="input" id="f-plano" name="plano">${Object.entries(PLANOS).map(([p, v]) => `<option value="${p}"${a.plano === p ? " selected" : ""}>${p} · R$ ${v}</option>`).join("")}</select></div>
+        <div class="field cheio"><label for="f-plano">Plano</label><select class="input" id="f-plano" name="plano">${planos.map(p => `<option value="${esc(p.id)}"${a.plano === p.id ? " selected" : ""}>${esc(p.nome)} · R$ ${p.valor}</option>`).join("")}</select></div>
         <p class="aviso cheio" id="f-erro" hidden></p>
         <div class="acoes cheio"><button type="button" class="btn ghost" id="f-cancelar">Cancelar</button><button class="btn" type="submit">${novo ? "Cadastrar" : "Salvar"}</button></div>
       </form>`;
@@ -43,16 +43,18 @@ export function abrirFormAluno(store, aluno, aoSalvar) {
         : f.nascimento && (!dataValida(f.nascimento) || f.nascimento > hoje) ? "Data de nascimento inválida."
         : f.peso && !(Number(f.peso) >= 20 && Number(f.peso) <= 250) ? "Peso deve ficar entre 20 e 250 kg." : "";
       if (falha) { erro.textContent = falha; erro.hidden = false; return; }
-      const campos = { nome, sexo: f.sexo, nascimento: f.nascimento || "", peso: f.peso ? Number(f.peso) : null, telefone: f.telefone.trim(), plano: f.plano, valor: PLANOS[f.plano] };
+      const campos = { nome, sexo: f.sexo, nascimento: f.nascimento || "", peso: f.peso ? Number(f.peso) : null, telefone: f.telefone.trim(), plano: f.plano, valor: planos.find(p => p.id === f.plano)?.valor ?? 0 };
       const d = store.dados;
       let alvo = aluno;
       if (novo) {
         const graus = Number(f.graus) || 0;
-        alvo = { id: store.novoId("a"), ...campos, faixa: f.faixa, graus, desde: hoje, desdeFaixa: hoje, ultimaGraduacao: hoje, status: "ativo", vencimentoDia: 10 };
+        alvo = { id: store.novoId("a"), ...campos, faixa: f.faixa, graus, desde: hoje, desdeFaixa: hoje, ultimaGraduacao: hoje, status: "ativo", vencimentoDia: d.config.vencimentoPadrao || 10 };
         d.alunos.unshift(alvo);
         if (f.faixa !== "branca" || graus) d.graduacoes.push({ alunoId: alvo.id, data: hoje, faixa: f.faixa, graus });
-        const comp = hoje.slice(0, 7), venc = `${comp}-10` < hoje ? hoje : `${comp}-10`;
+        const comp = hoje.slice(0, 7), dv = String(alvo.vencimentoDia).padStart(2, "0"), venc = `${comp}-${dv}` < hoje ? hoje : `${comp}-${dv}`;
         d.mensalidades.push({ id: store.novoId("m"), alunoId: alvo.id, competencia: comp, vencimento: venc, valor: alvo.valor, pagoEm: null, forma: null });
+        const numero = `CTR-${hoje.slice(0, 4)}-${String(100 + d.contratos.length).padStart(3, "0")}`;
+        d.contratos.push({ id: store.novoId("ct"), numero, alunoId: alvo.id, modeloId: "doc1", emissao: hoje, status: "pendente" });
       } else {
         Object.assign(alvo, campos);
       }

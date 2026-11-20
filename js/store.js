@@ -10,12 +10,14 @@ function ler(armazenamento, hojeISO) {
     const bruto = armazenamento?.getItem(CHAVE);
     if (!bruto) return null;
     const d = JSON.parse(bruto);
-    return d && d.versao === VERSAO && COLECOES.every(c => Array.isArray(d[c])) && String(d.geradoEm || "").slice(0, 7) === hojeISO.slice(0, 7) ? d : null;
+    return d && d.versao === VERSAO && COLECOES.every(c => Array.isArray(d[c])) && d.config && typeof d.config === "object" && String(d.geradoEm || "").slice(0, 7) === hojeISO.slice(0, 7) ? d : null;
   } catch { return null; }
 }
 
 export function criarStore(hojeISO, armazenamento = globalThis.localStorage) {
   let contador = 0;
+  // Versões antigas da vitrine não servem mais: limpa para não ocupar espaço.
+  try { for (let v = 1; v < VERSAO; v++) armazenamento?.removeItem?.(`gb-admin:v${v}`); } catch { /* ignora */ }
   const store = {
     dados: ler(armazenamento, hojeISO) || gerarDados(hojeISO),
     salvar() {

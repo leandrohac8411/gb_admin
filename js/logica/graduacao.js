@@ -28,3 +28,11 @@ export function aptidao(aluno, checkins, hojeISO) {
   if (mesesEntre(aluno.desdeFaixa, hojeISO) < minimo) return nada;
   return { ...nada, tipo: "faixa", proximaFaixa: FAIXAS[FAIXAS.indexOf(aluno.faixa) + 1] };
 }
+
+// Configurações → regras (o objeto REGRAS é o mesmo usado por todas as telas).
+export function aplicarRegras(r) {
+  if (!r) return;
+  REGRAS.aulasPorGrau = Number(r.aulasPorGrau) || REGRAS.aulasPorGrau;
+  REGRAS.mesesPorGrau = Number(r.mesesPorGrau) || REGRAS.mesesPorGrau;
+  REGRAS.mesesMinFaixa = { ...REGRAS.mesesMinFaixa, ...(r.mesesMinFaixa || {}) };
+}

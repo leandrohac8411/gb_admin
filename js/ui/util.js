@@ -36,7 +36,7 @@ export function toast(texto) {
 // aoDispensar roda quando a pessoa fecha tocando fora da folha.
 const abertas = new Set();
 export function fecharFolhas() { for (const dispensar of [...abertas]) dispensar(); }
-document.addEventListener("keydown", e => { if (e.key === "Escape" && abertas.size) [...abertas].at(-1)(); });
+globalThis.document?.addEventListener("keydown", e => { if (e.key === "Escape" && abertas.size) [...abertas].at(-1)(); });
 
 export function abrirFolha(conteudo, aoDispensar) {
   const fundo = document.createElement("div");

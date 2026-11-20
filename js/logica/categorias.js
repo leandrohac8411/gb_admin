@@ -19,7 +19,9 @@ export const TABELA_PESO = {
 export function categoriaIdade(nascimentoISO, hojeISO) {
   if (!nascimentoISO) return null;
   const idadeNoAno = deISO(hojeISO).ano - deISO(nascimentoISO).ano;
-  const linha = TABELA_IDADE.find(([min]) => idadeNoAno >= min);
+  // CBJJ/IBJJF: a partir de 2027 existe o Master 8 (66 anos ou mais); o Master 7 vira 61 a 65.
+  const tabela = deISO(hojeISO).ano >= 2027 ? [[66, "Master 8"], ...TABELA_IDADE] : TABELA_IDADE;
+  const linha = tabela.find(([min]) => idadeNoAno >= min);
   return linha ? { nome: linha[1], idadeNoAno } : null;
 }
 

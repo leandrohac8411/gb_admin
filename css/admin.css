@@ -293,3 +293,17 @@ button.kpi{font:inherit;color:inherit;cursor:pointer}
 .campos .secao{grid-column:1/-1;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:6px;border-top:1px solid var(--line);padding-top:12px}
 .check{display:flex;gap:8px;align-items:center;font-size:13px}
 .check input{width:18px;height:18px;accent-color:var(--red)}
+
+/* Fluxo de caixa: barras duplas */
+.barras.duplas .par{display:flex;align-items:flex-end;gap:6px;height:100%;width:100%;justify-content:center}
+.barras.duplas .bar{max-width:38px}
+.barras .bar.ent{background:var(--good)}
+.barras .bar.sai{background:var(--red)}
+.legenda{display:flex;gap:16px;font-size:12px;color:var(--muted2);margin-top:10px}
+.legenda i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.legenda i.ent{background:var(--good)}.legenda i.sai{background:var(--red)}
+.regras27 summary{cursor:pointer;display:flex;gap:10px;align-items:center;flex-wrap:wrap;list-style:none}
+.regras27 summary::-webkit-details-marker{display:none}
+.regras27 summary::before{content:"▸";color:var(--red);font-weight:800}
+.regras27[open] summary::before{content:"▾"}
+.regras27 ul{margin:12px 0 8px;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13px}

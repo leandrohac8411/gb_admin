@@ -259,6 +259,17 @@ export const habilidades = {
       .sort((a, b) => FAIXAS.indexOf(a.faixaMin) - FAIXAS.indexOf(b.faixaMin) || a.nome.localeCompare(b.nome, "pt-BR"));
     const pill = n => `<span class="pill ${n === "Iniciante" ? "ok" : n === "Intermediário" ? "info" : "alerta"}">${n}</span>`;
     el.innerHTML = cabecalho("Habilidades", "O que se espera em cada posição e a partir de qual faixa.", `<button class="btn" id="novo">${icone("habilidades")}Nova habilidade</button>`) +
+      `<details class="card regras27"><summary><b>Regras CBJJ/IBJJF 2027 que mudam o treino</b> <span class="pill alerta">a partir de 01/01/2027</span></summary>
+        <ul>
+          <li><b>Pular na guarda</b> vira falta gravíssima (desclassificação) para <b>até 15 anos</b> e para <b>faixa branca</b> em qualquer idade.</li>
+          <li><b>Chave de pé reta</b> proibida para <b>juvenis (16 e 17 anos)</b> e <b>faixa branca</b>. Azul e roxa podem girar para o lado do pé não atacado.</li>
+          <li><b>Puxada dupla:</b> 20 segundos sem ninguém ir por cima ou pontuar, a luta recomeça em pé.</li>
+          <li><b>Pegada de lapela/faixa enrolada na própria perna:</b> 20 segundos para progredir, senão falta de combatividade.</li>
+          <li><b>Queda na puxada para guarda:</b> deixa de existir a contagem de 3 segundos com o oponente de costas.</li>
+          <li><b>Master 8</b> (66 anos ou mais), com luta de 4 minutos; Master 7 passa a ser de 61 a 65 anos.</li>
+        </ul>
+        <small class="muted">Resumo da página de mudanças de regras da CBJJ. Em caso de dúvida, vale o livro de regras oficial.</small>
+      </details>` +
       `<div class="chips">${CATEGORIAS_TECNICAS.map(c => `<button class="chip${estadoHab.cat === c ? " on" : ""}" data-c="${esc(c)}">${esc(c)} · ${d.habilidades.filter(h => h.categoria === c).length}</button>`).join("")}</div>
       <div class="card">${lista.length ? `<table class="tabela resp"><thead><tr><th>Habilidade</th><th>Posição</th><th>Nível</th><th>A partir da</th></tr></thead><tbody>${lista.map(h =>
         `<tr class="clica" data-id="${esc(h.id)}" tabindex="0"><td class="cheia"><b>${esc(h.nome)}</b></td><td>${esc(h.categoria)}</td><td>${pill(h.nivel)}</td><td>${faixaCelula({ faixa: h.faixaMin, graus: 0 })}</td></tr>`).join("")}</tbody></table>`

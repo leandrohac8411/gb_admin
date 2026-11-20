@@ -39,3 +39,9 @@ test("sem peso ou sexo devolve null", () => {
   assert.equal(categoriaPeso(null, "M"), null);
   assert.equal(categoriaPeso(70, null), null);
 });
+
+test("Master 8 (66+) passa a valer em 2027", () => {
+  assert.equal(categoriaIdade("1960-03-10", "2026-11-20").nome, "Master 7");
+  assert.equal(categoriaIdade("1960-03-10", "2027-01-01").nome, "Master 8");
+  assert.equal(categoriaIdade("1964-03-10", "2027-05-01").nome, "Master 7");
+});

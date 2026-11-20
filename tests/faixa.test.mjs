@@ -21,3 +21,18 @@ test("nomes e ordem das faixas", () => {
   assert.deepEqual(FAIXAS, ["branca", "azul", "roxa", "marrom", "preta"]);
   assert.equal(nomeFaixa("marrom"), "Marrom");
 });
+
+test("faixas kids", async () => {
+  const { FAIXAS_KIDS, faixasDe, corBase } = await import("../js/ui/faixa.js");
+  assert.equal(FAIXAS_KIDS.length, 13);
+  assert.equal(faixasDe("kids").length, 13);
+  assert.deepEqual(faixasDe("adulto"), FAIXAS);
+  assert.equal(corBase("amarela-preta"), "amarela");
+  assert.equal(nomeFaixa("amarela-preta"), "Amarela e preta");
+  assert.equal(nomeFaixa("cinza-branca"), "Cinza e branca");
+  const s = faixaSVG("laranja-branca", 2);
+  assert.match(s, /#ee7d1c/);
+  assert.match(s, /height="9" fill="#ffffff"/);
+  assert.match(s, /aria-label="Faixa laranja e branca, 2 graus"/);
+  assert.match(faixaSVG("verde-preta", 0), /height="9" fill="#111111"/);
+});

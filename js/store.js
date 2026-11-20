@@ -4,24 +4,25 @@ import { gerarDados, VERSAO } from "./dados-ficticios.js";
 
 const CHAVE = "gb-admin:v1";
 
-function ler(armazenamento) {
+// Dados de outro mês são refeitos: a vitrine sempre mostra o mês atual "vivo".
+function ler(armazenamento, hojeISO) {
   try {
     const bruto = armazenamento?.getItem(CHAVE);
     if (!bruto) return null;
     const d = JSON.parse(bruto);
-    return d && d.versao === VERSAO && Array.isArray(d.alunos) ? d : null;
+    return d && d.versao === VERSAO && Array.isArray(d.alunos) && String(d.geradoEm || "").slice(0, 7) === hojeISO.slice(0, 7) ? d : null;
   } catch { return null; }
 }
 
 export function criarStore(hojeISO, armazenamento = globalThis.localStorage) {
   let contador = 0;
   const store = {
-    dados: ler(armazenamento) || gerarDados(hojeISO),
+    dados: ler(armazenamento, hojeISO) || gerarDados(hojeISO),
     salvar() {
       try { armazenamento?.setItem(CHAVE, JSON.stringify(store.dados)); } catch { /* sem espaço ou bloqueado: segue em memória */ }
     },
-    restaurar() {
-      store.dados = gerarDados(hojeISO);
+    restaurar(hoje = hojeISO) {
+      store.dados = gerarDados(hoje);
       store.salvar();
     },
     novoId(prefixo) {

@@ -1,10 +1,14 @@
 // Regras de graduação da vitrine (ajustáveis): grau por aulas + tempo; faixa com 4 graus + tempo mínimo na faixa.
-import { diasEntre } from "./datas.js";
+import { deISO } from "./datas.js";
 import { FAIXAS } from "../ui/faixa.js";
 
 export const REGRAS = { aulasPorGrau: 30, mesesPorGrau: 3, mesesMinFaixa: { branca: 12, azul: 24, roxa: 18, marrom: 12 } };
 
-export const mesesEntre = (a, b) => Math.floor(diasEntre(a, b) / 30.44);
+// Meses de calendário completos entre duas datas (20/11/2025 → 20/11/2026 = 12).
+export function mesesEntre(a, b) {
+  const x = deISO(a), y = deISO(b);
+  return (y.ano - x.ano) * 12 + (y.mes - x.mes) - (y.dia < x.dia ? 1 : 0);
+}
 
 export function aulasDesde(alunoId, iso, checkins) {
   let n = 0;

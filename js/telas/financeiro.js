@@ -77,7 +77,7 @@ export default {
         ${comp !== hoje.slice(0, 7) ? `<button class="link" id="atual">Mês atual</button>` : ""}
       </div>
       <div class="grade2">
-        <div class="kpis" style="grid-template-columns:1fr 1fr">
+        <div class="kpis kpis2">
           ${kpi("Previsto", reais(r.previsto), `${doMes.length} mensalidades`)}
           ${kpi("Recebido", reais(r.recebido), "já pago", "destaque")}
           ${kpi("Pendente", reais(r.pendente), "a vencer")}

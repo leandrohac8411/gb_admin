@@ -136,5 +136,5 @@ export function gerarDados(hojeISO, semente = 7) {
     }
   }
 
-  return { versao: VERSAO, professores: PROFESSORES.map(p => ({ ...p })), turmas, alunos, checkins, mensalidades, graduacoes };
+  return { versao: VERSAO, geradoEm: hojeISO, professores: PROFESSORES.map(p => ({ ...p })), turmas, alunos, checkins, mensalidades, graduacoes };
 }

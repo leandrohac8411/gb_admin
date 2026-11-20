@@ -2,6 +2,7 @@
 import { desenharMenu, itemDoMenu } from "./menu.js";
 import { esc } from "./ui/util.js";
 import embreve from "./telas/embreve.js";
+import { lerRota } from "./rota.js";
 
 const TELAS = {};
 const ctx = { store: null, ir: rota => { location.hash = "#" + rota; }, redesenhar: () => desenhar() };
@@ -28,7 +29,7 @@ const naoEncontrada = {
 };
 
 export function desenhar() {
-  const [rota = "dashboard", ...params] = (location.hash.slice(1) || "dashboard").split("/").map(decodeURIComponent);
+  const { rota, params } = lerRota(location.hash);
   const doMenu = itemDoMenu(rota);
   const tela_ = TELAS[rota] || (doMenu ? embreve : naoEncontrada);
   const ativa = rota === "aluno" ? "alunos" : rota;

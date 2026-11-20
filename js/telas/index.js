@@ -17,7 +17,7 @@ definirStore(store);
 
 quandoRestaurar(async () => {
   if (!await perguntar("Restaurar dados de exemplo?", "Tudo o que foi cadastrado ou alterado aqui volta para a academia de exemplo.", "Restaurar", "Cancelar")) return;
-  store.restaurar();
+  store.restaurar(hojeISO());
   desenhar();
   toast("Dados de exemplo restaurados");
 });

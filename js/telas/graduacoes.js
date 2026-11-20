@@ -50,7 +50,7 @@ export default {
       `<div class="grade2">
         <div class="card"><div class="card-cab"><h3>Alunos ativos por faixa</h3><small>${ativos.length} ativos</small></div>
           <div class="dist">${porFaixa.map(([f, n]) => `<div class="linha"><span>${nomeFaixa(f)}</span><div class="trilho"><i style="width:${Math.round(n / maxF * 100)}%;background:${CORES_FAIXA[f]}"></i></div><span>${n}</span></div>`).join("")}</div></div>
-        <div class="kpis" style="grid-template-columns:1fr 1fr">
+        <div class="kpis kpis2">
           <div class="kpi destaque"><div class="kpi-top"><span>Aptos agora</span></div><b>${aptos.length}</b><small>${aptos.filter(x => x.apt.tipo === "faixa").length} para troca de faixa</small></div>
           <div class="kpi"><div class="kpi-top"><span>Graduações no ano</span></div><b>${d.graduacoes.filter(g => g.data.startsWith(hoje.slice(0, 4))).length}</b><small>graus e faixas em ${hoje.slice(0, 4)}</small></div>
         </div>

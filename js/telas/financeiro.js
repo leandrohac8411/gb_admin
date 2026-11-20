@@ -99,7 +99,7 @@ function fluxoDeCaixa(el, ctx, comp, hoje, kpi) {
           <div class="bar sai" style="height:${Math.round(m.saidas / max * 100)}%"><i>${Math.round(m.saidas / 1000)}k</i></div></div><small>${competenciaTexto(m.c).split(" ")[0].slice(0, 3)}</small></div>`).join("")}</div>
         <div class="legenda"><span><i class="ent"></i>Entradas</span><span><i class="sai"></i>Saídas</span></div></div>
       <div class="card"><div class="card-cab"><h3>Para onde vai o dinheiro</h3><small>${competenciaTexto(comp)}</small></div>
-        ${f.porCategoria.length ? `<div class="dist">${f.porCategoria.map(c => `<div class="linha"><span>${esc(c.categoria)}</span><div class="trilho"><i style="width:${Math.round(c.valor / f.saidas * 100)}%;background:var(--red)"></i></div><span style="min-width:70px;text-align:right">${reais(c.valor)}</span></div>`).join("")}</div>`
+        ${f.porCategoria.length ? `<div class="dist valores">${f.porCategoria.map(c => `<div class="linha"><span>${esc(c.categoria)}</span><div class="trilho"><i style="width:${Math.round(c.valor / f.saidas * 100)}%;background:var(--red)"></i></div><span style="min-width:70px;text-align:right">${reais(c.valor)}</span></div>`).join("")}</div>`
           : `<div class="vazio">Nenhuma despesa neste mês.</div>`}</div>
     </div>
     <div class="card"><div class="card-cab"><h3>Despesas de ${competenciaTexto(comp).toLowerCase()}</h3><button class="btn peq" id="nova-despesa">${icone("financeiro")}Nova despesa</button></div>

@@ -14,6 +14,7 @@ import financeiro from "./financeiro.js";
 import * as gestao from "./gestao.js";
 import * as operacao from "./operacao.js";
 import * as admin from "./admin.js";
+import eventos from "./eventos.js";
 
 const store = criarStore(hojeISO());
 store.salvar();
@@ -28,7 +29,7 @@ quandoRestaurar(async () => {
   toast("Dados de exemplo restaurados");
 });
 
-Object.entries({ dashboard, alunos, aluno, agenda, checkins, graduacoes, financeiro,
+Object.entries({ dashboard, alunos, aluno, agenda, checkins, graduacoes, financeiro, eventos,
   professores: gestao.professores, acompanhamentos: gestao.acompanhamentos, cronogramas: gestao.cronogramas,
   "modelos-aula": gestao.modelosAula, habilidades: gestao.habilidades,
   planos: operacao.planos, contratos: operacao.contratos, prospects: operacao.prospects,

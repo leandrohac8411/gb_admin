@@ -23,6 +23,7 @@ export const ICONES = {
   permissoes: '<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
   portal: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',
   config: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+  eventos: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/>',
   restaurar: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>'
 };
 
@@ -30,7 +31,7 @@ const item = (rota, nome, pronto = true) => ({ rota, nome, pronto });
 
 export const MENU = [
   { grupo: "Visão geral", itens: [item("dashboard", "Dashboard", true), item("agenda", "Agenda & turmas", true), item("checkins", "Check-ins", true)] },
-  { grupo: "Gestão acadêmica", itens: [item("alunos", "Alunos", true), item("graduacoes", "Graduações", true), item("professores", "Professores"),
+  { grupo: "Gestão acadêmica", itens: [item("alunos", "Alunos", true), item("graduacoes", "Graduações", true), item("eventos", "Eventos"), item("professores", "Professores"),
     item("acompanhamentos", "Acompanhamentos"), item("cronogramas", "Cronogramas"), item("modelos-aula", "Modelos de aula"),
     item("habilidades", "Habilidades")] },
   { grupo: "Operação", itens: [item("financeiro", "Financeiro", true), item("planos", "Planos"),
@@ -47,7 +48,7 @@ export function itemDoMenu(rota) {
 }
 
 export function desenharMenu(ativa) {
-  return `<div class="lat-marca"><img src="img/logo-gb.png" alt=""><div><b>GB Sobradinho</b><small>Admin da academia</small></div></div>` +
+  return `<a class="lat-marca" href="#dashboard" aria-label="GB Sobradinho — início"><img src="img/logo-sobradinho.png" alt="GB Sobradinho" onerror="this.onerror=null;this.src='img/logo-gb.png'"></a>` +
     `<nav class="lat-nav">` + MENU.map(g => `<div class="lat-grupo"><span>${g.grupo}</span>` + g.itens.map(i =>
       `<a href="#${i.rota}" class="${i.rota === ativa ? "on" : ""}"${i.rota === ativa ? ' aria-current="page"' : ""}>` +
       `${icone(i.rota)}<span>${i.nome}</span>${i.pronto ? "" : '<em>em breve</em>'}</a>`).join("") + `</div>`).join("") +

@@ -28,11 +28,8 @@ h1,h2,h3{margin:0;line-height:1.2}
 #tela{flex:1;width:100%;margin:0;padding:28px 32px 32px;display:flex;flex-direction:column;gap:18px;outline:0}
 #rodape{text-align:center;font-size:11px;color:var(--muted);padding:14px;letter-spacing:.04em}
 
-.lat-marca{display:flex;align-items:center;gap:10px;padding:0 8px 18px;border-bottom:1px solid var(--line);margin-bottom:10px}
-.lat-marca img{width:42px;height:42px;object-fit:contain}
-.lat-marca b{display:block;font-size:15px;font-weight:800;letter-spacing:-.3px}
-.lat-marca b::after{content:"";display:block;width:22px;height:3px;background:var(--red);border-radius:2px;margin-top:4px}
-.lat-marca small{font-size:11px;color:var(--muted)}
+.lat-marca{display:flex;justify-content:center;padding:4px 8px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.lat-marca img{width:118px;height:118px;object-fit:contain}
 .lat-nav{flex:1}
 .lat-grupo{display:flex;flex-direction:column;gap:2px;margin:12px 0 4px}
 .lat-grupo>span{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:0 10px 6px}
@@ -307,3 +304,14 @@ button.kpi{font:inherit;color:inherit;cursor:pointer}
 .regras27 summary::before{content:"▸";color:var(--red);font-weight:800}
 .regras27[open] summary::before{content:"▾"}
 .regras27 ul{margin:12px 0 8px;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.dist.valores .linha{grid-template-columns:110px 1fr 100px}
+
+/* Eventos */
+.destaque-evento{background:var(--red);border-color:var(--red);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.destaque-evento h2{font-size:22px;margin:4px 0}
+.destaque-evento p{margin:0;opacity:.9;font-size:13px}
+.ev-num{text-align:center}.ev-num b{display:block;font-size:34px;line-height:1}.ev-num small{opacity:.85;font-size:12px}
+.evento{display:flex;gap:14px;align-items:flex-start}
+.ev-data{flex:none;width:54px;border-radius:14px;background:var(--red-soft);color:var(--red);text-align:center;padding:8px 0}
+.ev-data b{display:block;font-size:22px;line-height:1}.ev-data small{font-size:11px;font-weight:800;text-transform:uppercase}
+.ev-info{flex:1;min-width:0}.ev-info h3{font-size:15px;margin:8px 0 2px}

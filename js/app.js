@@ -54,4 +54,9 @@ export function quandoRestaurar(fn) { aoRestaurar = fn; }
 
 window.addEventListener("hashchange", desenhar);
 // As telas se registram em js/telas/index.js, que chama desenhar() no fim.
-import("./telas/index.js").catch(e => { console.error(e); desenhar(); });
+import("./telas/index.js").catch(e => {
+  console.error(e);
+  tela.innerHTML = `<div class="card vazio grande"><h2>Não foi possível carregar o painel</h2>
+    <p>Provavelmente o navegador guardou uma versão antiga dos arquivos. Recarregue com <b>Ctrl+Shift+R</b>.</p>
+    <p class="muted" style="font-size:12px">${esc(e.message)}</p></div>`;
+});

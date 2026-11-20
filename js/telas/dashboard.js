@@ -32,7 +32,7 @@ export default {
         ${kpi("Entrou no caixa", reais(r.recebidoMes), "pagamentos feitos este mês", "financeiro")}
         ${kpi("Inadimplentes", r.inadimplentes, r.inadimplentes ? `<a class="link" href="#financeiro">ver mensalidades</a>` : "tudo em dia", "permissoes", r.inadimplentes ? "ruim" : "")}
       </div>
-      <div class="grade2">
+      <div class="grade-dash">
         <div class="card"><div class="card-cab"><h3>Presença nas últimas 8 semanas</h3><small>check-ins por semana</small></div>
           <div class="barras">${r.presencaSemanas.map((n, i) => `<div class="col"><div class="bar ${i === 7 ? "on" : ""}" style="height:${Math.round(n / max * 100)}%"><i>${n}</i></div>` +
             `<small>${i === 7 ? "Atual" : r.semanas[i].slice(8) + "/" + r.semanas[i].slice(5, 7)}</small></div>`).join("")}</div></div>

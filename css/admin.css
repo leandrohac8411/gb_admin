@@ -29,7 +29,7 @@ h1,h2,h3{margin:0;line-height:1.2}
 #rodape{text-align:center;font-size:11px;color:var(--muted);padding:14px;letter-spacing:.04em}
 
 .lat-marca{display:flex;justify-content:center;padding:4px 8px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
-.lat-marca img{width:118px;height:118px;object-fit:contain}
+.lat-marca img{width:150px;height:150px;object-fit:contain}
 .lat-nav{flex:1}
 .lat-grupo{display:flex;flex-direction:column;gap:2px;margin:12px 0 4px}
 .lat-grupo>span{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:0 10px 6px}

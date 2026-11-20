@@ -5,6 +5,7 @@ import { hojeISO, deISO } from "../logica/datas.js";
 import { resumoDashboard } from "../logica/indicadores.js";
 import { icone } from "../menu.js";
 import { cabecalho, etiquetaPrograma, nomeProfessor, pessoa, DIAS_LONGOS } from "./comum.js";
+import { boasVindas } from "./comum.js";
 
 function kpi(rotulo, valor, sub, ic, classe = "") {
   return `<div class="kpi ${classe}"><div class="kpi-top"><span>${rotulo}</span><span class="kpi-ic">${icone(ic)}</span></div><b>${valor}</b><small>${sub}</small></div>`;
@@ -25,7 +26,7 @@ export default {
     const { dia, mes } = deISO(hoje);
 
     el.innerHTML = cabecalho("Dashboard", `${saudacao().replace(",", "!")} Hoje é ${DIAS_LONGOS[new Date().getDay()].toLowerCase()}, ${dataLonga(hoje)}.`,
-      `<a class="btn sec" href="#checkins">${icone("checkins")}Check-ins de hoje</a><a class="btn" href="#alunos/novo">${icone("prospects")}Novo aluno</a>`) +
+      `<a class="btn sec" href="#checkins">${icone("checkins")}Check-ins de hoje</a><a class="btn" href="#alunos/novo">${icone("prospects")}Novo aluno</a>`, boasVindas(d)) +
       `<div class="kpis">
         ${kpi("Alunos ativos", r.ativos, `${r.ativos - r.kids} adultos · ${r.kids} kids`, "alunos", "destaque")}
         ${kpi("Check-ins no mês", r.checkinsMes, variacao(r.checkinsMes, r.checkinsMesAnterior), "checkins")}

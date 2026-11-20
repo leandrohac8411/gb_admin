@@ -322,3 +322,4 @@ button.kpi{font:inherit;color:inherit;cursor:pointer}
 .estrelas-edit{display:flex;gap:2px}
 .estrelas-edit button{font-size:24px;color:#e2ddd9;line-height:1;padding:2px}
 .estrelas-edit button.on{color:#efbf1f}
+.cab .k.boas{text-transform:none;letter-spacing:0;font-size:15px;font-weight:700;color:var(--muted2)}

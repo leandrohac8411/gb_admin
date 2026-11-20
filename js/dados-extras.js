@@ -149,6 +149,7 @@ export function gerarExtras(hojeISO, alunos, turmas = []) {
         obs: k === 8 && n === 0 ? "Disperso nas últimas aulas; conversar com a família." : "" };
     })),
     config: {
+      usuario: { nome: "Leandro", sexo: "M" },
       academia: { nome: "GB Sobradinho", endereco: "Sobradinho, Distrito Federal", telefone: "(61) 3000-0000", email: "contato@exemplo.com" },
       regras: { aulasPorGrau: 30, mesesPorGrau: 3, mesesMinFaixa: { branca: 12, azul: 24, roxa: 18, marrom: 12 } },
       regrasKids: { aulasPorGrau: 20, mesesPorGrau: 2, mesesMinFaixa: 6, idadeMin: { cinza: 4, amarela: 7, laranja: 10, verde: 13 } },

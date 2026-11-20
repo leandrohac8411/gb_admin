@@ -223,6 +223,11 @@ export const config = {
     const num = (id, rot, val, min, max) => `<div class="field"><label for="${id}">${rot}</label><input class="input" type="number" inputmode="numeric" id="${id}" min="${min}" max="${max}" step="1" value="${esc(val)}"></div>`;
     el.innerHTML = cabecalho("Configurações", "Dados da academia e regras usadas em todo o painel.") +
       `<form id="cfg" novalidate class="grade2">
+        <div class="card"><div class="card-cab"><h3>Quem usa o painel</h3></div><div class="campos">
+          <div class="field"><label for="cf-unome">Seu nome</label><input class="input" id="cf-unome" value="${esc(c.usuario?.nome ?? "Leandro")}"></div>
+          <div class="field"><label for="cf-usexo">Saudação</label><select class="input" id="cf-usexo"><option value="M"${(c.usuario?.sexo ?? "M") === "M" ? " selected" : ""}>Bem-vindo</option><option value="F"${c.usuario?.sexo === "F" ? " selected" : ""}>Bem-vinda</option></select></div>
+          <small class="muted cheio">Aparece no topo do Dashboard. Com login de verdade, viria do usuário que entrou.</small>
+        </div></div>
         <div class="card"><div class="card-cab"><h3>Academia</h3></div><div class="campos">
           <div class="field cheio"><label for="cf-nome">Nome</label><input class="input" id="cf-nome" value="${esc(c.academia.nome)}"></div>
           <div class="field cheio"><label for="cf-end">Endereço</label><input class="input" id="cf-end" value="${esc(c.academia.endereco)}"></div>
@@ -280,6 +285,7 @@ export const config = {
       if (ruim) return erroEm(el, "#cf-erro", `Confira o campo "${el.querySelector(`label[for="${ruim.slice(1)}"]`).textContent}".`);
       const ik = ["cinza", "amarela", "laranja", "verde"].map(f => n(`#cf-k-${f}`));
       if (!ik.every((v, i) => i === 0 || ik[i - 1] <= v)) return erroEm(el, "#cf-erro", "As idades mínimas kids precisam subir: cinza ≤ amarela ≤ laranja ≤ verde.");
+      c.usuario = { nome: v("#cf-unome") || "Leandro", sexo: el.querySelector("#cf-usexo").value };
       c.academia = { nome: v("#cf-nome"), endereco: v("#cf-end"), telefone: v("#cf-tel"), email: v("#cf-email") };
       c.vencimentoPadrao = n("#cf-venc"); c.metaAulas30 = n("#cf-meta");
       c.regras = { aulasPorGrau: n("#cf-aulas"), mesesPorGrau: n("#cf-meses"), mesesMinFaixa: Object.fromEntries(["branca", "azul", "roxa", "marrom"].map(f => [f, n(`#cf-min-${f}`)])) };

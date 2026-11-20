@@ -4,10 +4,16 @@ import { faixaSVG, nomeFaixa } from "../ui/faixa.js";
 
 export const DIAS_LONGOS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 export const anosTexto = n => (n == null ? "idade não informada" : `${n} anos`);
+// Quem está usando o painel (vitrine sem login: o nome fica em Configurações).
+export function boasVindas(d) {
+  const u = d.config?.usuario || { nome: "Leandro", sexo: "M" };
+  return `${u.sexo === "F" ? "Bem-vinda" : "Bem-vindo"}, ${(u.nome || "").trim() || "visitante"}`;
+}
+
 export const DIAS_CURTOS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-export function cabecalho(titulo, sub = "", acoes = "") {
-  return `<div class="cab"><div><span class="k">GB Sobradinho</span><h1>${esc(titulo)}</h1>${sub ? `<p>${sub}</p>` : ""}</div>` +
+export function cabecalho(titulo, sub = "", acoes = "", sobre = "GB Sobradinho") {
+  return `<div class="cab"><div><span class="k${sobre === "GB Sobradinho" ? "" : " boas"}">${esc(sobre)}</span><h1>${esc(titulo)}</h1>${sub ? `<p>${sub}</p>` : ""}</div>` +
     (acoes ? `<div class="acoes-cab">${acoes}</div>` : "") + `</div>`;
 }
 

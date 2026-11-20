@@ -76,7 +76,7 @@ export default {
           <div><div class="cresce"><b>Alergias e observações</b><small>${esc(a.saude || "Nada informado")}</small></div>${a.saude ? '<span class="pill alerta">Atenção</span>' : ""}</div>
           <div><div class="cresce"><b>Uso de imagem</b><small>${a.autorizaImagem ? "Autorizado" : "Não autorizado: não postar fotos"}</small></div>${a.autorizaImagem ? '<span class="pill ok">Sim</span>' : '<span class="pill ruim">Não</span>'}</div></div></div>
         <div class="card"><div class="card-cab"><h3>Comportamento</h3><button class="btn sec peq" id="avaliar">Avaliar ${competenciaTexto(hoje.slice(0, 7)).split(" ")[0].toLowerCase()}</button></div>
-          ${avs.length ? `<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px"><b style="font-size:30px">${String(media).replace(".", ",")}</b>
+          ${avs.length && media != null ? `<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px"><b style="font-size:30px">${String(media).replace(".", ",")}</b>
             <div>${estrelas(media)}<br><small class="muted">média de ${competenciaTexto(avs[0].mes).toLowerCase()}${media < 3 ? " · conversar com a família" : ""}</small></div></div>
             <div class="lista">${CRITERIOS.map(c => `<div><div class="cresce"><b>${NOMES_CRITERIOS[c]}</b></div>${estrelas(avs[0].notas[c])}</div>`).join("")}</div>
             ${avs[0].obs ? `<p class="aviso" style="margin-top:10px;background:var(--soft);color:var(--muted2)">${esc(avs[0].obs)}</p>` : ""}

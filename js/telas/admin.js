@@ -8,7 +8,7 @@ import { aptidao, aplicarRegras, regrasDe } from "../logica/graduacao.js";
 import { statusMensalidade } from "../logica/financeiro.js";
 import { aulasNosUltimos } from "../logica/relatorios.js";
 import { MODULOS } from "../dados-extras.js";
-import { validarDados } from "../store.js";
+import { validarDados, limparImportado } from "../store.js";
 import { irmaos, mediaComportamento } from "../logica/familia.js";
 import { icone } from "../menu.js";
 import { cabecalho, etiquetaPrograma, nomeProfessor, PILL_STATUS, DIAS_LONGOS, estrelas } from "./comum.js";
@@ -147,7 +147,8 @@ const estadoPt = { alunoId: null };
 // Visão do responsável: um cartão por filho (irmãos juntos) e o total das mensalidades.
 function portalResponsavel(el, ctx, crianca, seletor) {
   const { store } = ctx, d = store.dados, hoje = hojeISO(), r = crianca.responsavel || {};
-  const filhos = [crianca, ...irmaos(crianca, d.alunos)].sort((x, y) => x.nascimento.localeCompare(y.nascimento));
+  const filhos = [crianca, ...irmaos(crianca, d.alunos)].sort((x, y) => (x.nascimento || "").localeCompare(y.nascimento || ""));
+  const comDesconto = filhos.some(f => { const p = d.planos.find(x => x.id === f.plano); return p && Number(f.valor) < p.valor; });
   const agora = new Date(), hhmm = `${String(agora.getHours()).padStart(2, "0")}:${String(agora.getMinutes()).padStart(2, "0")}`;
   const abertas = d.mensalidades.filter(m => filhos.some(f => f.id === m.alunoId) && !m.pagoEm);
   const total = abertas.reduce((s, m) => s + (Number(m.valor) || 0), 0);
@@ -169,7 +170,7 @@ function portalResponsavel(el, ctx, crianca, seletor) {
         </div>`;
       }).join("")}
       <div class="cel-card"><small>Mensalidades em aberto</small><b>${reais(total)}</b>${abertas.length ? (atrasada ? PILL_STATUS.atrasado : PILL_STATUS.pendente) : PILL_STATUS.pago}
-        <small>${filhos.length > 1 ? `${filhos.length} filhos · desconto de irmãos aplicado` : "1 filho"}</small></div>
+        <small>${filhos.length > 1 ? `${filhos.length} filhos${comDesconto ? " · desconto de irmãos aplicado" : ""}` : "1 filho"}</small></div>
     </div></div>`;
   el.querySelector("#pt-aluno").onchange = e => { estadoPt.alunoId = e.target.value; ctx.redesenhar(); };
 }
@@ -263,9 +264,9 @@ export const config = {
       let novo = null;
       try { novo = JSON.parse(await arq.text()); } catch { /* arquivo não é JSON */ }
       if (!validarDados(novo)) { toast("Arquivo inválido: não é um backup desta versão do painel"); return; }
-      if (!await perguntar("Importar backup?", `Os dados atuais serão trocados pelos do arquivo "${arq.name}".`, "Importar", "Cancelar")) return;
+      if (!await perguntar("Importar backup?", `Os dados atuais serão trocados pelos do arquivo "${arq.name}". Dados importados não são refeitos na virada do mês; use "Restaurar dados de exemplo" para voltar à vitrine.`, "Importar", "Cancelar")) return;
       novo.geradoEm = hojeISO();
-      store.dados = novo; store.salvar();
+      store.dados = limparImportado(novo); store.salvar();
       aplicarRegras(novo.config.regras, novo.config.regrasKids);
       toast("Backup importado"); ctx.redesenhar();
     };

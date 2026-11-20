@@ -77,3 +77,19 @@ test("dados novos de exemplo", () => {
   assert.ok(d.prospects.filter(p => p.etapa === "experimental").every(p => p.experimental?.turmaId));
   assert.equal(d.config.descontoIrmaos, 10);
 });
+
+test("backup importado é limpo e não some na virada do mês", async () => {
+  const { limparImportado, criarStore } = await import("../js/store.js");
+  const d = gerarDados(H);
+  d.eventos.push({ id: "x", titulo: "Ruim", data: "<img>", hora: "<b>", vagas: "9", inscritos: "nada" });
+  d.avaliacoes.push({ id: "y", alunoId: "k01", mes: "2026-11", notas: { respeito: "\"><img src=x>" } });
+  d.despesas.push({ id: "z", descricao: "sem data", valor: 10 });
+  const limpo = limparImportado(JSON.parse(JSON.stringify(d)));
+  assert.ok(!limpo.eventos.some(e => e.id === "x"));
+  assert.ok(!limpo.avaliacoes.some(v => v.id === "y"));
+  assert.ok(!limpo.despesas.some(x => x.id === "z"));
+  assert.equal(limpo.importado, true);
+  const o = {}; const mem = { getItem: k => o[k] ?? null, setItem: (k, v) => { o[k] = String(v); }, removeItem: k => { delete o[k]; } };
+  const s = criarStore(H, mem); s.dados = limpo; s.dados.config.academia.nome = "Importada"; s.salvar();
+  assert.equal(criarStore("2026-12-02", mem).dados.config.academia.nome, "Importada");
+});

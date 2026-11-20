@@ -159,7 +159,7 @@ export default {
           ${kpi("Previsto", reais(r.previsto), `${doMes.length} mensalidades`)}
           ${kpi("Recebido", reais(r.recebido), `das mensalidades de ${competenciaTexto(comp).split(" ")[0].toLowerCase()}`, "destaque")}
           ${kpi("Pendente", reais(r.pendente), "a vencer")}
-          ${kpi("Atrasado", reais(r.atrasado), `${r.inadimplentes.length} ${kids ? "família" : "aluno"}${r.inadimplentes.length === 1 ? "" : "s"}`, r.atrasado ? "ruim" : "")}
+          ${kpi("Atrasado", reais(r.atrasado), `${r.inadimplentes.length} ${kids ? "criança" : "aluno"}${r.inadimplentes.length === 1 ? "" : "s"}`, r.atrasado ? "ruim" : "")}
         </div>
         <div class="card" style="display:flex;align-items:center;gap:20px">
           <div class="anel">${anelClaroSVG(r.previsto ? r.recebido / r.previsto : 0, "#1f8a5b")}<b>${r.previsto ? Math.round(r.recebido / r.previsto * 100) : 0}%<small>recebido</small></b></div>

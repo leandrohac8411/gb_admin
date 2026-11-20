@@ -43,13 +43,13 @@ function formEvento(store, ev, pronto) {
       if (!dataValida(data)) return erro("Escolha a data.");
       if (!/^\d{2}:\d{2}$/.test(hora)) return erro("Escolha a hora.");
       if (!Number.isInteger(vagas) || vagas < 1) return erro("Informe o número de vagas.");
-      if (ev && ev.inscritos.length > vagas) return erro(`Já há ${ev.inscritos.length} inscritos; as vagas não podem ser menos que isso.`);
       const campos = { titulo, tipo: el.querySelector("#e-tipo").value, publico: el.querySelector("#e-pub").value, data, hora,
         local: el.querySelector("#e-local").value.trim(), vagas, descricao: el.querySelector("#e-desc").value.trim() };
       if (ev) {
-        Object.assign(ev, campos);
         const alunos = porId(store.dados.alunos);
-        ev.inscritos = ev.inscritos.filter(id => alunos[id] && (ev.publico === "todos" || (alunos[id].categoria || "adulto") === ev.publico));
+        const ficam = ev.inscritos.filter(id => alunos[id] && (campos.publico === "todos" || (alunos[id].categoria || "adulto") === campos.publico));
+        if (ficam.length > vagas) return erro(`Já há ${ficam.length} inscritos; as vagas não podem ser menos que isso.`);
+        Object.assign(ev, campos, { inscritos: ficam });
       } else store.dados.eventos.push({ id: store.novoId("ev"), ...campos, inscritos: [] });
       store.salvar(); fechar(); toast("Evento salvo"); pronto();
     };
@@ -65,8 +65,8 @@ function abrirInscritos(store, ev, pronto) {
       const livres = d.alunos.filter(a => podeIr(ev, a) && !ev.inscritos.includes(a.id) && (!q || normalizar(a.nome).includes(q))).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")).slice(0, 30);
       const aptosFora = ev.tipo === "Graduação" ? d.alunos.filter(a => podeIr(ev, a) && !ev.inscritos.includes(a.id) && aptidao(a, d.checkins, hoje).tipo) : [];
       const cheio = ev.inscritos.length >= ev.vagas, passado = ev.data < hoje;
-      el.innerHTML = `<h3>${esc(ev.titulo)}</h3><p class="muted" style="margin:0">${dataLonga(ev.data)} · ${horaTexto(ev.hora)} · ${ev.inscritos.length}/${ev.vagas} inscritos</p>
-        ${!passado && aptosFora.length && !cheio ? `<button class="btn sec bloco" id="i-aptos">Inscrever os ${aptosFora.length} aptos a graduar</button>` : ""}
+      el.innerHTML = `<h3>${esc(ev.titulo)}</h3><p class="muted" style="margin:0">${esc(dataLonga(ev.data))} · ${esc(horaTexto(ev.hora))} · ${ev.inscritos.length}/${Number(ev.vagas)} inscritos</p>
+        ${!passado && aptosFora.length && !cheio ? `<button class="btn sec bloco" id="i-aptos">Inscrever ${Math.min(aptosFora.length, ev.vagas - ev.inscritos.length)} apto${Math.min(aptosFora.length, ev.vagas - ev.inscritos.length) === 1 ? "" : "s"} a graduar${aptosFora.length > ev.vagas - ev.inscritos.length ? ` (de ${aptosFora.length}; faltam vagas)` : ""}</button>` : ""}
         <div class="lista" style="max-height:30vh;overflow:auto">${inscritos.length ? inscritos.map(a => `<div>${pessoa(a)}${faixaCelula(a)}${passado ? "" : `<button class="btn sec peq" data-tirar="${esc(a.id)}" aria-label="Tirar ${esc(a.nome)}">Tirar</button>`}</div>`).join("") : '<div class="vazio">Ninguém inscrito ainda.</div>'}</div>
         ${passado ? "" : `<label class="busca" style="max-width:none">${icone("alunos")}<input id="i-busca" type="search" placeholder="Inscrever aluno" value="${esc(q)}" aria-label="Buscar aluno para inscrever" autocomplete="off"></label>
         <div class="lista" style="max-height:25vh;overflow:auto">${cheio ? '<div class="vazio">Vagas esgotadas.</div>' : livres.map(a => `<button data-pôr="${esc(a.id)}" style="text-align:left;width:100%">${pessoa(a)}<span class="link" style="margin-left:auto">Inscrever</span></button>`).join("") || '<div class="vazio">Ninguém com essa busca.</div>'}</div>`}
@@ -92,22 +92,24 @@ export default {
   titulo: "Eventos",
   montar(el, params, ctx) {
     const { store } = ctx, d = store.dados, hoje = hojeISO();
+    const existe = new Set(d.alunos.map(a => a.id));
+    d.eventos.forEach(ev => { ev.inscritos = (ev.inscritos || []).filter(id => existe.has(id)); });
     const proximos = d.eventos.filter(e => e.data >= hoje).sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
     const passados = d.eventos.filter(e => e.data < hoje).sort((a, b) => b.data.localeCompare(a.data));
     const lista = estado.quando === "Próximos" ? proximos : passados;
     const prox = proximos[0];
     el.innerHTML = cabecalho("Eventos", "Graduações, seminários, campeonatos e confraternizações.", `<button class="btn" id="novo">${icone("eventos")}Novo evento</button>`) +
       (prox ? `<div class="card destaque-evento"><div><span class="k" style="color:rgba(255,255,255,.8)">Próximo evento · ${diasEntre(hoje, prox.data) === 0 ? "hoje" : `em ${diasEntre(hoje, prox.data)} dia${diasEntre(hoje, prox.data) === 1 ? "" : "s"}`}</span>
-          <h2>${esc(prox.titulo)}</h2><p>${DIAS_LONGOS[diaSemana(prox.data)]}, ${dataLonga(prox.data)} · ${horaTexto(prox.hora)} · ${esc(prox.local)}</p></div>
-          <div class="ev-num"><b>${prox.inscritos.length}</b><small>de ${prox.vagas} vagas</small></div></div>` : "") +
+          <h2>${esc(prox.titulo)}</h2><p>${DIAS_LONGOS[diaSemana(prox.data)]}, ${esc(dataLonga(prox.data))} · ${esc(horaTexto(prox.hora))} · ${esc(prox.local)}</p></div>
+          <div class="ev-num"><b>${prox.inscritos.length}</b><small>de ${Number(prox.vagas)} vagas</small></div></div>` : "") +
       `<div class="chips">${["Próximos", "Passados"].map(t => `<button class="chip${estado.quando === t ? " on" : ""}" data-q="${t}">${t} · ${t === "Próximos" ? proximos.length : passados.length}</button>`).join("")}</div>
       ${lista.length ? `<div class="grade3">${lista.map(e => `<div class="card evento">
-          <div class="ev-data"><b>${e.data.slice(8)}</b><small>${["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"][Number(e.data.slice(5, 7)) - 1]}</small></div>
+          <div class="ev-data"><b>${esc(e.data.slice(8))}</b><small>${["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"][Number(e.data.slice(5, 7)) - 1]}</small></div>
           <div class="ev-info"><div style="display:flex;gap:6px;flex-wrap:wrap"><span class="pill info">${esc(e.tipo)}</span>${pillPublico(e.publico)}</div>
-            <h3>${esc(e.titulo)}</h3><small class="muted">${horaTexto(e.hora)} · ${esc(e.local)}</small>
+            <h3>${esc(e.titulo)}</h3><small class="muted">${esc(horaTexto(e.hora))} · ${esc(e.local)}</small>
             ${e.descricao ? `<p class="muted" style="margin:6px 0 0;font-size:12.5px">${esc(e.descricao)}</p>` : ""}
             <div class="progresso" style="margin-top:10px"><i style="width:${Math.min(100, Math.round(e.inscritos.length / e.vagas * 100))}%"></i></div>
-            <small class="muted">${e.inscritos.length} de ${e.vagas} vagas${e.inscritos.length >= e.vagas ? " · esgotado" : ""}</small>
+            <small class="muted">${e.inscritos.length} de ${Number(e.vagas)} vagas${e.inscritos.length >= e.vagas ? " · esgotado" : ""}</small>
             <div style="display:flex;gap:8px;margin-top:10px"><button class="btn peq" data-inscritos="${esc(e.id)}">${e.data < hoje ? "Ver participantes" : "Inscritos"}</button><button class="btn sec peq" data-editar="${esc(e.id)}">Editar</button></div>
           </div></div>`).join("")}</div>` : `<div class="card vazio">${estado.quando === "Próximos" ? "Nenhum evento marcado." : "Nenhum evento passado."}</div>`}`;
     el.querySelectorAll("[data-q]").forEach(b => b.onclick = () => { estado.quando = b.dataset.q; ctx.redesenhar(); });

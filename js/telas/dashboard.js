@@ -30,7 +30,7 @@ export default {
         ${kpi("Alunos ativos", r.ativos, `${r.ativos - r.kids} adultos · ${r.kids} kids`, "alunos", "destaque")}
         ${kpi("Check-ins no mês", r.checkinsMes, variacao(r.checkinsMes, r.checkinsMesAnterior), "checkins")}
         ${kpi("Entrou no caixa", reais(r.recebidoMes), "pagamentos feitos este mês", "financeiro")}
-        ${kpi("Inadimplentes", r.inadimplentes, r.inadimplentes ? `<a class="link" href="#financeiro">ver mensalidades</a>` : "tudo em dia", "permissoes", r.inadimplentes ? "ruim" : "")}
+        ${kpi("Inadimplentes", r.inadimplentes, r.inadimplentes ? `${r.inadimplentes - r.inadimplentesKids} adultos · ${r.inadimplentesKids} kids · <a class="link" href="#financeiro">ver</a>` : "tudo em dia", "permissoes", r.inadimplentes ? "ruim" : "")}
       </div>
       <div class="grade-dash">
         <div class="card"><div class="card-cab"><h3>Presença nas últimas 8 semanas</h3><small>check-ins por semana</small></div>

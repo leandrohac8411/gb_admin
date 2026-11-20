@@ -27,6 +27,7 @@ export function resumoDashboard(dados, hojeISO) {
     checkinsMes, checkinsMesAnterior,
     recebidoMes: mensalidades.filter(m => m.pagoEm && m.pagoEm.startsWith(comp)).reduce((s, m) => s + (Number(m.valor) || 0), 0),
     inadimplentes: inadimplentes(mensalidades, alunos, hojeISO).length,
+    inadimplentesKids: inadimplentes(mensalidades, alunos.filter(a => a.categoria === "kids"), hojeISO).length,
     presencaSemanas, semanas,
     aulasHoje: turmas.filter(t => t.diaSemana === diaSemana(hojeISO)).sort((a, b) => a.horario.localeCompare(b.horario)),
     aptos: ativos.filter(a => aptidao(a, checkins, hojeISO).tipo).length,

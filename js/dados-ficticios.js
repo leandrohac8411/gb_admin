@@ -132,12 +132,14 @@ export function gerarDados(hojeISO, semente = 7) {
     const id = `k${String(k + 1).padStart(2, "0")}`;
     const sobrenome = `${SOBRENOMES[(k * 5 + 2) % SOBRENOMES.length]} ${SOBRENOMES[(k * 3 + 9) % SOBRENOMES.length]}`;
     const nascimento = somarDias(hojeISO, -(idade * 365 + Math.floor(idade / 4) + inteiro(20, 300)));
-    const desdeFaixa = somarDias(hojeISO, -inteiro(200, 420));
+    // A maioria graduou há pouco (1 a 10 semanas); 1 em cada 3 está há mais tempo e pode estar apta.
+    const ultimaGraduacao = somarDias(hojeISO, -(k % 3 === 0 || graus === 4 ? inteiro(100, 160) : inteiro(10, 70)));
+    // Com graus, está na faixa há 200–420 dias; sem graus, entrou na faixa na última graduação.
+    const desdeFaixa = graus ? somarDias(hojeISO, -inteiro(200, 420)) : ultimaGraduacao;
     const desde = faixa === "branca" ? desdeFaixa : somarDias(desdeFaixa, -inteiro(150, 500));
-    const intervalo = Math.floor(diasEntre(desdeFaixa, hojeISO) / (graus + 1.4));
-    const ultimaGraduacao = graus ? somarDias(desdeFaixa, graus * intervalo) : desdeFaixa;
+    const intervalo = graus ? Math.max(1, Math.floor(diasEntre(desdeFaixa, ultimaGraduacao) / graus)) : 0;
     if (faixa !== "branca") graduacoes.push({ alunoId: id, data: desdeFaixa, faixa, graus: 0 });
-    for (let g = 1; g <= graus; g++) graduacoes.push({ alunoId: id, data: somarDias(desdeFaixa, g * intervalo), faixa, graus: g });
+    for (let g = 1; g <= graus; g++) graduacoes.push({ alunoId: id, data: g === graus ? ultimaGraduacao : somarDias(desdeFaixa, g * intervalo), faixa, graus: g });
     const [pai, parentesco] = PAIS[k % PAIS.length];
     const telefone = `(61) 9${inteiro(8100, 9999)}-${inteiro(1000, 9999)}`;
     alunos.push({

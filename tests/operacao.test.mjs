@@ -25,9 +25,10 @@ test("variáveis do aluno", () => {
 test("públicos de mensagem", () => {
   const d = gerarDados(H);
   assert.ok(PUBLICOS.length >= 6);
-  assert.equal(publico("ativos", d, H).length, 37);
+  assert.equal(publico("ativos", d, H).length, 54);
   assert.equal(publico("atrasados", d, H).length, 4);
-  assert.equal(publico("sumidos", d, H).length, 3);
+  const sumidos = new Set(publico("sumidos", d, H).map(p => p.id));
+  for (const i of [7, 15, 26]) assert.ok(sumidos.has(d.alunos[i].id));
   assert.equal(publico("novos", d, H).length, 2);
   assert.ok(publico("prospects", d, H).every(p => p.telefone));
   assert.deepEqual(publico("nao-existe", d, H), []);

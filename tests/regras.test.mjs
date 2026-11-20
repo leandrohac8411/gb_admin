@@ -72,7 +72,7 @@ test("mês vazio dá zeros", () => {
 test("dashboard bate com os dados gerados", () => {
   const d = gerarDados("2026-11-20");
   const r = resumoDashboard(d, "2026-11-20");
-  assert.equal(r.ativos, 37);
+  assert.equal(r.ativos, 54);
   assert.equal(r.presencaSemanas.length, 8);
   assert.ok(r.aulasHoje.length === 2 && r.aulasHoje.every(t => t.diaSemana === 5));
   assert.equal(r.inadimplentes, 4);

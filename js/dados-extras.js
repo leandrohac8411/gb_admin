@@ -30,7 +30,8 @@ export function gerarExtras(hojeISO, alunos) {
     planos: [
       { id: "Mensal", nome: "Mensal", meses: 1, valor: 280, ativo: true, descricao: "Treinos livres na grade adulta." },
       { id: "Trimestral", nome: "Trimestral", meses: 3, valor: 750, ativo: true, descricao: "3 meses com desconto." },
-      { id: "Anual", nome: "Anual", meses: 12, valor: 2700, ativo: true, descricao: "12 meses, melhor valor." }
+      { id: "Anual", nome: "Anual", meses: 12, valor: 2700, ativo: true, descricao: "12 meses, melhor valor." },
+      { id: "Kids", nome: "Kids", meses: 1, valor: 220, ativo: true, descricao: "Turmas infantis (4 a 15 anos)." }
     ],
     produtos: [
       { id: "p1", nome: "Kimono GB branco A1", categoria: "Uniformes", preco: 549, estoque: 6, minimo: 3 },
@@ -114,6 +115,7 @@ export function gerarExtras(hojeISO, alunos) {
     config: {
       academia: { nome: "GB Sobradinho", endereco: "Sobradinho, Distrito Federal", telefone: "(61) 3000-0000", email: "contato@exemplo.com" },
       regras: { aulasPorGrau: 30, mesesPorGrau: 3, mesesMinFaixa: { branca: 12, azul: 24, roxa: 18, marrom: 12 } },
+      regrasKids: { aulasPorGrau: 20, mesesPorGrau: 2, mesesMinFaixa: 6, idadeMin: { cinza: 4, amarela: 7, laranja: 10, verde: 13 } },
       metaAulas30: 12,
       vencimentoPadrao: 10,
       ancoras: [{ programa: "GB1", data: "2026-11-16", semana: 12 }, { programa: "GB2", data: "2026-11-16", semana: 12 }]

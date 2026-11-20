@@ -2,7 +2,7 @@
 import { somarDias, diasEntre, diaSemana, deISO } from "./logica/datas.js";
 import { gerarExtras, COLECOES_EXTRAS } from "./dados-extras.js";
 
-export const VERSAO = 3;
+export const VERSAO = 4;
 export const DIAS_CHECKIN = 120;
 export const COLECOES = ["professores", "turmas", "alunos", "checkins", "mensalidades", "graduacoes", ...COLECOES_EXTRAS];
 
@@ -40,6 +40,26 @@ const GRADE = [
   [6, "10:00", "GB1+GB2", "p1"]
 ];
 
+// Turmas kids (fictícias): [dia, horário, professor, idade mín, idade máx]
+const GRADE_KIDS = [
+  [1, "17:00", "p2", 4, 6], [1, "18:00", "p5", 7, 10], [3, "17:00", "p2", 4, 6], [3, "18:00", "p5", 7, 10],
+  [2, "17:00", "p3", 7, 10], [2, "18:00", "p3", 11, 15], [4, "17:00", "p3", 7, 10], [4, "18:00", "p3", 11, 15],
+  [6, "09:00", "p2", 4, 15]
+];
+export const publicoKids = (min, max) => (min <= 4 && max >= 15 ? "Todas as idades" : `${min}–${max} anos`);
+
+// Crianças: [nome, sexo, faixa, graus, idade]
+const KIDS = [
+  ["Miguel", "M", "branca", 0, 5], ["Alice", "F", "branca", 2, 4], ["Davi", "M", "cinza-branca", 3, 5],
+  ["Laura", "F", "cinza", 1, 6], ["Arthur", "M", "cinza-preta", 4, 6], ["Valentina", "F", "cinza-preta", 4, 7],
+  ["Heitor", "M", "amarela-branca", 2, 8], ["Helena", "F", "amarela", 0, 9], ["Bernardo", "M", "amarela-preta", 3, 9],
+  ["Cecília", "F", "laranja-branca", 1, 10], ["Theo", "M", "laranja", 4, 11], ["Manuela", "F", "laranja-preta", 2, 12],
+  ["Gael", "M", "verde-branca", 3, 13], ["Lívia", "F", "verde", 1, 14], ["Noah", "M", "verde-preta", 4, 15],
+  ["Isadora", "F", "verde-preta", 2, 16], ["Benício", "M", "amarela", 1, 8], ["Antonella", "F", "branca", 1, 7]
+];
+const PAIS = [["Ana", "mãe"], ["Marcos", "pai"], ["Juliana", "mãe"], ["Ricardo", "pai"], ["Fernanda", "mãe"], ["Paulo", "pai"]];
+const ALERGIAS = ["", "", "Alergia a amendoim", "", "Asma leve (bombinha na mochila)", "", "", "Rinite"];
+
 export const idTurma = (dia, horario) => `${dia}-${horario.replace(":", "")}`;
 
 // [faixa, quantidade, anos de treino mín..máx, anos na faixa mín..máx]
@@ -70,7 +90,11 @@ export function gerarDados(hojeISO, semente = 7) {
   const anosAtras = anos => somarDias(hojeISO, -Math.round(anos * 365));
 
   const turmas = GRADE.map(([diaSemana_, horario, programa, professorId]) =>
-    ({ id: idTurma(diaSemana_, horario), diaSemana: diaSemana_, horario, programa, professorId, duracaoMin: 60 }));
+    ({ id: idTurma(diaSemana_, horario), diaSemana: diaSemana_, horario, programa, professorId, duracaoMin: 60, categoria: "adulto" }));
+  for (const [dia, horario, professorId, idadeMin, idadeMax] of GRADE_KIDS) {
+    turmas.push({ id: idTurma(dia, horario), diaSemana: dia, horario, programa: "Kids", professorId, duracaoMin: 50, categoria: "kids",
+      idadeMin, idadeMax, publico: publicoKids(idadeMin, idadeMax) });
+  }
 
   const alunos = [], graduacoes = [];
   let i = 0;
@@ -93,7 +117,7 @@ export function gerarDados(hojeISO, semente = 7) {
         nascimento: `${deISO(hojeISO).ano - idade}-${String(inteiro(1, 12)).padStart(2, "0")}-${String(inteiro(1, 28)).padStart(2, "0")}`,
         peso: sexo === "F" ? inteiro(52, 78) : inteiro(62, 102),
         telefone: `(61) 9${inteiro(8100, 9999)}-${inteiro(1000, 9999)}`,
-        faixa, graus, desde, desdeFaixa, ultimaGraduacao,
+        categoria: "adulto", faixa, graus, desde, desdeFaixa, ultimaGraduacao,
         status: TRANCADOS.has(i) ? "trancado" : "ativo",
         plano, valor: PLANOS[plano], vencimentoDia: [5, 10, 15][i % 3],
         parouEm: SUMIDOS.has(i) ? somarDias(hojeISO, -SUMIDOS.get(i)) : null
@@ -103,12 +127,36 @@ export function gerarDados(hojeISO, semente = 7) {
   // Atrasados precisam ser ativos e de plano Mensal.
   for (const idx of ATRASADOS) Object.assign(alunos[idx], { plano: "Mensal", valor: PLANOS.Mensal, status: "ativo" });
 
-  // Check-ins: cada aluno tem 2 ou 3 turmas preferidas e vai em ~70% delas.
+  // Crianças: responsável, saúde e faixas coerentes com a idade.
+  KIDS.forEach(([primeiro, sexo, faixa, graus, idade], k) => {
+    const id = `k${String(k + 1).padStart(2, "0")}`;
+    const sobrenome = `${SOBRENOMES[(k * 5 + 2) % SOBRENOMES.length]} ${SOBRENOMES[(k * 3 + 9) % SOBRENOMES.length]}`;
+    const nascimento = somarDias(hojeISO, -(idade * 365 + Math.floor(idade / 4) + inteiro(20, 300)));
+    const desdeFaixa = somarDias(hojeISO, -inteiro(200, 420));
+    const desde = faixa === "branca" ? desdeFaixa : somarDias(desdeFaixa, -inteiro(150, 500));
+    const intervalo = Math.floor(diasEntre(desdeFaixa, hojeISO) / (graus + 1.4));
+    const ultimaGraduacao = graus ? somarDias(desdeFaixa, graus * intervalo) : desdeFaixa;
+    if (faixa !== "branca") graduacoes.push({ alunoId: id, data: desdeFaixa, faixa, graus: 0 });
+    for (let g = 1; g <= graus; g++) graduacoes.push({ alunoId: id, data: somarDias(desdeFaixa, g * intervalo), faixa, graus: g });
+    const [pai, parentesco] = PAIS[k % PAIS.length];
+    const telefone = `(61) 9${inteiro(8100, 9999)}-${inteiro(1000, 9999)}`;
+    alunos.push({
+      id, nome: `${primeiro} ${sobrenome}`, sexo, nascimento, peso: inteiro(16, 55), telefone,
+      categoria: "kids", faixa, graus, desde, desdeFaixa, ultimaGraduacao, status: k === 16 ? "trancado" : "ativo",
+      plano: "Kids", valor: 220, vencimentoDia: 10, parouEm: null,
+      responsavel: { nome: `${pai} ${sobrenome.split(" ")[0]}`, parentesco, telefone, buscam: k % 3 === 0 ? "Mãe, pai e avó" : "Pai e mãe" },
+      saude: ALERGIAS[k % ALERGIAS.length], autorizaImagem: k % 4 !== 2
+    });
+  });
+
+  // Check-ins: cada aluno tem 2 ou 3 turmas preferidas (da sua categoria e idade) e vai em ~70% delas.
   const checkins = [];
   const inicio = somarDias(hojeISO, -(DIAS_CHECKIN - 1));
   const preferidas = new Map(alunos.map(a => {
-    const n = inteiro(2, 3), escolhidas = new Set();
-    while (escolhidas.size < n) escolhidas.add(turmas[inteiro(0, turmas.length - 1)].id);
+    const idade = Math.min(15, Math.floor(diasEntre(a.nascimento, hojeISO) / 365.25));  // 16+ ainda treina com os juniors
+    const opcoes = turmas.filter(t => t.categoria === a.categoria && (t.categoria === "adulto" || (idade >= t.idadeMin && idade <= t.idadeMax)));
+    const n = Math.min(opcoes.length, inteiro(2, 3)), escolhidas = new Set();
+    while (escolhidas.size < n) escolhidas.add(opcoes[inteiro(0, opcoes.length - 1)].id);
     return [a.id, [...escolhidas].map(id => turmas.find(t => t.id === id))];
   }));
   for (let d = inicio; d <= hojeISO; d = somarDias(d, 1)) {

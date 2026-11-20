@@ -12,12 +12,14 @@ const mapa = (inicial = {}) => {
 
 test("gera a academia de exemplo", () => {
   const d = gerarDados("2026-11-20");
-  assert.equal(d.versao, 3);
-  assert.equal(d.alunos.length, 40);
-  assert.equal(d.turmas.length, 15);
+  assert.equal(d.versao, 4);
+  assert.equal(d.alunos.filter(a => a.categoria === "adulto").length, 40);
+  assert.equal(d.alunos.filter(a => a.categoria === "kids").length, 18);
+  assert.equal(d.turmas.filter(t => t.categoria === "adulto").length, 15);
+  assert.equal(d.turmas.filter(t => t.categoria === "kids").length, 9);
   assert.equal(d.professores.length, 5);
   assert.equal(d.alunos.filter(a => a.faixa === "preta").length, 2);
-  assert.equal(d.alunos.filter(a => a.status === "trancado").length, 3);
+  assert.equal(d.alunos.filter(a => a.categoria === "adulto" && a.status === "trancado").length, 3);
   assert.deepEqual(gerarDados("2026-11-20"), d);
   assert.ok(d.checkins.every(c => c.data <= "2026-11-20"));
 });
@@ -50,10 +52,10 @@ test("histórico de graduações bate com o aluno", () => {
 });
 
 test("store descarta lixo e versão antiga", () => {
-  const mem = mapa({ "gb-admin:v3": "{quebrado" });
-  assert.equal(criarStore("2026-11-20", mem).dados.alunos.length, 40);
-  mem.setItem("gb-admin:v3", JSON.stringify({ versao: 0 }));
-  assert.equal(criarStore("2026-11-20", mem).dados.versao, 3);
+  const mem = mapa({ "gb-admin:v4": "{quebrado" });
+  assert.equal(criarStore("2026-11-20", mem).dados.alunos.length, 58);
+  mem.setItem("gb-admin:v4", JSON.stringify({ versao: 0 }));
+  assert.equal(criarStore("2026-11-20", mem).dados.versao, 4);
 });
 
 test("store salva, relê e restaura", () => {
@@ -67,7 +69,7 @@ test("store salva, relê e restaura", () => {
 });
 
 test("funciona sem localStorage ou com um que lança", () => {
-  assert.equal(criarStore("2026-11-20", undefined).dados.alunos.length, 40);
+  assert.equal(criarStore("2026-11-20", undefined).dados.alunos.length, 58);
   const ruim = { getItem() { throw new Error("x"); }, setItem() { throw new Error("x"); } };
   const s = criarStore("2026-11-20", ruim);
   assert.doesNotThrow(() => s.salvar());

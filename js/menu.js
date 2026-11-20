@@ -33,7 +33,7 @@ export const MENU = [
   { grupo: "Gestão acadêmica", itens: [item("alunos", "Alunos", true), item("graduacoes", "Graduações", true), item("professores", "Professores"),
     item("acompanhamentos", "Acompanhamentos"), item("cronogramas", "Cronogramas"), item("modelos-aula", "Modelos de aula"),
     item("habilidades", "Habilidades")] },
-  { grupo: "Operação", itens: [item("financeiro", "Financeiro", true), item("planos", "Planos"), item("produtos", "Produtos & estoque"),
+  { grupo: "Operação", itens: [item("financeiro", "Financeiro", true), item("planos", "Planos"),
     item("contratos", "Contratos"), item("prospects", "Prospects"), item("comunicacao", "Comunicação"), item("relatorios", "Relatórios")] },
   { grupo: "Administração", itens: [item("documentos", "Modelos de documentos"), item("mensagens", "Modelos de mensagens"),
     item("permissoes", "Permissões"), item("portal", "Portal do aluno"), item("config", "Configurações")] }

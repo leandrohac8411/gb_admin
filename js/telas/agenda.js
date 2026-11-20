@@ -6,7 +6,7 @@ import { icone } from "../menu.js";
 import { cabecalho, etiquetaPrograma, nomeProfessor, DIAS_CURTOS, DIAS_LONGOS } from "./comum.js";
 import { publicoKids } from "../dados-ficticios.js";
 
-const estado = { semana: 0 };
+const estado = { semana: 0, filtro: "Todas" };
 
 const programaDe = (gb1, gb2) => (gb1 && gb2 ? "GB1+GB2" : gb1 ? "GB1" : gb2 ? "GB2" : null);
 
@@ -79,6 +79,14 @@ export default {
     for (const c of d.checkins) if (c.data >= segunda && c.data <= fim) contagem[c.turmaId + c.data] = (contagem[c.turmaId + c.data] || 0) + 1;
     const ab = data => aulaPadrao(data);
 
+    const visiveis = d.turmas.filter(t => estado.filtro === "Todas" || (estado.filtro === "Kids") === (t.categoria === "kids"));
+    const horarios = [...new Set(visiveis.map(t => t.horario))].sort();
+    const experimentais = (t, data) => d.prospects.filter(p => p.etapa === "experimental" && p.experimental?.turmaId === t.id && p.experimental?.data === data).length;
+    const cartao = (t, data, comHora) => `<button class="turma${t.categoria === "kids" ? " kids" : ""}" data-id="${esc(t.id)}">
+        <div class="linha">${comHora ? `<span class="hora">${horaTexto(t.horario)}</span>` : ""}${etiquetaPrograma(t.programa)}${t.publico ? `<small>${esc(t.publico)}</small>` : ""}</div>
+        <small>${esc(nomeProfessor(d, t.professorId))}</small>
+        <small>${data <= hoje ? `${contagem[t.id + data] || 0} check-ins` : "—"}</small>
+        ${experimentais(t, data) ? `<span class="pill ok" style="align-self:flex-start">+${experimentais(t, data)} experimental</span>` : ""}</button>`;
     el.innerHTML = cabecalho("Agenda & turmas", `${d.turmas.filter(t => t.categoria !== "kids").length} turmas adultas e ${d.turmas.filter(t => t.categoria === "kids").length} kids na semana`,
       `<button class="btn" id="nova">${icone("agenda")}Nova turma</button>`) +
       `<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
@@ -91,16 +99,22 @@ export default {
         <div class="ciclo"><span class="pill gb1-p" style="background:var(--red-soft);color:var(--red)">GB1 · semana ${semanaDoCiclo(segunda, d.config.ancoras, "GB1")} de 16</span>
           <span class="pill info">GB2 · semana ${semanaDoCiclo(segunda, d.config.ancoras, "GB2")} de 16</span></div>
       </div>
-      <div class="semana">${dias.map(({ i, data }) => {
-        const turmas = d.turmas.filter(t => t.diaSemana === i).sort((a, b) => a.horario.localeCompare(b.horario));
+      <div class="chips" id="f-cat">${["Todas", "Adultos", "Kids"].map(f => `<button class="chip${estado.filtro === f ? " on" : ""}" data-f="${f}">${f}</button>`).join("")}</div>
+      <div class="grade-agenda" style="--dias:${dias.length}">
+        <div class="ga-canto"></div>
+        ${dias.map(({ i, data }) => `<div class="ga-dia${data === hoje ? " hoje" : ""}"><b>${DIAS_CURTOS[i]} ${data.slice(8)}/${data.slice(5, 7)}</b>${ab(data) ? `<small>Aula ${ab(data)}</small>` : ""}</div>`).join("")}
+        ${horarios.map(h => `<div class="ga-hora">${horaTexto(h)}</div>` + dias.map(({ i, data }) => {
+          const t = visiveis.find(x => x.diaSemana === i && x.horario === h);
+          return t ? cartao(t, data, false) : `<div class="ga-vazio${data === hoje ? " hoje" : ""}"></div>`;
+        }).join("")).join("")}
+      </div>
+      <div class="semana lista-agenda">${dias.map(({ i, data }) => {
+        const turmas = visiveis.filter(t => t.diaSemana === i).sort((a, b) => a.horario.localeCompare(b.horario));
         return `<div class="dia"><h4 class="${data === hoje ? "hoje" : ""}"><span>${DIAS_CURTOS[i]} ${data.slice(8)}/${data.slice(5, 7)}</span>${ab(data) ? `<span>Aula ${ab(data)}</span>` : ""}</h4>
-          <div class="turmas">${turmas.length ? turmas.map(t => `<button class="turma" data-id="${esc(t.id)}">
-            <div class="linha"><span class="hora">${horaTexto(t.horario)}</span>${etiquetaPrograma(t.programa)}</div>
-            <small>${t.publico ? `${esc(t.publico)} · ` : ""}${esc(nomeProfessor(d, t.professorId))}</small>
-            <small>${data <= hoje ? `${contagem[t.id + data] || 0} check-ins` : "—"}</small>${(() => { const n = d.prospects.filter(p => p.etapa === "experimental" && p.experimental?.turmaId === t.id && p.experimental?.data === data).length;
-              return n ? `<span class="pill ok" style="align-self:flex-start">+${n} experimental</span>` : ""; })()}</button>`).join("") : `<div class="vazio">Sem turmas</div>`}</div></div>`;
+          <div class="turmas">${turmas.length ? turmas.map(t => cartao(t, data, true)).join("") : `<div class="vazio">Sem turmas</div>`}</div></div>`;
       }).join("")}</div>`;
 
+    el.querySelectorAll("#f-cat [data-f]").forEach(b => b.onclick = () => { estado.filtro = b.dataset.f; ctx.redesenhar(); });
     el.querySelector("#ant").onclick = () => { estado.semana--; ctx.redesenhar(); };
     el.querySelector("#prox").onclick = () => { estado.semana++; ctx.redesenhar(); };
     el.querySelector("#hoje")?.addEventListener("click", () => { estado.semana = 0; ctx.redesenhar(); });

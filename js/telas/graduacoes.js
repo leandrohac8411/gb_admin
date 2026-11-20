@@ -4,7 +4,7 @@ import { esc, perguntar, toast, dataLonga } from "../ui/util.js";
 import { faixaSVG, nomeFaixa, faixasDe, CORES_FAIXA, corBase } from "../ui/faixa.js";
 import { hojeISO } from "../logica/datas.js";
 import { aptidao, regrasDe, mesesEntre, idadeEm, passaParaAdulto, REGRAS, REGRAS_KIDS } from "../logica/graduacao.js";
-import { cabecalho, pessoa, faixaCelula, porId, aba, daAba, abasCategoria, ligarAbas } from "./comum.js";
+import { cabecalho, pessoa, faixaCelula, porId, aba, daAba, abasCategoria, ligarAbas, anosTexto } from "./comum.js";
 
 const estado = { aba: "Aptos" };
 
@@ -20,7 +20,7 @@ function situacao(a, apt, hoje) {
     if (!prox) return '<span class="pill">Última faixa kids</span>';
     const minMeses = kids ? R.mesesMinFaixa : R.mesesMinFaixa[a.faixa];
     if (mesesEntre(a.desdeFaixa, hoje) < minMeses) return `<span class="pill alerta">Aguardando tempo (${mesesEntre(a.desdeFaixa, hoje)}/${minMeses} meses)</span>`;
-    if (kids) return `<span class="pill alerta">Aguardando idade (${idadeEm(a.nascimento, hoje)}/${R.idadeMin[corBase(prox)]} anos)</span>`;
+    if (kids) return `<span class="pill alerta">Aguardando idade (${idadeEm(a.nascimento, hoje) ?? "?"}/${R.idadeMin[corBase(prox)]} anos)</span>`;
   }
   return '<span class="pill alerta">Aguardando tempo</span>';
 }
@@ -46,7 +46,7 @@ export default {
 
     const cartaoVirarAdulto = viramAdultos.length ? `<div class="card" style="border-color:#f0d39a;background:#fffaf0">
         <div class="card-cab"><div><h3>Passam para Adultos</h3><small>completaram ${REGRAS_KIDS.idadeAdulto} anos</small></div></div>
-        <div class="lista">${viramAdultos.map(a => `<div>${pessoa(a, `${idadeEm(a.nascimento, hoje)} anos · ${nomeFaixa(a.faixa)}`)}
+        <div class="lista">${viramAdultos.map(a => `<div>${pessoa(a, `${anosTexto(idadeEm(a.nascimento, hoje))} · ${nomeFaixa(a.faixa)}`)}
           <div class="promo" style="margin-left:auto">${faixaSVG(a.faixa, a.graus, { mini: true })}<span class="seta">→</span>${faixaSVG(faixaAdulta(a.faixa), 0, { mini: true })}</div>
           <button class="btn peq" data-adulto="${esc(a.id)}">Passar para Adultos</button></div>`).join("")}</div></div>` : "";
 
@@ -54,7 +54,7 @@ export default {
       ? (aptos.length ? `<div class="grade3">${aptos.map(({ a, apt }) => {
           const nova = apt.tipo === "faixa" ? { faixa: apt.proximaFaixa, graus: 0 } : { faixa: a.faixa, graus: a.graus + 1 };
           return `<div class="card" style="display:flex;flex-direction:column;gap:12px">
-            <a href="#aluno/${encodeURIComponent(a.id)}">${pessoa(a, `${kids ? `${idadeEm(a.nascimento, hoje)} anos · ` : ""}${apt.aulas} aulas desde ${dataLonga(a.ultimaGraduacao)}`)}</a>
+            <a href="#aluno/${encodeURIComponent(a.id)}">${pessoa(a, `${kids ? `${anosTexto(idadeEm(a.nascimento, hoje))} · ` : ""}${apt.aulas} aulas desde ${dataLonga(a.ultimaGraduacao)}`)}</a>
             <div class="promo">${faixaSVG(a.faixa, a.graus)}<span class="seta">→</span>${faixaSVG(nova.faixa, nova.graus)}</div>
             <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">${situacao(a, apt, hoje)}
               <button class="btn peq" data-graduar="${esc(a.id)}">${apt.tipo === "faixa" ? "Trocar faixa" : "Dar grau"}</button></div></div>`;
@@ -62,7 +62,7 @@ export default {
       : estado.aba === "Todos"
       ? `<div class="card">${lista.length ? `<table class="tabela resp"><thead><tr><th>${kids ? "Criança" : "Aluno"}</th><th>Faixa</th><th>Aulas p/ próximo grau</th><th>Situação</th></tr></thead><tbody>${lista
           .sort((x, y) => faixas.indexOf(y.a.faixa) - faixas.indexOf(x.a.faixa) || y.a.graus - x.a.graus || x.a.nome.localeCompare(y.a.nome, "pt-BR"))
-          .map(({ a, apt }) => `<tr class="clica" data-id="${esc(a.id)}"><td class="cheia">${pessoa(a, kids ? `${idadeEm(a.nascimento, hoje)} anos` : "")}</td><td>${faixaCelula(a)}</td>
+          .map(({ a, apt }) => `<tr class="clica" data-id="${esc(a.id)}"><td class="cheia">${pessoa(a, kids ? anosTexto(idadeEm(a.nascimento, hoje)) : "")}</td><td>${faixaCelula(a)}</td>
             <td style="min-width:140px">${a.faixa === "preta" ? "—" : `<div class="progresso ${apt.faltamAulas ? "" : "ok"}"><i style="width:${Math.min(100, Math.round(apt.aulas / R.aulasPorGrau * 100))}%"></i></div><small class="muted">${Math.min(apt.aulas, R.aulasPorGrau)}/${R.aulasPorGrau}</small>`}</td>
             <td>${situacao(a, apt, hoje)}</td></tr>`).join("")}</tbody></table>` : `<div class="vazio">Nenhum aluno ativo nesta aba.</div>`}</div>`
       : (() => {
@@ -103,6 +103,7 @@ export default {
       const mensal = d.planos.find(p => p.id === "Mensal");
       Object.assign(a, { categoria: "adulto", faixa: nova, graus: 0, desdeFaixa: hoje, ultimaGraduacao: hoje, plano: mensal?.id || a.plano, valor: mensal?.valor ?? a.valor });
       d.graduacoes.push({ alunoId: a.id, data: hoje, faixa: nova, graus: 0 });
+      d.mensalidades.filter(m => m.alunoId === a.id && !m.pagoEm && m.competencia >= hoje.slice(0, 7)).forEach(m => { m.valor = a.valor; });
       store.salvar(); toast(`${a.nome.split(" ")[0]} agora treina com os adultos!`); ctx.redesenhar();
     });
   }

@@ -46,14 +46,14 @@ export default {
     el.innerHTML = `<a class="voltar" href="#alunos">‹ Alunos</a>
       <div class="card ficha-topo">
         <span class="av g">${esc(iniciais(a.nome))}</span>
-        <div class="quem"><h1>${esc(a.nome)}</h1><p class="muted" style="margin:4px 0 8px">${nomeFaixa(a.faixa)}${a.graus ? ` · ${a.graus}º grau` : ""}${kids ? ` · ${anos} anos` : ""} · desde ${dataLonga(a.desde)}</p>
+        <div class="quem"><h1>${esc(a.nome)}</h1><p class="muted" style="margin:4px 0 8px">${nomeFaixa(a.faixa)}${a.graus ? ` · ${a.graus}º grau` : ""}${kids ? ` · ${anos ?? "idade não informada"}${anos != null ? " anos" : ""}` : ""} · desde ${dataLonga(a.desde)}</p>
           ${kids ? '<span class="pill kids">Kids</span> ' : ""}${devendo ? PILL_STATUS.inadimplente : PILL_STATUS[a.status]}${passaParaAdulto(a, hoje) ? ' <span class="pill alerta">Passa para Adultos</span>' : ""}</div>
         <div class="faixa-grande">${faixaSVG(a.faixa, a.graus)}</div>
         <div class="acoes-cab" style="display:flex;gap:8px"><button class="btn sec" id="editar">Editar</button>
           <button class="btn ${a.status === "ativo" ? "sec" : ""}" id="status">${a.status === "ativo" ? "Trancar matrícula" : "Reativar matrícula"}</button></div>
       </div>
       <div class="card dados">
-        ${kids ? `<div><small>Idade · turma</small><b>${anos ?? "—"} anos${turmaKids ? ` · ${esc(turmaKids.publico)}` : ""}</b></div>
+        ${kids ? `<div><small>Idade · turma</small><b>${anos != null ? `${anos} anos` : "Sem data de nascimento"}${turmaKids ? ` · ${esc(turmaKids.publico)}` : ""}</b></div>
         <div><small>Peso</small><b>${a.peso ? `${String(a.peso).replace(".", ",")} kg` : "—"}</b></div>`
         : `<div><small>Idade · categoria</small><b>${idade ? `${idade.idadeNoAno} anos · ${idade.nome}` : "—"}</b></div>
         <div><small>Peso · categoria</small><b>${a.peso ? `${String(a.peso).replace(".", ",")} kg · ${peso?.nome || "—"}` : "—"}</b></div>`}

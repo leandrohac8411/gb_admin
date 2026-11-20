@@ -19,8 +19,11 @@ function ultimo(alunoId, checkins) {
 
 export function publico(chave, d, hojeISO) {
   const ativos = d.alunos.filter(a => a.status === "ativo");
+  // Mensagens sobre a própria criança ({{primeiro}} = criança) vs. para o responsável ({{primeiro}} = responsável).
+  const falaComCrianca = ["aniversariantes", "sumidos", "novos", "aptos"].includes(chave);
   const doAluno = a => {
-    const vars = varsParaContato(a, d, hojeISO);
+    const contato = varsParaContato(a, d, hojeISO);
+    const vars = falaComCrianca && a.categoria === "kids" ? { ...contato, primeiro: a.nome.split(" ")[0], nome: a.nome } : contato;
     return { id: a.id, nome: a.categoria === "kids" && a.responsavel ? `${a.responsavel.nome} (${a.responsavel.parentesco} de ${a.nome.split(" ")[0]})` : a.nome, telefone: vars.telefone, vars };
   };
   let lista;

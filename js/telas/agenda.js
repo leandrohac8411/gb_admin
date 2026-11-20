@@ -3,7 +3,7 @@ import { esc, abrirFolha, perguntar, toast, horaTexto } from "../ui/util.js";
 import { hojeISO, segundaDaSemana, somarDias } from "../logica/datas.js";
 import { semanaDoCiclo, aulaPadrao } from "../logica/ciclo.js";
 import { icone } from "../menu.js";
-import { cabecalho, etiquetaPrograma, nomeProfessor, DIAS_CURTOS, DIAS_LONGOS, aba } from "./comum.js";
+import { cabecalho, etiquetaPrograma, nomeProfessor, DIAS_CURTOS, DIAS_LONGOS } from "./comum.js";
 import { publicoKids } from "../dados-ficticios.js";
 
 const estado = { semana: 0 };
@@ -12,8 +12,7 @@ const programaDe = (gb1, gb2) => (gb1 && gb2 ? "GB1+GB2" : gb1 ? "GB1" : gb2 ? "
 
 function abrirFormTurma(store, turma, aoSalvar) {
   const d = store.dados, nova = !turma;
-  const t = turma || (aba() === "kids" ? { diaSemana: 1, horario: "17:00", programa: "Kids", idadeMin: 4, idadeMax: 6, professorId: d.professores[0]?.id }
-    : { diaSemana: 1, horario: "19:00", programa: "GB1", professorId: d.professores[0]?.id });
+  const t = turma || { diaSemana: 1, horario: "19:00", programa: "GB1", professorId: d.professores[0]?.id };
   let gb1 = t.programa.includes("GB1"), gb2 = t.programa.includes("GB2"), kids = t.programa === "Kids";
   abrirFolha((el, fechar) => {
     el.innerHTML = `<h3>${nova ? "Nova turma" : `Turma de ${DIAS_LONGOS[t.diaSemana].toLowerCase()} · ${horaTexto(t.horario)}`}</h3>
@@ -59,7 +58,11 @@ function abrirFormTurma(store, turma, aoSalvar) {
       const campos = { diaSemana, horario, programa, professorId: el.querySelector("#t-prof").value, categoria: kids ? "kids" : "adulto",
         ...(kids ? { idadeMin: imin, idadeMax: imax, publico: publicoKids(imin, imax) } : { idadeMin: undefined, idadeMax: undefined, publico: undefined }) };
       if (nova) d.turmas.push({ id: store.novoId("t"), ...campos, duracaoMin: kids ? 50 : 60 });
-      else Object.assign(turma, campos);
+      else {
+        const trocouCategoria = (turma.categoria || "adulto") !== campos.categoria && d.checkins.some(c => c.turmaId === turma.id);
+        Object.assign(turma, campos);
+        if (trocouCategoria) turma.id = store.novoId("t");
+      }
       store.salvar(); fechar(); toast(nova ? "Turma criada" : "Turma salva"); aoSalvar();
     };
   });

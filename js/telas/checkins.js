@@ -3,7 +3,7 @@ import { esc, abrirFolha, perguntar, toast, horaTexto, dataLonga } from "../ui/u
 import { normalizar } from "../ui/util-admin.js";
 import { hojeISO, diaSemana, dataValida } from "../logica/datas.js";
 import { icone } from "../menu.js";
-import { cabecalho, etiquetaPrograma, nomeProfessor, pessoa, faixaCelula, porId, DIAS_LONGOS, aba, daAba, abasCategoria, ligarAbas } from "./comum.js";
+import { cabecalho, etiquetaPrograma, nomeProfessor, pessoa, faixaCelula, porId, DIAS_LONGOS, aba, daAba, abasCategoria, ligarAbas, definirAba } from "./comum.js";
 
 const estado = { data: null, turmaId: null };
 
@@ -40,16 +40,20 @@ export default {
   titulo: "Check-ins",
   montar(el, params, ctx) {
     const { store } = ctx, d = store.dados, hoje = hojeISO();
-    if (params[0]) { estado.data = hoje; estado.turmaId = params[0]; history.replaceState(null, "", "#checkins"); }
+    if (params[0]) {
+      estado.data = hoje; estado.turmaId = params[0];
+      const t = d.turmas.find(x => x.id === params[0]); if (t) definirAba(t.categoria);
+      history.replaceState(null, "", "#checkins");
+    }
     if (!estado.data || !dataValida(estado.data)) estado.data = hoje;
     const data = estado.data, turmas = d.turmas.filter(t => t.diaSemana === diaSemana(data) && (t.categoria || "adulto") === aba()).sort((a, b) => a.horario.localeCompare(b.horario));
     const idsDoDia = new Set(turmas.map(t => t.id)), doDia = d.checkins.filter(c => c.data === data && idsDoDia.has(c.turmaId));
     // Presenças de turmas que mudaram de dia ou foram excluídas ficam em "Turmas antigas".
+    const alunos = porId(d.alunos);
     const idsOutraAba = new Set(d.turmas.filter(t => (t.categoria || "adulto") !== aba()).map(t => t.id));
-    const orfaos = d.checkins.filter(c => c.data === data && !idsDoDia.has(c.turmaId) && !idsOutraAba.has(c.turmaId) && daAba(porId(d.alunos)[c.alunoId] || {}));
+    const orfaos = d.checkins.filter(c => c.data === data && !idsDoDia.has(c.turmaId) && !idsOutraAba.has(c.turmaId) && daAba(alunos[c.alunoId] || {}));
     if (!(estado.turmaId === "outras" && orfaos.length) && !turmas.some(t => t.id === estado.turmaId)) estado.turmaId = turmas[0]?.id || (orfaos.length ? "outras" : null);
     const turma = turmas.find(t => t.id === estado.turmaId);
-    const alunos = porId(d.alunos);
     const presentes = estado.turmaId === "outras" ? orfaos : turma ? doDia.filter(c => c.turmaId === turma.id).sort((a, b) => (alunos[a.alunoId]?.nome || "").localeCompare(alunos[b.alunoId]?.nome || "", "pt-BR")) : [];
 
     el.innerHTML = cabecalho("Check-ins", `${doDia.length} presença${doDia.length === 1 ? "" : "s"} em ${dataLonga(data)}`,

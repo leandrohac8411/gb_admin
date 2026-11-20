@@ -6,7 +6,7 @@ import { hojeISO, somarDias, dataValida } from "../logica/datas.js";
 import { inadimplentes } from "../logica/financeiro.js";
 import { idadeEm } from "../logica/graduacao.js";
 import { icone } from "../menu.js";
-import { cabecalho, pessoa, faixaCelula, PILL_STATUS, aba, daAba, abasCategoria, ligarAbas } from "./comum.js";
+import { cabecalho, pessoa, faixaCelula, PILL_STATUS, aba, daAba, abasCategoria, ligarAbas, anosTexto } from "./comum.js";
 
 const estado = { busca: "", status: "Todos", faixa: null };
 
@@ -56,7 +56,7 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
       const falha = nome.length < 3 ? "Escreva o nome completo."
         : f.nascimento && (!dataValida(f.nascimento) || f.nascimento > hoje) ? "Data de nascimento inválida."
         : kids && !f.nascimento ? "Informe a data de nascimento da criança."
-        : kids && (idade < 3 || idade > 17) ? "Kids é para crianças de 3 a 17 anos."
+        : kids && novo && (idade < 3 || idade > 17) ? "Kids é para crianças de 3 a 17 anos."
         : f.peso && !(Number(f.peso) >= (kids ? 10 : 20) && Number(f.peso) <= 250) ? "Peso fora do esperado."
         : kids && (f.rnome || "").trim().length < 3 ? "Escreva o nome do responsável."
         : kids && (f.rtelefone || "").replace(/\D/g, "").length < 8 ? "Informe o telefone do responsável." : "";
@@ -117,7 +117,7 @@ export default {
           (estado.status === "Trancados" && a.status === "trancado") || (estado.status === "Inadimplentes" && devendo.has(a.id))))
         .sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
       const sub = a => kids
-        ? `${idadeEm(a.nascimento, hoje)} anos · resp.: ${esc(a.responsavel?.nome || "—")}${a.responsavel?.telefone ? " " + esc(a.responsavel.telefone) : ""}`
+        ? `${anosTexto(idadeEm(a.nascimento, hoje))} · resp.: ${esc(a.responsavel?.nome || "—")}${a.responsavel?.telefone ? " " + esc(a.responsavel.telefone) : ""}`
         : `${esc(a.plano)}${a.telefone ? " · " + esc(a.telefone) : ""}`;
       lista.innerHTML = `<p class="muted" style="font-size:12px;margin:8px 0">${visiveis.length} de ${daCategoria.length} ${kids ? "crianças" : "alunos"}</p>` + (visiveis.length
         ? `<table class="tabela resp"><thead><tr><th>${kids ? "Criança" : "Aluno"}</th><th>Faixa</th><th class="num">Aulas 30 dias</th><th>Desde</th><th>Status</th></tr></thead><tbody>` +

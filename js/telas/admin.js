@@ -1,10 +1,10 @@
 // Administração (segunda leva): Modelos de documentos, Modelos de mensagens, Permissões, Portal do aluno e Configurações.
 import { esc, abrirFolha, perguntar, toast, dataLonga, horaTexto, iniciais, saudacao } from "../ui/util.js";
 import { reais, competenciaTexto } from "../ui/util-admin.js";
-import { faixaSVG, nomeFaixa, FAIXAS } from "../ui/faixa.js";
+import { faixaSVG, nomeFaixa, faixasDe } from "../ui/faixa.js";
 import { hojeISO, diaSemana, dataValida } from "../logica/datas.js";
-import { preencher, varsDoAluno, CAMPOS } from "../logica/modelos.js";
-import { aptidao, aplicarRegras, REGRAS } from "../logica/graduacao.js";
+import { preencher, varsParaContato, CAMPOS } from "../logica/modelos.js";
+import { aptidao, aplicarRegras, regrasDe } from "../logica/graduacao.js";
 import { statusMensalidade } from "../logica/financeiro.js";
 import { aulasNosUltimos } from "../logica/relatorios.js";
 import { MODULOS } from "../dados-extras.js";
@@ -59,7 +59,7 @@ function telaModelos(tipo) {
     montar(el, params, ctx) {
       const { store } = ctx, d = store.dados, hoje = hojeISO(), ativos = ativosOrdenados(d);
       if (!ativos.some(a => a.id === estado.alunoId)) estado.alunoId = ativos[0]?.id || null;
-      const aluno = ativos.find(a => a.id === estado.alunoId), vars = aluno ? varsDoAluno(aluno, d, hoje) : {};
+      const aluno = ativos.find(a => a.id === estado.alunoId), vars = aluno ? varsParaContato(aluno, d, hoje) : {};
       const lista = d[tipo.colecao];
       el.innerHTML = cabecalho(tipo.titulo, tipo.descricao, `<button class="btn" id="novo">${icone(tipo.icone)}Novo modelo</button>`) +
         `<div class="card filtros"><label for="md-aluno" class="forte" style="font-size:13px">Pré-visualizar com</label>
@@ -151,7 +151,8 @@ export const portal = {
     if (!a) { el.innerHTML = cabecalho("Portal do aluno") + `<div class="card vazio">Nenhum aluno ativo.</div>`; return; }
     const meta = d.config.metaAulas30 || 12, n30 = aulasNosUltimos(a.id, d.checkins, hoje, 30), apt = aptidao(a, d.checkins, hoje);
     const agora = new Date(), hhmm = `${String(agora.getHours()).padStart(2, "0")}:${String(agora.getMinutes()).padStart(2, "0")}`;
-    const deHoje = d.turmas.filter(t => t.diaSemana === diaSemana(hoje)).sort((x, y) => x.horario.localeCompare(y.horario));
+    const R = regrasDe(a), lista = faixasDe(a.categoria), proximaCor = lista[lista.indexOf(a.faixa) + 1];
+    const deHoje = d.turmas.filter(t => t.diaSemana === diaSemana(hoje) && (t.categoria || "adulto") === (a.categoria || "adulto")).sort((x, y) => x.horario.localeCompare(y.horario));
     const proxima = deHoje.find(t => t.horario >= hhmm) || null;
     const jaFez = proxima && d.checkins.some(c => c.alunoId === a.id && c.turmaId === proxima.id && c.data === hoje);
     const mens = d.mensalidades.filter(m => m.alunoId === a.id).sort((x, y) => y.competencia.localeCompare(x.competencia))[0];
@@ -160,10 +161,10 @@ export const portal = {
       `<div class="card filtros"><label for="pt-aluno" class="forte" style="font-size:13px">Ver como</label><select class="input" id="pt-aluno" style="max-width:320px">${opcoes(ativos.map(x => [x.id, x.nome]), a.id)}</select></div>
       <div class="celular"><div class="cel-tela">
         <div class="cel-topo"><span class="av">${esc(iniciais(a.nome))}</span><div><small>${saudacao()}</small><b>${esc(a.nome.split(" ")[0])}</b></div><img src="img/logo-gb.png" alt=""></div>
-        <div class="cel-prog"><small>Rumo ${apt.tipo === "faixa" || a.graus === 4 ? `à faixa ${a.faixa === "preta" ? "preta" : nomeFaixa(FAIXAS[FAIXAS.indexOf(a.faixa) + 1] || a.faixa).toLowerCase()}` : `ao ${a.graus + 1}º grau`}</small>
-          <b>${a.faixa === "preta" ? "Faixa preta" : apt.tipo ? "Pronto para graduar! 🥋" : `${Math.min(apt.aulas, REGRAS.aulasPorGrau)} de ${REGRAS.aulasPorGrau} aulas`}</b>
+        <div class="cel-prog"><small>Rumo ${apt.tipo === "faixa" || a.graus === 4 ? `à faixa ${a.faixa === "preta" ? "preta" : nomeFaixa(proximaCor || a.faixa).toLowerCase()}` : `ao ${a.graus + 1}º grau`}</small>
+          <b>${a.faixa === "preta" ? "Faixa preta" : apt.tipo ? "Pronto para graduar! 🥋" : `${Math.min(apt.aulas, R.aulasPorGrau)} de ${R.aulasPorGrau} aulas`}</b>
           <div class="cel-faixa">${faixaSVG(a.faixa, a.graus)}</div>
-          ${a.faixa === "preta" ? "" : `<div class="progresso" style="background:rgba(255,255,255,.25)"><i style="background:#fff;width:${Math.min(100, Math.round(apt.aulas / REGRAS.aulasPorGrau * 100))}%"></i></div>`}</div>
+          ${a.faixa === "preta" ? "" : `<div class="progresso" style="background:rgba(255,255,255,.25)"><i style="background:#fff;width:${Math.min(100, Math.round(apt.aulas / R.aulasPorGrau * 100))}%"></i></div>`}</div>
         <div class="cel-card"><small>Próxima aula hoje</small>${proxima ? `<div class="linha"><b>${horaTexto(proxima.horario)}</b>${etiquetaPrograma(proxima.programa)}</div><small>Prof. ${esc(nomeProfessor(d, proxima.professorId))}</small>
           <button class="btn bloco" id="pt-check"${jaFez ? " disabled" : ""}>${jaFez ? "Check-in feito ✓" : "Fazer check-in"}</button>` : `<b>Sem mais aulas hoje</b><small>${DIAS_LONGOS[diaSemana(hoje)]}</small>`}</div>
         <div class="cel-duo"><div class="cel-card"><small>Treinos em 30 dias</small><b>${n30}<span>/${meta}</span></b></div>

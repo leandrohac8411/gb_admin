@@ -3,7 +3,7 @@ import { esc, abrirFolha, perguntar, toast, dataLonga, horaTexto } from "../ui/u
 import { reais, csv, competenciaTexto } from "../ui/util-admin.js";
 import { nomeFaixa, faixasDe, CORES_FAIXA } from "../ui/faixa.js";
 import { hojeISO, diasEntre } from "../logica/datas.js";
-import { preencher, varsDoAluno } from "../logica/modelos.js";
+import { preencher, varsParaContato } from "../logica/modelos.js";
 import { PUBLICOS, publico } from "../logica/publicos.js";
 import { presencaPorDia, presencaPorHorario, ranking, receitaPorPlano } from "../logica/relatorios.js";
 import { resumoFinanceiro } from "../logica/financeiro.js";
@@ -143,7 +143,7 @@ const estadoCt = { filtro: "Todos" };
 
 function verContrato(store, ct, aluno, pronto) {
   const d = store.dados, modelo = d.modelosDoc.find(m => m.id === ct.modeloId) || d.modelosDoc[0];
-  const texto = aluno && modelo ? preencher(modelo.texto, varsDoAluno(aluno, d, ct.emissao)) : "Modelo ou aluno não encontrado.";
+  const texto = aluno && modelo ? preencher(modelo.texto, varsParaContato(aluno, d, ct.emissao)) : "Modelo ou aluno não encontrado.";
   abrirFolha((el, fechar) => {
     el.innerHTML = `<h3>${esc(ct.numero)}</h3><p class="muted" style="margin:0">${esc(modelo?.nome || "")} · emitido em ${dataLonga(ct.emissao)}</p>
       <pre style="white-space:pre-wrap;font-family:inherit;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin:0;font-size:13px;max-height:45vh;overflow:auto">${esc(texto)}</pre>
@@ -226,7 +226,7 @@ export const prospects = {
     });
     el.querySelectorAll("[data-matricular]").forEach(b => b.onclick = () => {
       const p = d.prospects.find(x => x.id === b.dataset.matricular);
-      abrirFormAluno(store, null, a => { p.etapa = "matriculado"; p.alunoId = a.id; store.salvar(); ctx.ir(`aluno/${a.id}`); }, { nome: p.nome, telefone: p.telefone });
+      abrirFormAluno(store, null, a => { p.etapa = "matriculado"; p.alunoId = a.id; store.salvar(); ctx.ir(`aluno/${a.id}`); }, { nome: p.nome, telefone: p.telefone, categoria: "adulto" });
     });
   }
 };

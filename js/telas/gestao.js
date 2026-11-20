@@ -105,7 +105,7 @@ export const acompanhamentos = {
     const motivo = x => estadoAc.aba === "Sumidos" ? (x.ult ? `sem treinar há ${diasEntre(x.ult, hoje)} dias` : "nunca treinou")
       : estadoAc.aba === "Frequência baixa" ? `${x.n30} aula${x.n30 === 1 ? "" : "s"} em 30 dias`
       : estadoAc.aba === "Novos (30 dias)" ? `entrou em ${dataLonga(x.a.desde)} · ${x.n30} aulas`
-      : x.apt.tipo === "faixa" ? `apto à faixa ${x.apt.proximaFaixa}` : `apto ao ${x.a.graus + 1}º grau`;
+      : x.apt.tipo === "faixa" ? `apto à faixa ${nomeFaixa(x.apt.proximaFaixa).toLowerCase()}` : `apto ao ${x.a.graus + 1}º grau`;
     const notas = d.acompanhamentos.filter(n => alunos[n.alunoId] && daAba(alunos[n.alunoId]));
     const lista = estadoAc.aba === "Anotações"
       ? (notas.length ? `<div class="lista">${notas.map(n => `<div><span class="pill info">${esc(n.tipo)}</span><div class="cresce"><b>${esc(alunos[n.alunoId]?.nome || "Aluno removido")}</b><small>${esc(n.texto)}</small></div><span class="muted" style="white-space:nowrap">${dataLonga(n.data)}</span></div>`).join("")}</div>` : `<div class="vazio">Nenhuma anotação ainda.</div>`)

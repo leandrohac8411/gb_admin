@@ -3,6 +3,7 @@ import { esc, iniciais } from "../ui/util.js";
 import { faixaSVG, nomeFaixa } from "../ui/faixa.js";
 
 export const DIAS_LONGOS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+export const anosTexto = n => (n == null ? "idade não informada" : `${n} anos`);
 export const DIAS_CURTOS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 export function cabecalho(titulo, sub = "", acoes = "") {
@@ -40,6 +41,7 @@ export const PILL_STATUS = {
 // Abas Adultos | Kids: a escolha fica lembrada ao trocar de tela.
 let categoriaAtual = "adulto";
 export const aba = () => categoriaAtual;
+export const definirAba = c => { categoriaAtual = c === "kids" ? "kids" : "adulto"; };
 export const daAba = a => (a.categoria || "adulto") === categoriaAtual;
 
 export function abasCategoria(d) {

@@ -67,3 +67,25 @@ test("comunicação para crianças vai ao responsável", async () => {
   const todos = publico("ativos", d, H).find(x => x.id === k.id);
   assert.equal(todos.vars.primeiro, k.responsavel.nome.split(" ")[0]);
 });
+
+test("aniversário da criança fala com a criança, no telefone do responsável", async () => {
+  const { gerarDados } = await import("../js/dados-ficticios.js");
+  const { publico } = await import("../js/logica/publicos.js");
+  const d = gerarDados(H);
+  const k = d.alunos.find(a => a.categoria === "kids" && a.status === "ativo");
+  k.nascimento = "2018-11-05";
+  const item = publico("aniversariantes", d, H).find(x => x.id === k.id);
+  assert.equal(item.vars.primeiro, k.nome.split(" ")[0]);
+  assert.equal(item.telefone, k.responsavel.telefone);
+  const cobranca = publico("ativos", d, H).find(x => x.id === k.id);
+  assert.equal(cobranca.vars.primeiro, k.responsavel.nome.split(" ")[0]);
+});
+
+test("contrato de criança sai no nome do responsável", async () => {
+  const { gerarDados } = await import("../js/dados-ficticios.js");
+  const { varsParaContato } = await import("../js/logica/modelos.js");
+  const d = gerarDados(H), k = d.alunos.find(a => a.categoria === "kids");
+  const v = varsParaContato(k, d, H);
+  assert.equal(v.nome, k.responsavel.nome);
+  assert.equal(v.crianca, k.nome.split(" ")[0]);
+});

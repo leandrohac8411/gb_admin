@@ -2,13 +2,13 @@
 import { esc, abrirFolha, perguntar, toast, dataLonga, horaTexto } from "../ui/util.js";
 import { reais, csv, competenciaTexto } from "../ui/util-admin.js";
 import { nomeFaixa, faixasDe, CORES_FAIXA } from "../ui/faixa.js";
-import { hojeISO, diasEntre } from "../logica/datas.js";
+import { hojeISO, diasEntre, diaSemana, dataValida } from "../logica/datas.js";
 import { preencher, varsParaContato } from "../logica/modelos.js";
 import { PUBLICOS, publico } from "../logica/publicos.js";
 import { presencaPorDia, presencaPorHorario, ranking, receitaPorPlano } from "../logica/relatorios.js";
 import { resumoFinanceiro } from "../logica/financeiro.js";
 import { icone } from "../menu.js";
-import { cabecalho, pessoa, porId, DIAS_CURTOS, aba, daAba, abasCategoria, ligarAbas } from "./comum.js";
+import { cabecalho, pessoa, porId, DIAS_CURTOS, aba, daAba, abasCategoria, ligarAbas, etiquetaPrograma } from "./comum.js";
 import { abrirFormAluno } from "./alunos.js";
 
 const erroEm = (el, sel, msg) => { const e = el.querySelector(sel); e.textContent = msg; e.hidden = false; };
@@ -200,6 +200,29 @@ function formProspect(store, pr, pronto) {
   });
 }
 
+// Aula experimental: escolhe data e turma (as turmas daquele dia da semana).
+function agendarExperimental(store, p, pronto) {
+  const d = store.dados, hoje = hojeISO();
+  let data = p.experimental?.data && p.experimental.data >= hoje ? p.experimental.data : hoje;
+  abrirFolha((el, fechar) => {
+    const desenhar = () => {
+      const turmas = d.turmas.filter(t => t.diaSemana === diaSemana(data)).sort((a, b) => a.horario.localeCompare(b.horario));
+      el.innerHTML = `<h3>Aula experimental</h3><p class="muted" style="margin:0">${esc(p.nome)} · ${esc(p.interesse)}</p>
+        <div class="field"><label for="ex-data">Dia</label><input class="input" type="date" id="ex-data" min="${hoje}" value="${data}"></div>
+        <div class="field"><label>Turma</label>${turmas.length ? `<div class="lista">${turmas.map(t => `<button type="button" data-t="${esc(t.id)}" style="text-align:left;width:100%"><span class="hora">${horaTexto(t.horario)}</span><div class="cresce">${etiquetaPrograma(t.programa)}${t.publico ? ` <small>${esc(t.publico)}</small>` : ""}</div><span class="link">Marcar</span></button>`).join("")}</div>`
+          : `<div class="vazio">Sem turmas nesse dia. Escolha outro.</div>`}</div>
+        <button class="btn ghost bloco" id="ex-x">Cancelar</button>`;
+      el.querySelector("#ex-data").onchange = e => { if (dataValida(e.target.value) && e.target.value >= hoje) data = e.target.value; desenhar(); };
+      el.querySelector("#ex-x").onclick = fechar;
+      el.querySelectorAll("[data-t]").forEach(b => b.onclick = () => {
+        p.etapa = "experimental"; p.experimental = { data, turmaId: b.dataset.t };
+        store.salvar(); fechar(); toast(`Aula experimental marcada para ${dataLonga(data)}`); pronto();
+      });
+    };
+    desenhar();
+  });
+}
+
 export const prospects = {
   titulo: "Prospects",
   montar(el, params, ctx) {
@@ -213,6 +236,8 @@ export const prospects = {
         return `<div class="etapa"><h4>${nome} <span>${l.length}</span></h4>${l.map(p => `<div class="card prospect">
           <b>${esc(p.nome)}</b><small>${esc(p.interesse)} · ${esc(p.origem)}</small><small>${esc(p.telefone)} · há ${diasEntre(p.criadoEm, hoje)} dia${diasEntre(p.criadoEm, hoje) === 1 ? "" : "s"}</small>
           ${p.obs ? `<small class="obs">${esc(p.obs)}</small>` : ""}
+          ${id === "experimental" && p.experimental ? (() => { const t = d.turmas.find(x => x.id === p.experimental.turmaId);
+            return `<small class="obs" style="background:var(--good-soft);color:var(--good)">📅 ${dataLonga(p.experimental.data)}${t ? ` · ${horaTexto(t.horario)}` : ""}${p.experimental.data < hoje ? " · já passou" : ""}</small>`; })() : ""}
           <div class="mover">${i > 0 && id !== "matriculado" ? `<button class="btn sec peq" data-mover="${esc(p.id)}" data-para="${id === "perdido" ? "contato" : ETAPAS[i - 1][0]}" aria-label="Voltar etapa">‹</button>` : ""}
             <button class="btn sec peq" data-editar="${esc(p.id)}">Editar</button>
             ${id === "experimental" ? `<button class="btn peq" data-matricular="${esc(p.id)}">Matricular</button>` : ""}
@@ -222,7 +247,9 @@ export const prospects = {
     el.querySelector("#novo").onclick = () => formProspect(store, null, ctx.redesenhar);
     el.querySelectorAll("[data-editar]").forEach(b => b.onclick = () => formProspect(store, d.prospects.find(p => p.id === b.dataset.editar), ctx.redesenhar));
     el.querySelectorAll("[data-mover]").forEach(b => b.onclick = () => {
-      const p = d.prospects.find(x => x.id === b.dataset.mover); p.etapa = b.dataset.para; store.salvar(); ctx.redesenhar();
+      const p = d.prospects.find(x => x.id === b.dataset.mover);
+      if (b.dataset.para === "experimental") return agendarExperimental(store, p, ctx.redesenhar);
+      p.etapa = b.dataset.para; store.salvar(); ctx.redesenhar();
     });
     el.querySelectorAll("[data-matricular]").forEach(b => b.onclick = () => {
       const p = d.prospects.find(x => x.id === b.dataset.matricular);
@@ -298,6 +325,10 @@ export const relatorios = {
           <tr><td><b>Total</b></td><td class="num"><b>${receita.reduce((s, r) => s + r.alunos, 0)}</b></td><td class="num"><b>${reais(receita.reduce((s, r) => s + r.mensal, 0))}</b></td></tr></tbody></table></div>
         <div class="card"><div class="card-cab"><h3>Alunos ativos por faixa</h3></div>
           <div class="dist">${porFaixa.map(([f, n]) => `<div class="linha"><span>${nomeFaixa(f)}</span><div class="trilho"><i style="width:${Math.round(n / maxF * 100)}%;background:${CORES_FAIXA[f]}"></i></div><span>${n}</span></div>`).join("")}</div></div>
+        <div class="card"><div class="card-cab"><h3>Por que saem</h3><small>${alunosAba.filter(a => a.status === "trancado").length} trancados</small></div>
+          ${(() => { const cont = {}; alunosAba.filter(a => a.status === "trancado").forEach(a => { const m = a.trancamento?.motivo || "Sem motivo"; cont[m] = (cont[m] || 0) + 1; });
+            const l = Object.entries(cont).sort((x, y) => y[1] - x[1]), mx = Math.max(1, ...l.map(x => x[1]));
+            return l.length ? `<div class="dist">${l.map(([m, n]) => `<div class="linha"><span>${esc(m)}</span><div class="trilho"><i style="width:${Math.round(n / mx * 100)}%;background:var(--red)"></i></div><span>${n}</span></div>`).join("")}</div>` : '<div class="vazio">Ninguém trancou a matrícula.</div>'; })()}</div>
         <div class="card"><div class="card-cab"><h3>Quem mais treinou</h3><small>top 10</small></div>
           <div class="lista">${top.map((t, i) => `<a href="#aluno/${encodeURIComponent(t.aluno.id)}"><span class="hora">${i + 1}º</span><div class="cresce"><b>${esc(t.aluno.nome)}</b><small>${nomeFaixa(t.aluno.faixa)}</small></div><span class="pill info">${t.n} aulas</span></a>`).join("")}</div></div>
       </div>`;

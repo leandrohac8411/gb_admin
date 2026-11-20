@@ -8,6 +8,7 @@ import { aptidao, aplicarRegras, regrasDe } from "../logica/graduacao.js";
 import { statusMensalidade } from "../logica/financeiro.js";
 import { aulasNosUltimos } from "../logica/relatorios.js";
 import { MODULOS } from "../dados-extras.js";
+import { validarDados } from "../store.js";
 import { irmaos, mediaComportamento } from "../logica/familia.js";
 import { icone } from "../menu.js";
 import { cabecalho, etiquetaPrograma, nomeProfessor, PILL_STATUS, DIAS_LONGOS, estrelas } from "./comum.js";
@@ -242,11 +243,32 @@ export const config = {
             return `<div><div class="cresce"><b>${p}</b><small>${an ? `semana ${an.semana} a partir de ${dataLonga(an.data)}` : "sem referência"}</small></div></div>`; }).join("")}</div></div>
         <div class="card" style="display:flex;flex-direction:column;gap:10px"><div class="card-cab"><h3>Dados de exemplo</h3></div>
           <p class="muted" style="margin:0">Tudo aqui é fictício e fica salvo só neste navegador. Restaurar volta a academia de exemplo do zero.</p>
-          <button type="button" class="btn sec" id="cf-restaurar">${icone("restaurar")}Restaurar dados de exemplo</button></div>
+          <button type="button" class="btn sec" id="cf-restaurar">${icone("restaurar")}Restaurar dados de exemplo</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn sec" id="cf-exportar">${icone("documentos")}Exportar backup (JSON)</button>
+            <label class="btn sec" style="cursor:pointer">${icone("restaurar")}Importar backup<input type="file" id="cf-importar" accept="application/json,.json" hidden></label></div>
+          <small class="muted">O backup guarda alunos, turmas, check-ins, financeiro e todo o resto num arquivo.</small></div>
         <p class="aviso" id="cf-erro" hidden style="grid-column:1/-1"></p>
         <div style="grid-column:1/-1;display:flex;justify-content:flex-end"><button class="btn">Salvar configurações</button></div>
       </form>`;
     el.querySelector("#cf-restaurar").onclick = () => document.getElementById("restaurar")?.click();
+    el.querySelector("#cf-exportar").onclick = () => {
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(new Blob([JSON.stringify(d, null, 2)], { type: "application/json" }));
+      link.download = `gb-admin-backup-${hojeISO()}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      toast("Backup exportado");
+    };
+    el.querySelector("#cf-importar").onchange = async e => {
+      const arq = e.target.files?.[0]; e.target.value = "";
+      if (!arq) return;
+      let novo = null;
+      try { novo = JSON.parse(await arq.text()); } catch { /* arquivo não é JSON */ }
+      if (!validarDados(novo)) { toast("Arquivo inválido: não é um backup desta versão do painel"); return; }
+      if (!await perguntar("Importar backup?", `Os dados atuais serão trocados pelos do arquivo "${arq.name}".`, "Importar", "Cancelar")) return;
+      novo.geradoEm = hojeISO();
+      store.dados = novo; store.salvar();
+      aplicarRegras(novo.config.regras, novo.config.regrasKids);
+      toast("Backup importado"); ctx.redesenhar();
+    };
     el.querySelector("#cfg").onsubmit = e => {
       e.preventDefault();
       const v = id => el.querySelector(id).value.trim(), n = id => Number(v(id));

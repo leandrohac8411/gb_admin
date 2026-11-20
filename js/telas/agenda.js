@@ -97,7 +97,8 @@ export default {
           <div class="turmas">${turmas.length ? turmas.map(t => `<button class="turma" data-id="${esc(t.id)}">
             <div class="linha"><span class="hora">${horaTexto(t.horario)}</span>${etiquetaPrograma(t.programa)}</div>
             <small>${t.publico ? `${esc(t.publico)} · ` : ""}${esc(nomeProfessor(d, t.professorId))}</small>
-            <small>${data <= hoje ? `${contagem[t.id + data] || 0} check-ins` : "—"}</small></button>`).join("") : `<div class="vazio">Sem turmas</div>`}</div></div>`;
+            <small>${data <= hoje ? `${contagem[t.id + data] || 0} check-ins` : "—"}</small>${(() => { const n = d.prospects.filter(p => p.etapa === "experimental" && p.experimental?.turmaId === t.id && p.experimental?.data === data).length;
+              return n ? `<span class="pill ok" style="align-self:flex-start">+${n} experimental</span>` : ""; })()}</button>`).join("") : `<div class="vazio">Sem turmas</div>`}</div></div>`;
       }).join("")}</div>`;
 
     el.querySelector("#ant").onclick = () => { estado.semana--; ctx.redesenhar(); };

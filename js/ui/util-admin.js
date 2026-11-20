@@ -26,7 +26,12 @@ export function anelClaroSVG(fracao, cor = "#c8201b") {
     (f > 0 ? `<circle cx="60" cy="60" r="50" fill="none" stroke="${cor}" stroke-width="13" stroke-linecap="round" stroke-dasharray="${x} ${c.toFixed(2)}"/>` : "") + `</svg>`;
 }
 
+// CSV para Excel (separador ;). Células que começam com = + - @ ganham ' para não virar fórmula.
 export function csv(linhas) {
-  const cel = v => { const s = String(v ?? ""); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const cel = v => {
+    let s = String(v ?? "");
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
   return "﻿" + linhas.map(l => l.map(cel).join(";")).join("\n");
 }

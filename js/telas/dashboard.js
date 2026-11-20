@@ -29,7 +29,7 @@ export default {
       `<div class="kpis">
         ${kpi("Alunos ativos", r.ativos, `${d.alunos.length - r.ativos} trancados`, "alunos", "destaque")}
         ${kpi("Check-ins no mês", r.checkinsMes, variacao(r.checkinsMes, r.checkinsMesAnterior), "checkins")}
-        ${kpi("Recebido no mês", reais(r.recebidoMes), "mensalidades pagas", "financeiro")}
+        ${kpi("Entrou no caixa", reais(r.recebidoMes), "pagamentos feitos este mês", "financeiro")}
         ${kpi("Inadimplentes", r.inadimplentes, r.inadimplentes ? `<a class="link" href="#financeiro">ver mensalidades</a>` : "tudo em dia", "permissoes", r.inadimplentes ? "ruim" : "")}
       </div>
       <div class="grade2">

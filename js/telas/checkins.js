@@ -43,16 +43,19 @@ export default {
     if (params[0]) { estado.data = hoje; estado.turmaId = params[0]; history.replaceState(null, "", "#checkins"); }
     if (!estado.data || !dataValida(estado.data)) estado.data = hoje;
     const data = estado.data, turmas = d.turmas.filter(t => t.diaSemana === diaSemana(data)).sort((a, b) => a.horario.localeCompare(b.horario));
-    if (!turmas.some(t => t.id === estado.turmaId)) estado.turmaId = turmas[0]?.id || null;
+    const idsDoDia = new Set(turmas.map(t => t.id)), doDia = d.checkins.filter(c => c.data === data && idsDoDia.has(c.turmaId));
+    // Presenças de turmas que mudaram de dia ou foram excluídas ficam em "Turmas antigas".
+    const orfaos = d.checkins.filter(c => c.data === data && !idsDoDia.has(c.turmaId));
+    if (!(estado.turmaId === "outras" && orfaos.length) && !turmas.some(t => t.id === estado.turmaId)) estado.turmaId = turmas[0]?.id || (orfaos.length ? "outras" : null);
     const turma = turmas.find(t => t.id === estado.turmaId);
-    const doDia = d.checkins.filter(c => c.data === data);
     const alunos = porId(d.alunos);
-    const presentes = turma ? doDia.filter(c => c.turmaId === turma.id).sort((a, b) => (alunos[a.alunoId]?.nome || "").localeCompare(alunos[b.alunoId]?.nome || "", "pt-BR")) : [];
+    const presentes = estado.turmaId === "outras" ? orfaos : turma ? doDia.filter(c => c.turmaId === turma.id).sort((a, b) => (alunos[a.alunoId]?.nome || "").localeCompare(alunos[b.alunoId]?.nome || "", "pt-BR")) : [];
 
     el.innerHTML = cabecalho("Check-ins", `${doDia.length} presença${doDia.length === 1 ? "" : "s"} em ${dataLonga(data)}`,
       `<input class="input" type="date" id="data" value="${data}" max="${hoje}" style="width:auto" aria-label="Data">`) +
-      `<div class="card">${turmas.length ? `<div class="chips" id="turmas">${turmas.map(t => `<button class="chip${t.id === estado.turmaId ? " on" : ""}" data-id="${esc(t.id)}">${horaTexto(t.horario)} · ${doDia.filter(c => c.turmaId === t.id).length}</button>`).join("")}</div>`
+      `<div class="card">${turmas.length || orfaos.length ? `<div class="chips" id="turmas">${turmas.map(t => `<button class="chip${t.id === estado.turmaId ? " on" : ""}" data-id="${esc(t.id)}">${horaTexto(t.horario)} · ${doDia.filter(c => c.turmaId === t.id).length}</button>`).join("")}${orfaos.length ? `<button class="chip${estado.turmaId === "outras" ? " on" : ""}" data-id="outras">Turmas antigas · ${orfaos.length}</button>` : ""}</div>`
         : `<div class="vazio">Sem aulas em ${DIAS_LONGOS[diaSemana(data)].toLowerCase()}.</div>`}</div>
+      ${estado.turmaId === "outras" ? `<div class="card"><div class="card-cab"><div><h3>Turmas antigas</h3><small>presenças de turmas que mudaram de dia ou foram excluídas</small></div></div>${presentes.map(c => { const a = alunos[c.alunoId]; return `<div class="lista"><div>${a ? pessoa(a) : "Aluno removido"}<span class="hora" style="margin-left:auto">${horaTexto(c.hora)}</span></div></div>`; }).join("")}</div>` : ""}
       ${turma ? `<div class="card"><div class="card-cab"><div><h3>${horaTexto(turma.horario)} · ${etiquetaPrograma(turma.programa)}</h3><small>Prof. ${esc(nomeProfessor(d, turma.professorId))} · ${presentes.length} presente${presentes.length === 1 ? "" : "s"}</small></div>
           <button class="btn" id="registrar">${icone("checkins")}Registrar presença</button></div>
         ${presentes.length ? `<table class="tabela resp"><thead><tr><th>Aluno</th><th>Faixa</th><th>Hora</th><th></th></tr></thead><tbody>${presentes.map(c => {
@@ -61,7 +64,11 @@ export default {
             <td class="num"><button class="btn sec peq" data-remover="${esc(c.id)}" aria-label="Remover presença">Remover</button></td></tr>`;
         }).join("")}</tbody></table>` : `<div class="vazio">Nenhuma presença registrada nesta aula.</div>`}</div>` : ""}`;
 
-    el.querySelector("#data").onchange = e => { if (dataValida(e.target.value) && e.target.value <= hoje) { estado.data = e.target.value; ctx.redesenhar(); } };
+    el.querySelector("#data").onchange = e => {
+      if (dataValida(e.target.value) && e.target.value <= hoje) estado.data = e.target.value;
+      else toast("Escolha uma data até hoje.");
+      ctx.redesenhar();
+    };
     el.querySelectorAll("#turmas [data-id]").forEach(b => b.onclick = () => { estado.turmaId = b.dataset.id; ctx.redesenhar(); });
     el.querySelector("#registrar")?.addEventListener("click", () => abrirRegistro(store, turma, data, ctx.redesenhar));
     el.querySelectorAll("[data-remover]").forEach(b => b.onclick = async () => {

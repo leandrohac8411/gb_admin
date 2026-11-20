@@ -1,6 +1,6 @@
 // GB Admin: roteador por hash (#rota/param) e moldura com menu lateral.
 import { desenharMenu, itemDoMenu } from "./menu.js";
-import { esc } from "./ui/util.js";
+import { esc, fecharFolhas } from "./ui/util.js";
 import embreve from "./telas/embreve.js";
 import { lerRota } from "./rota.js";
 
@@ -31,11 +31,12 @@ const naoEncontrada = {
 export function desenhar() {
   const { rota, params } = lerRota(location.hash);
   const doMenu = itemDoMenu(rota);
-  const tela_ = TELAS[rota] || (doMenu ? embreve : naoEncontrada);
+  const tela_ = (Object.hasOwn(TELAS, rota) && TELAS[rota]) || (doMenu ? embreve : naoEncontrada);
   const ativa = rota === "aluno" ? "alunos" : rota;
   lateral.innerHTML = desenharMenu(ativa);
   lateral.querySelector("#restaurar").onclick = () => aoRestaurar?.();
   lateral.querySelectorAll("a").forEach(a => a.addEventListener("click", () => abrirMenu(false)));
+  fecharFolhas();
   tela.innerHTML = "";
   try {
     tela_.montar(tela, params, ctx, doMenu);

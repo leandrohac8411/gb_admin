@@ -1,7 +1,7 @@
 // Ficha do aluno: dados, categoria IBJJF, frequência, próximo passo, mensalidades, graduações e check-ins.
 import { esc, iniciais, dataLonga, dataCurta, horaTexto, perguntar, toast } from "../ui/util.js";
 import { reais, anelClaroSVG, competenciaTexto } from "../ui/util-admin.js";
-import { faixaSVG, nomeFaixa } from "../ui/faixa.js";
+import { faixaSVG, nomeFaixa, FAIXAS } from "../ui/faixa.js";
 import { hojeISO } from "../logica/datas.js";
 import { categoriaIdade, categoriaPeso } from "../logica/categorias.js";
 import { aptidao, REGRAS, mesesEntre } from "../logica/graduacao.js";
@@ -28,9 +28,11 @@ export default {
     const mens = d.mensalidades.filter(m => m.alunoId === a.id).sort((x, y) => y.competencia.localeCompare(x.competencia)).slice(0, 4);
     const grads = d.graduacoes.filter(g => g.alunoId === a.id).sort((x, y) => y.data.localeCompare(x.data));
     const ultimos = d.checkins.filter(c => c.alunoId === a.id).sort((x, y) => (y.data + y.hora).localeCompare(x.data + x.hora)).slice(0, 10);
-    const proximo = a.faixa === "preta" ? "Faixa preta: graus por tempo de faixa, fora desta regra."
+    const proximo = a.status === "trancado" ? "Matrícula trancada: a contagem para graduação fica parada."
+      : a.faixa === "preta" ? "Faixa preta: graus por tempo de faixa, fora desta regra."
       : apt.tipo === "faixa" ? `Pronto para a faixa ${nomeFaixa(apt.proximaFaixa).toLowerCase()}!`
       : apt.tipo === "grau" ? `Pronto para o ${a.graus + 1}º grau!`
+      : apt.faltamAulas ? `Faltam ${apt.faltamAulas} aulas para ${a.graus === 4 ? `a faixa ${nomeFaixa(FAIXAS[FAIXAS.indexOf(a.faixa) + 1]).toLowerCase()}` : `o ${a.graus + 1}º grau`}.`
       : a.graus === 4 ? `4 graus: faixa ${nomeFaixa(a.faixa).toLowerCase()} pede ${REGRAS.mesesMinFaixa[a.faixa]} meses na faixa (está com ${mesesEntre(a.desdeFaixa, hoje)}).`
       : apt.faltamAulas ? `Faltam ${apt.faltamAulas} aulas para o ${a.graus + 1}º grau.`
       : `Aulas completas; falta tempo (mín. ${REGRAS.mesesPorGrau} meses desde a última graduação).`;

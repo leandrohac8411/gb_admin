@@ -1,8 +1,8 @@
 // Guarda a academia fictícia no navegador. Se não houver localStorage (ou ele falhar),
 // o painel funciona só em memória.
-import { gerarDados, VERSAO } from "./dados-ficticios.js";
+import { gerarDados, VERSAO, COLECOES } from "./dados-ficticios.js";
 
-const CHAVE = "gb-admin:v1";
+const CHAVE = `gb-admin:v${VERSAO}`;
 
 // Dados de outro mês são refeitos: a vitrine sempre mostra o mês atual "vivo".
 function ler(armazenamento, hojeISO) {
@@ -10,7 +10,7 @@ function ler(armazenamento, hojeISO) {
     const bruto = armazenamento?.getItem(CHAVE);
     if (!bruto) return null;
     const d = JSON.parse(bruto);
-    return d && d.versao === VERSAO && Array.isArray(d.alunos) && String(d.geradoEm || "").slice(0, 7) === hojeISO.slice(0, 7) ? d : null;
+    return d && d.versao === VERSAO && COLECOES.every(c => Array.isArray(d[c])) && String(d.geradoEm || "").slice(0, 7) === hojeISO.slice(0, 7) ? d : null;
   } catch { return null; }
 }
 

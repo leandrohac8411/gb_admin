@@ -79,7 +79,7 @@ export default {
       <div class="grade2">
         <div class="kpis kpis2">
           ${kpi("Previsto", reais(r.previsto), `${doMes.length} mensalidades`)}
-          ${kpi("Recebido", reais(r.recebido), "já pago", "destaque")}
+          ${kpi("Recebido", reais(r.recebido), `das mensalidades de ${competenciaTexto(comp).split(" ")[0].toLowerCase()}`, "destaque")}
           ${kpi("Pendente", reais(r.pendente), "a vencer")}
           ${kpi("Atrasado", reais(r.atrasado), `${r.inadimplentes.length} aluno${r.inadimplentes.length === 1 ? "" : "s"}`, r.atrasado ? "ruim" : "")}
         </div>
@@ -93,7 +93,7 @@ export default {
         <div class="chips" id="filtros" style="margin-bottom:10px">${["Todos", "Pago", "Pendente", "Atrasado", "Em atraso (todos os meses)"].map(f => `<button class="chip${estado.filtro === f ? " on" : ""}" data-f="${f}">${f}</button>`).join("")}</div>
         ${visiveis.length ? `<table class="tabela resp"><thead><tr><th>Aluno</th><th>Mês</th><th>Vencimento</th><th class="num">Valor</th><th>Status</th><th></th></tr></thead><tbody>${visiveis.map(m => {
           const a = alunos[m.alunoId], s = statusMensalidade(m, hoje);
-          return `<tr><td class="cheia">${a ? `<a href="#aluno/${encodeURIComponent(a.id)}">${pessoa(a, esc(a.plano))}</a>` : "—"}</td><td class="esconde-m">${competenciaTexto(m.competencia)}</td>
+          return `<tr><td class="cheia">${a ? `<a href="#aluno/${encodeURIComponent(a.id)}">${pessoa(a, esc(a.plano))}</a>` : "—"}</td><td class="${estado.filtro.startsWith("Em atraso") ? "" : "esconde-m"}" data-l="Mês:">${competenciaTexto(m.competencia)}</td>
             <td data-l="Vence:">${dataLonga(m.vencimento)}</td><td class="num"><b>${reais(m.valor)}</b></td><td>${PILL_STATUS[s]}${m.pagoEm ? `<br><small class="muted">${dataLonga(m.pagoEm)} · ${esc(m.forma || "")}</small>` : ""}</td>
             <td class="num">${s === "pago" ? "" : `<button class="btn sec peq" data-pagar="${esc(m.id)}">Marcar pago</button>`}</td></tr>`;
         }).join("")}</tbody></table>` : `<div class="vazio">Nenhuma mensalidade com esse filtro.</div>`}

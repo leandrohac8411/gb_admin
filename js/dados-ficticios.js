@@ -1,8 +1,9 @@
 // Academia fictícia para a vitrine. Determinística: mesma data + mesma semente = mesmos dados.
 import { somarDias, diasEntre, diaSemana, deISO } from "./logica/datas.js";
 
-export const VERSAO = 1;
+export const VERSAO = 2;
 export const DIAS_CHECKIN = 120;
+export const COLECOES = ["professores", "turmas", "alunos", "checkins", "mensalidades", "graduacoes"];
 
 function mulberry32(a) {
   return () => {

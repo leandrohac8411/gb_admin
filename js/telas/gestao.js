@@ -97,7 +97,7 @@ export const acompanhamentos = {
     const ativos = d.alunos.filter(a => a.status === "ativo");
     const info = ativos.map(a => ({ a, ult: ultimoTreino(a.id, d.checkins), n30: aulas30(a.id, d.checkins, hoje), apt: aptidao(a, d.checkins, hoje) }));
     const grupos = {
-      Sumidos: info.filter(x => !x.ult || diasEntre(x.ult, hoje) >= 14).sort((x, y) => (x.ult || "").localeCompare(y.ult || "")),
+      Sumidos: info.filter(x => (x.ult ? diasEntre(x.ult, hoje) : diasEntre(x.a.desde, hoje)) >= 14).sort((x, y) => (x.ult || "").localeCompare(y.ult || "")),
       "Frequência baixa": info.filter(x => x.n30 >= 1 && x.n30 <= 4 && x.ult && diasEntre(x.ult, hoje) < 14).sort((x, y) => x.n30 - y.n30),
       "Novos (30 dias)": info.filter(x => diasEntre(x.a.desde, hoje) <= 30),
       "Aptos a graduar": info.filter(x => x.apt.tipo)
@@ -185,7 +185,9 @@ function formModeloAula(store, m, pronto) {
       <div class="acoes cheio"><button type="button" class="btn ghost" id="m-x">Cancelar</button><button class="btn">Salvar</button></div>
       ${m ? '<button type="button" class="link cheio" id="m-del" style="justify-self:center">Excluir modelo</button>' : ""}</form>`;
     el.querySelector("#m-x").onclick = fechar;
-    el.querySelector("#m-del")?.addEventListener("click", () => {
+    el.querySelector("#m-del")?.addEventListener("click", async () => {
+      fechar();
+      if (!await perguntar("Excluir modelo de aula?", m.nome, "Excluir", "Cancelar")) return;
       store.dados.modelosAula = store.dados.modelosAula.filter(y => y !== m); store.salvar(); fechar(); toast("Modelo excluído"); pronto();
     });
     el.querySelector("form").onsubmit = e => {
@@ -236,7 +238,7 @@ function formHabilidade(store, h, pronto) {
       <div class="acoes cheio"><button type="button" class="btn ghost" id="h-x">Cancelar</button><button class="btn">Salvar</button></div>
       ${h ? '<button type="button" class="link cheio" id="h-del" style="justify-self:center">Excluir habilidade</button>' : ""}</form>`;
     el.querySelector("#h-x").onclick = fechar;
-    el.querySelector("#h-del")?.addEventListener("click", () => { store.dados.habilidades = store.dados.habilidades.filter(y => y !== h); store.salvar(); fechar(); toast("Habilidade excluída"); pronto(); });
+    el.querySelector("#h-del")?.addEventListener("click", async () => { fechar(); if (!await perguntar("Excluir habilidade?", h.nome, "Excluir", "Cancelar")) return; store.dados.habilidades = store.dados.habilidades.filter(y => y !== h); store.salvar(); fechar(); toast("Habilidade excluída"); pronto(); });
     el.querySelector("form").onsubmit = e => {
       e.preventDefault();
       const nome = el.querySelector("#h-nome").value.trim();

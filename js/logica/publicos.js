@@ -30,7 +30,7 @@ export function publico(chave, d, hojeISO) {
   else if (chave === "prospects") {
     const academia = d.config?.academia?.nome || "academia";
     return (d.prospects || []).filter(p => ["novo", "contato", "experimental"].includes(p.etapa))
-      .map(p => ({ id: p.id, nome: p.nome, telefone: p.telefone, vars: { nome: p.nome, primeiro: p.nome.split(" ")[0], academia, data: dataLonga(hojeISO), telefone: p.telefone } }));
+      .map(p => ({ id: p.id, nome: p.nome, telefone: p.telefone, vars: { nome: p.nome, primeiro: p.nome.split(" ")[0], academia, data: dataLonga(hojeISO), telefone: p.telefone, faixa: "", plano: "", valor: "", desde: "", aulas30: "" } }));
   } else return [];
   return lista.map(doAluno);
 }

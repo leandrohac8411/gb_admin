@@ -103,6 +103,7 @@ function formUsuario(store, u, pronto) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return erroEm(el, "#us-erro", "E-mail inválido.");
       if (d.usuarios.some(y => y !== u && y.email === email)) return erroEm(el, "#us-erro", "Já existe um usuário com esse e-mail.");
       const campos = { nome, email, perfilId: el.querySelector("#us-perfil").value };
+      if (u && u.perfilId === "admin" && campos.perfilId !== "admin" && u.ativo && d.usuarios.filter(y => y.ativo && y.perfilId === "admin").length === 1) return erroEm(el, "#us-erro", "Precisa haver pelo menos um administrador ativo.");
       if (u) Object.assign(u, campos); else d.usuarios.push({ id: store.novoId("u"), ativo: true, ...campos });
       store.salvar(); fechar(); toast("Usuário salvo"); pronto();
     };
@@ -159,8 +160,8 @@ export const portal = {
       `<div class="card filtros"><label for="pt-aluno" class="forte" style="font-size:13px">Ver como</label><select class="input" id="pt-aluno" style="max-width:320px">${opcoes(ativos.map(x => [x.id, x.nome]), a.id)}</select></div>
       <div class="celular"><div class="cel-tela">
         <div class="cel-topo"><span class="av">${esc(iniciais(a.nome))}</span><div><small>${saudacao()}</small><b>${esc(a.nome.split(" ")[0])}</b></div><img src="img/logo-gb.png" alt=""></div>
-        <div class="cel-prog"><small>Rumo ao ${apt.tipo === "faixa" || a.graus === 4 ? `faixa ${a.faixa === "preta" ? "preta" : nomeFaixa(FAIXAS[FAIXAS.indexOf(a.faixa) + 1] || a.faixa).toLowerCase()}` : `${a.graus + 1}º grau`}</small>
-          <b>${a.faixa === "preta" ? "Faixa preta" : apt.tipo ? "Pronto para graduar! 🥋" : `${apt.aulas} de ${REGRAS.aulasPorGrau} aulas`}</b>
+        <div class="cel-prog"><small>Rumo ${apt.tipo === "faixa" || a.graus === 4 ? `à faixa ${a.faixa === "preta" ? "preta" : nomeFaixa(FAIXAS[FAIXAS.indexOf(a.faixa) + 1] || a.faixa).toLowerCase()}` : `ao ${a.graus + 1}º grau`}</small>
+          <b>${a.faixa === "preta" ? "Faixa preta" : apt.tipo ? "Pronto para graduar! 🥋" : `${Math.min(apt.aulas, REGRAS.aulasPorGrau)} de ${REGRAS.aulasPorGrau} aulas`}</b>
           <div class="cel-faixa">${faixaSVG(a.faixa, a.graus)}</div>
           ${a.faixa === "preta" ? "" : `<div class="progresso" style="background:rgba(255,255,255,.25)"><i style="background:#fff;width:${Math.min(100, Math.round(apt.aulas / REGRAS.aulasPorGrau * 100))}%"></i></div>`}</div>
         <div class="cel-card"><small>Próxima aula hoje</small>${proxima ? `<div class="linha"><b>${horaTexto(proxima.horario)}</b>${etiquetaPrograma(proxima.programa)}</div><small>Prof. ${esc(nomeProfessor(d, proxima.professorId))}</small>

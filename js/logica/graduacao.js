@@ -32,7 +32,8 @@ export function aptidao(aluno, checkins, hojeISO) {
 // Configurações → regras (o objeto REGRAS é o mesmo usado por todas as telas).
 export function aplicarRegras(r) {
   if (!r) return;
-  REGRAS.aulasPorGrau = Number(r.aulasPorGrau) || REGRAS.aulasPorGrau;
-  REGRAS.mesesPorGrau = Number(r.mesesPorGrau) || REGRAS.mesesPorGrau;
+  const numero = (v, padrao) => (v === "" || v == null || !Number.isFinite(Number(v)) ? padrao : Number(v));
+  REGRAS.aulasPorGrau = numero(r.aulasPorGrau, REGRAS.aulasPorGrau);
+  REGRAS.mesesPorGrau = numero(r.mesesPorGrau, REGRAS.mesesPorGrau);
   REGRAS.mesesMinFaixa = { ...REGRAS.mesesMinFaixa, ...(r.mesesMinFaixa || {}) };
 }

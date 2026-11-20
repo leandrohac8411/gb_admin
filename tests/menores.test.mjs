@@ -36,3 +36,11 @@ test("academia de exemplo tem as coleções novas", () => {
   assert.equal(d.cronograma.length, 32);
   assert.equal(d.config.regras.aulasPorGrau, 30);
 });
+
+test("regra com zero meses vale", async () => {
+  const { aplicarRegras, REGRAS } = await import("../js/logica/graduacao.js");
+  aplicarRegras({ aulasPorGrau: 30, mesesPorGrau: 0, mesesMinFaixa: {} });
+  assert.equal(REGRAS.mesesPorGrau, 0);
+  aplicarRegras({ aulasPorGrau: "", mesesPorGrau: 3 });
+  assert.equal(REGRAS.aulasPorGrau, 30);
+});

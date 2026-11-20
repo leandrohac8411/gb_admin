@@ -97,12 +97,13 @@ function formProduto(store, prod, pronto) {
       <div class="acoes cheio"><button type="button" class="btn ghost" id="po-x">Cancelar</button><button class="btn">Salvar</button></div>
       ${prod ? '<button type="button" class="link cheio" id="po-del" style="justify-self:center">Excluir produto</button>' : ""}</form>`;
     el.querySelector("#po-x").onclick = fechar;
-    el.querySelector("#po-del")?.addEventListener("click", () => { store.dados.produtos = store.dados.produtos.filter(x => x !== prod); store.salvar(); fechar(); toast("Produto excluído"); pronto(); });
+    el.querySelector("#po-del")?.addEventListener("click", async () => { fechar(); if (!await perguntar("Excluir produto?", prod.nome, "Excluir", "Cancelar")) return; store.dados.produtos = store.dados.produtos.filter(x => x !== prod); store.salvar(); fechar(); toast("Produto excluído"); pronto(); });
     el.querySelector("form").onsubmit = e => {
       e.preventDefault();
       const nome = el.querySelector("#po-nome").value.trim(), preco = Number(el.querySelector("#po-preco").value);
       const estoque = Number(el.querySelector("#po-est").value), minimo = Number(el.querySelector("#po-min").value);
       if (nome.length < 2) return erroEm(el, "#po-erro", "Escreva o nome do produto.");
+      if (["#po-preco", "#po-est", "#po-min"].some(id => el.querySelector(id).value.trim() === "")) return erroEm(el, "#po-erro", "Preencha preço, estoque e mínimo.");
       if (!(preco >= 0) || !Number.isInteger(estoque) || estoque < 0 || !Number.isInteger(minimo) || minimo < 0) return erroEm(el, "#po-erro", "Preço, estoque e mínimo precisam ser números (estoque e mínimo inteiros).");
       const campos = { nome, categoria: el.querySelector("#po-cat").value, preco, estoque, minimo };
       if (prod) Object.assign(prod, campos); else store.dados.produtos.push({ id: store.novoId("p"), ...campos });
@@ -212,7 +213,7 @@ export const prospects = {
         return `<div class="etapa"><h4>${nome} <span>${l.length}</span></h4>${l.map(p => `<div class="card prospect">
           <b>${esc(p.nome)}</b><small>${esc(p.interesse)} · ${esc(p.origem)}</small><small>${esc(p.telefone)} · há ${diasEntre(p.criadoEm, hoje)} dia${diasEntre(p.criadoEm, hoje) === 1 ? "" : "s"}</small>
           ${p.obs ? `<small class="obs">${esc(p.obs)}</small>` : ""}
-          <div class="mover">${i > 0 && id !== "matriculado" ? `<button class="btn sec peq" data-mover="${esc(p.id)}" data-para="${ETAPAS[i - 1][0]}" aria-label="Voltar etapa">‹</button>` : ""}
+          <div class="mover">${i > 0 && id !== "matriculado" ? `<button class="btn sec peq" data-mover="${esc(p.id)}" data-para="${id === "perdido" ? "contato" : ETAPAS[i - 1][0]}" aria-label="Voltar etapa">‹</button>` : ""}
             <button class="btn sec peq" data-editar="${esc(p.id)}">Editar</button>
             ${id === "experimental" ? `<button class="btn peq" data-matricular="${esc(p.id)}">Matricular</button>` : ""}
             ${i < 2 ? `<button class="btn sec peq" data-mover="${esc(p.id)}" data-para="${ETAPAS[i + 1][0]}" aria-label="Avançar etapa">›</button>` : ""}

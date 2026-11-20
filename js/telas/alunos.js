@@ -43,7 +43,7 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
         : f.nascimento && (!dataValida(f.nascimento) || f.nascimento > hoje) ? "Data de nascimento inválida."
         : f.peso && !(Number(f.peso) >= 20 && Number(f.peso) <= 250) ? "Peso deve ficar entre 20 e 250 kg." : "";
       if (falha) { erro.textContent = falha; erro.hidden = false; return; }
-      const campos = { nome, sexo: f.sexo, nascimento: f.nascimento || "", peso: f.peso ? Number(f.peso) : null, telefone: f.telefone.trim(), plano: f.plano, valor: planos.find(p => p.id === f.plano)?.valor ?? 0 };
+      const campos = { nome, sexo: f.sexo, nascimento: f.nascimento || "", peso: f.peso ? Number(f.peso) : null, telefone: f.telefone.trim(), plano: f.plano, valor: !novo && aluno.plano === f.plano ? aluno.valor : (planos.find(p => p.id === f.plano)?.valor ?? 0) };
       const d = store.dados;
       let alvo = aluno;
       if (novo) {

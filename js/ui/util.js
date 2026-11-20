@@ -35,7 +35,7 @@ export function toast(texto) {
 // Folha que sobe de baixo. conteudo(el, fechar) monta o que vai dentro.
 // aoDispensar roda quando a pessoa fecha tocando fora da folha.
 const abertas = new Set();
-export function fecharFolhas() { for (const dispensar of [...abertas]) dispensar(); }
+export function fecharFolhas() { for (const dispensar of [...abertas]) dispensar(true); }
 globalThis.document?.addEventListener("keydown", e => { if (e.key === "Escape" && abertas.size) [...abertas].at(-1)(); });
 
 export function abrirFolha(conteudo, aoDispensar) {
@@ -45,7 +45,7 @@ export function abrirFolha(conteudo, aoDispensar) {
   folha.className = "folha"; folha.setAttribute("role", "dialog"); folha.setAttribute("aria-modal", "true");
   fundo.appendChild(folha);
   const fechar = () => { fundo.remove(); abertas.delete(dispensar); };
-  const dispensar = () => { fechar(); aoDispensar?.(); };
+  const dispensar = (silencioso = false) => { fechar(); if (!silencioso) aoDispensar?.(); };
   abertas.add(dispensar);
   fundo.addEventListener("click", e => { if (e.target === fundo) dispensar(); });
   document.body.appendChild(fundo);

@@ -74,8 +74,10 @@ export default {
       ${turma ? (() => { const f = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
         return `<div class="card foto-aula"><div class="card-cab"><div><h3>Foto da aula das ${horaTexto(turma.horario)} ${etiquetaPrograma(turma.programa)}</h3><small>${DIAS_LONGOS[diaSemana(data)]}, ${dataLonga(data)} · ${f ? `salva por Prof. ${esc(nomeProfessor(d, turma.professorId))}` : "o professor registra como foi a aula"}</small></div>
           ${f ? `<div style="display:flex;gap:8px"><label class="btn sec peq" style="cursor:pointer">Trocar<input type="file" accept="image/*" capture="environment" id="foto-arq" hidden></label><button class="btn sec peq" id="foto-del">Remover</button></div>` : ""}</div>
-          ${f ? `<button class="foto-grande" id="foto-ver" aria-label="Ver foto da aula em tela cheia"><img src="${esc(f.foto)}" alt="Foto da aula de ${esc(dataLonga(data))}"></button>
-            <input class="input" id="foto-leg" placeholder="Legenda (ex.: drill de passagem com a turma toda)" value="${esc(f.legenda || "")}" maxlength="140" style="margin-top:10px">`
+          ${f ? `<div class="foto-corpo"><button class="foto-grande" id="foto-ver" aria-label="Ver foto da aula em tela cheia"><img src="${esc(f.foto)}" alt="Foto da aula de ${esc(dataLonga(data))}"><span>Ver em tela cheia</span></button>
+            <div class="foto-lado"><label for="foto-leg" class="k">Legenda</label>
+              <textarea class="input" id="foto-leg" rows="3" maxlength="140" placeholder="Ex.: drill de passagem com a turma toda">${esc(f.legenda || "")}</textarea>
+              <small class="muted">${doDia.filter(c => c.turmaId === turma.id).length} alunos presentes nesta aula</small></div></div>`
           : `<label class="foto-vazia">${icone("camera")}<b>Adicionar foto da aula</b><small>Tire na hora ou escolha da galeria · uma foto por aula</small>
               <input type="file" accept="image/*" capture="environment" id="foto-arq" hidden></label>`}</div>`; })() : ""}
       ${turma ? `<div class="card"><div class="card-cab"><div><h3>${horaTexto(turma.horario)} · ${etiquetaPrograma(turma.programa)}</h3><small>Prof. ${esc(nomeProfessor(d, turma.professorId))} · ${presentes.length} presente${presentes.length === 1 ? "" : "s"}</small></div>

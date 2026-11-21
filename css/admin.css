@@ -347,8 +347,13 @@ button.kpi{font:inherit;color:inherit;cursor:pointer}
 .foto-vazia:hover{border-color:var(--red);color:var(--red)}
 .foto-vazia .ic{width:30px;height:30px;color:var(--red)}
 .foto-vazia small{color:var(--muted)}
-.foto-grande{display:block;width:100%;border-radius:14px;overflow:hidden;padding:0}
-.foto-grande img{display:block;width:100%;max-height:280px;object-fit:cover}
+.foto-corpo{display:grid;grid-template-columns:minmax(0,560px) minmax(220px,1fr);gap:18px;align-items:start}
+.foto-grande{position:relative;display:block;width:100%;border-radius:14px;overflow:hidden;padding:0;background:#111}
+.foto-grande img{display:block;width:100%;height:auto;max-height:420px;object-fit:contain}
+.foto-grande span{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.6);color:#fff;font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:99px;opacity:0;transition:opacity .15s}
+.foto-grande:hover span,.foto-grande:focus-visible span{opacity:1}
+.foto-lado{display:flex;flex-direction:column;gap:8px}
+@media (max-width:899px){.foto-corpo{grid-template-columns:1fr}}
 .folha-foto img{width:100%;border-radius:14px;max-height:70vh;object-fit:contain;background:#111}
 @media (min-width:900px){.folha:has(img){max-width:900px}}
 

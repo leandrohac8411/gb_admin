@@ -23,7 +23,8 @@ export function limparImportado(d) {
     despesas: x => texto(x?.id) && DATA.test(x.data || "") && texto(x.descricao) && texto(x.categoria) && Number.isFinite(Number(x.valor)),
     eventos: e => texto(e?.id) && texto(e.titulo) && DATA.test(e.data || "") && HORA.test(e.hora || "") && Number.isInteger(e.vagas) && Array.isArray(e.inscritos),
     avaliacoes: v => texto(v?.alunoId) && MES.test(v.mes || "") && v.notas && ["respeito", "disciplina", "atencao", "coleguismo"].every(c => nota(v.notas[c])),
-    graduacoes: g => texto(g?.alunoId) && DATA.test(g.data || "") && texto(g.faixa)
+    graduacoes: g => texto(g?.alunoId) && DATA.test(g.data || "") && texto(g.faixa),
+    fotosAula: f => texto(f?.id) && texto(f.turmaId) && DATA.test(f.data || "") && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(f.foto || "")
   };
   for (const [col, f] of Object.entries(ok)) d[col] = (d[col] || []).filter(f);
   d.importado = true;
@@ -47,7 +48,8 @@ export function criarStore(hojeISO, armazenamento = globalThis.localStorage) {
   const store = {
     dados: ler(armazenamento, hojeISO) || gerarDados(hojeISO),
     salvar() {
-      try { armazenamento?.setItem(CHAVE, JSON.stringify(store.dados)); } catch { /* sem espaço ou bloqueado: segue em memória */ }
+      // false = não coube no navegador (ou armazenamento bloqueado): os dados seguem só em memória.
+      try { if (!armazenamento) return false; armazenamento.setItem(CHAVE, JSON.stringify(store.dados)); return true; } catch { return false; }
     },
     restaurar(hoje = hojeISO) {
       store.dados = gerarDados(hoje);

@@ -93,3 +93,17 @@ test("backup importado é limpo e não some na virada do mês", async () => {
   const s = criarStore(H, mem); s.dados = limpo; s.dados.config.academia.nome = "Importada"; s.salvar();
   assert.equal(criarStore("2026-12-02", mem).dados.config.academia.nome, "Importada");
 });
+
+test("salvar avisa quando falta espaço e backup só aceita fotos válidas", async () => {
+  const { criarStore, limparImportado } = await import("../js/store.js");
+  const cheio = { getItem: () => null, setItem() { throw new Error("QuotaExceededError"); }, removeItem() {} };
+  assert.equal(criarStore(H, cheio).salvar(), false);
+  const o = {}; const ok = { getItem: k => o[k] ?? null, setItem: (k, v) => { o[k] = v; }, removeItem: k => { delete o[k]; } };
+  assert.equal(criarStore(H, ok).salvar(), true);
+  const d = gerarDados(H);
+  d.fotosAula = [
+    { id: "f1", turmaId: d.turmas[0].id, data: "2026-11-16", foto: "data:image/jpeg;base64,AAAA", legenda: "ok" },
+    { id: "f2", turmaId: d.turmas[0].id, data: "2026-11-16", foto: "javascript:alert(1)", legenda: "ruim" }
+  ];
+  assert.deepEqual(limparImportado(d).fotosAula.map(f => f.id), ["f1"]);
+});

@@ -3,6 +3,7 @@ import { esc, abrirFolha, perguntar, toast, horaTexto, dataLonga } from "../ui/u
 import { normalizar } from "../ui/util-admin.js";
 import { hojeISO, diaSemana, dataValida } from "../logica/datas.js";
 import { icone } from "../menu.js";
+import { comprimirImagem } from "../foto.js";
 import { cabecalho, etiquetaPrograma, nomeProfessor, pessoa, faixaCelula, porId, DIAS_LONGOS, aba, daAba, abasCategoria, ligarAbas, definirAba } from "./comum.js";
 
 const estado = { data: null, turmaId: null };
@@ -40,6 +41,7 @@ export default {
   titulo: "Check-ins",
   montar(el, params, ctx) {
     const { store } = ctx, d = store.dados, hoje = hojeISO();
+    if (!Array.isArray(d.fotosAula)) d.fotosAula = [];
     if (params[0]) {
       estado.data = hoje; estado.turmaId = params[0];
       const t = d.turmas.find(x => x.id === params[0]); if (t) definirAba(t.categoria);
@@ -65,6 +67,13 @@ export default {
       ${turma ? (() => { const vis = d.prospects.filter(p => p.etapa === "experimental" && p.experimental?.turmaId === turma.id && p.experimental?.data === data);
         return vis.length ? `<div class="card" style="border-color:#bfe3cf;background:#f4fbf7"><div class="card-cab"><h3>Aula experimental</h3><a class="link" href="#prospects">Prospects</a></div>
           <div class="lista">${vis.map(p => `<div><div class="cresce"><b>${esc(p.nome)}</b><small>${esc(p.interesse)} · ${esc(p.telefone)}</small></div><span class="pill ok">Visitante</span></div>`).join("")}</div></div>` : ""; })() : ""}
+      ${turma ? (() => { const f = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
+        return `<div class="card foto-aula"><div class="card-cab"><div><h3>Foto da aula</h3><small>${f ? `salva por Prof. ${esc(nomeProfessor(d, turma.professorId))}` : "o professor registra como foi a aula"}</small></div>
+          ${f ? `<div style="display:flex;gap:8px"><label class="btn sec peq" style="cursor:pointer">Trocar<input type="file" accept="image/*" capture="environment" id="foto-arq" hidden></label><button class="btn sec peq" id="foto-del">Remover</button></div>` : ""}</div>
+          ${f ? `<button class="foto-grande" id="foto-ver" aria-label="Ver foto da aula em tela cheia"><img src="${esc(f.foto)}" alt="Foto da aula de ${esc(dataLonga(data))}"></button>
+            <input class="input" id="foto-leg" placeholder="Legenda (ex.: drill de passagem com a turma toda)" value="${esc(f.legenda || "")}" maxlength="140" style="margin-top:10px">`
+          : `<label class="foto-vazia">${icone("camera")}<b>Adicionar foto da aula</b><small>Tire na hora ou escolha da galeria · uma foto por aula</small>
+              <input type="file" accept="image/*" capture="environment" id="foto-arq" hidden></label>`}</div>`; })() : ""}
       ${turma ? `<div class="card"><div class="card-cab"><div><h3>${horaTexto(turma.horario)} · ${etiquetaPrograma(turma.programa)}</h3><small>Prof. ${esc(nomeProfessor(d, turma.professorId))} · ${presentes.length} presente${presentes.length === 1 ? "" : "s"}</small></div>
           <button class="btn" id="registrar">${icone("checkins")}Registrar presença</button></div>
         ${presentes.length ? `<table class="tabela resp"><thead><tr><th>Aluno</th><th>Faixa</th><th>Hora</th><th></th></tr></thead><tbody>${presentes.map(c => {
@@ -80,6 +89,42 @@ export default {
     };
     ligarAbas(el, ctx, () => { estado.turmaId = null; });
     el.querySelectorAll("#turmas [data-id]").forEach(b => b.onclick = () => { estado.turmaId = b.dataset.id; ctx.redesenhar(); });
+    // Foto da aula: comprime no aparelho e guarda uma por turma e dia.
+    el.querySelector("#foto-arq")?.addEventListener("change", async e => {
+      const arq = e.target.files?.[0]; e.target.value = "";
+      if (!arq || !turma) return;
+      if (!arq.type.startsWith("image/")) { toast("Escolha um arquivo de imagem"); return; }
+      toast("Preparando a foto…");
+      let foto;
+      try { foto = (await comprimirImagem(arq, 1280, 220 * 1024)).dados; }
+      catch { toast("Não deu para ler essa imagem"); return; }
+      const antiga = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
+      const nova = { id: store.novoId("fa"), turmaId: turma.id, data, foto, legenda: antiga?.legenda || "", professorId: turma.professorId };
+      d.fotosAula = d.fotosAula.filter(x => x !== antiga).concat(nova);
+      if (!store.salvar()) {
+        d.fotosAula = d.fotosAula.filter(x => x !== nova).concat(antiga ? [antiga] : []);
+        toast("Sem espaço no navegador para mais fotos. Remova fotos antigas.");
+      } else toast(antiga ? "Foto trocada" : "Foto da aula salva 📸");
+      ctx.redesenhar();
+    });
+    el.querySelector("#foto-leg")?.addEventListener("change", e => {
+      const f = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
+      if (f) { f.legenda = e.target.value.trim().slice(0, 140); store.salvar(); toast("Legenda salva"); }
+    });
+    el.querySelector("#foto-del")?.addEventListener("click", async () => {
+      if (!await perguntar("Remover a foto da aula?", "Ela sai do painel e não dá para desfazer.", "Remover", "Cancelar")) return;
+      d.fotosAula = d.fotosAula.filter(x => !(x.turmaId === turma.id && x.data === data));
+      store.salvar(); toast("Foto removida"); ctx.redesenhar();
+    });
+    el.querySelector("#foto-ver")?.addEventListener("click", () => {
+      const f = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
+      if (!f) return;
+      abrirFolha((fl, fechar) => {
+        fl.classList.add("folha-foto");
+        fl.innerHTML = `<img src="${esc(f.foto)}" alt="Foto da aula"><p class="muted" style="margin:0">${esc(f.legenda || "")}</p><button class="btn ghost bloco" id="ff-x">Fechar</button>`;
+        fl.querySelector("#ff-x").onclick = fechar;
+      });
+    });
     el.querySelector("#registrar")?.addEventListener("click", () => abrirRegistro(store, turma, data, ctx.redesenhar));
     el.querySelectorAll("[data-remover]").forEach(b => b.onclick = async () => {
       const c = d.checkins.find(x => x.id === b.dataset.remover), a = alunos[c?.alunoId];

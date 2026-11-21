@@ -85,7 +85,7 @@ export default {
     const cartao = (t, data, comHora) => `<button class="turma${t.categoria === "kids" ? " kids" : ""}" data-id="${esc(t.id)}">
         <div class="linha">${comHora ? `<span class="hora">${horaTexto(t.horario)}</span>` : ""}${etiquetaPrograma(t.programa)}${t.publico ? `<small>${esc(t.publico)}</small>` : ""}</div>
         <small>${esc(nomeProfessor(d, t.professorId))}</small>
-        <small>${data <= hoje ? `${contagem[t.id + data] || 0} check-ins` : "—"}</small>
+        <small>${data <= hoje ? `${contagem[t.id + data] || 0} check-ins` : "—"}${(d.fotosAula || []).some(f => f.turmaId === t.id && f.data === data) ? " · 📸 foto" : ""}</small>
         ${experimentais(t, data) ? `<span class="pill ok" style="align-self:flex-start">+${experimentais(t, data)} experimental</span>` : ""}</button>`;
     el.innerHTML = cabecalho("Agenda & turmas", `${d.turmas.filter(t => t.categoria !== "kids").length} turmas adultas e ${d.turmas.filter(t => t.categoria === "kids").length} kids na semana`,
       `<button class="btn" id="nova">${icone("agenda")}Nova turma</button>`) +

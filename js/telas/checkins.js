@@ -51,7 +51,8 @@ function abrirAnalise(store, turma, data, foto, pronto) {
       el.innerHTML = `<h3>Presença pela foto</h3>
         <p class="muted" style="margin:0">${horaTexto(turma.horario)} · ${dataLonga(data)} · a foto mostra quantos; a lista sugere quem. Confira antes de confirmar.</p>
         <div class="analise-foto"><span class="af-quadro"><img src="${esc(foto)}" alt="Foto da aula">
-          ${rostos ? rostos.rostos.map(r => `<i style="left:${(r.x / rostos.largura * 100).toFixed(2)}%;top:${(r.y / rostos.altura * 100).toFixed(2)}%;width:${(r.w / rostos.largura * 100).toFixed(2)}%;height:${(r.h / rostos.altura * 100).toFixed(2)}%"></i>`).join("") : ""}
+          ${rostos ? `<svg class="af-marcas" viewBox="0 0 ${rostos.largura} ${rostos.altura}" preserveAspectRatio="none" aria-hidden="true">${rostos.rostos.map(r =>
+            `<rect x="${r.x.toFixed(1)}" y="${r.y.toFixed(1)}" width="${r.w.toFixed(1)}" height="${r.h.toFixed(1)}" rx="${(r.w * 0.12).toFixed(1)}"/>`).join("")}</svg>` : ""}
           ${!rostos && !erro ? '<div class="analise-carregando">Procurando rostos na foto…</div>' : ""}</span></div>
         ${erro ? `<p class="aviso" style="margin:0">Não consegui analisar a foto (${esc(erro)}). Informe abaixo quantos alunos aparecem.</p>`
           : rostos ? `<p style="margin:0"><b>Encontrei ${rostos.rostos.length} rosto${rostos.rostos.length === 1 ? "" : "s"}</b> na foto.</p>` : ""}

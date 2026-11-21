@@ -368,3 +368,14 @@ button.kpi{font:inherit;color:inherit;cursor:pointer}
 .dia-aula{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
 .dia-aula-ctl{display:flex;align-items:center;gap:6px}
 @media (max-width:899px){.dia-aula{align-items:flex-start}}
+
+/* Presença pela foto */
+.analise-foto{border-radius:14px;overflow:hidden;background:#111;display:flex;justify-content:center}
+.af-quadro{position:relative;display:inline-block;line-height:0}
+.af-quadro img{display:block;max-width:100%;max-height:46vh;width:auto;height:auto}
+.analise-foto i{position:absolute;border:2px solid #3ddc84;border-radius:6px;box-shadow:0 0 0 1px rgba(0,0,0,.4)}
+.analise-carregando{position:absolute;inset:auto 0 0 0;background:rgba(0,0,0,.6);color:#fff;font-size:13px;font-weight:700;padding:10px;text-align:center}
+.sug{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.sug input{width:18px;height:18px;accent-color:var(--red);flex:none}
+.sug.ja{opacity:.75}
+.sug .pessoa{flex:1}

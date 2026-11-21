@@ -4,6 +4,8 @@ import { normalizar } from "../ui/util-admin.js";
 import { hojeISO, diaSemana, dataValida, somarDias } from "../logica/datas.js";
 import { icone } from "../menu.js";
 import { comprimirImagem } from "../foto.js";
+import { detectarRostos } from "../rostos.js";
+import { sugerirPresenca } from "../logica/presenca-foto.js";
 import { cabecalho, etiquetaPrograma, nomeProfessor, pessoa, faixaCelula, porId, DIAS_LONGOS, aba, daAba, abasCategoria, ligarAbas, definirAba } from "./comum.js";
 
 const estado = { data: null, turmaId: null };
@@ -35,6 +37,58 @@ function abrirRegistro(store, turma, data, aoFechar) {
     desenhar();
     el.querySelector("#r-busca").focus();
   }, aoFechar);
+}
+
+// Presença pela foto: detecta os rostos, sugere quem estava e o professor confirma.
+function abrirAnalise(store, turma, data, foto, pronto) {
+  const d = store.dados;
+  let rostos = null, erro = null, pessoas = 0, professorNaFoto = true, marcas = null;
+  abrirFolha((el, fechar) => {
+    const desenhar = () => {
+      const sugestao = sugerirPresenca(d, turma, data, pessoas);
+      if (!marcas) marcas = new Map(sugestao.map(x => [x.aluno.id, x.marcado]));
+      const novos = sugestao.filter(x => !x.presente && marcas.get(x.aluno.id));
+      el.innerHTML = `<h3>Presença pela foto</h3>
+        <p class="muted" style="margin:0">${horaTexto(turma.horario)} · ${dataLonga(data)} · a foto mostra quantos; a lista sugere quem. Confira antes de confirmar.</p>
+        <div class="analise-foto"><span class="af-quadro"><img src="${esc(foto)}" alt="Foto da aula">
+          ${rostos ? rostos.rostos.map(r => `<i style="left:${(r.x / rostos.largura * 100).toFixed(2)}%;top:${(r.y / rostos.altura * 100).toFixed(2)}%;width:${(r.w / rostos.largura * 100).toFixed(2)}%;height:${(r.h / rostos.altura * 100).toFixed(2)}%"></i>`).join("") : ""}
+          ${!rostos && !erro ? '<div class="analise-carregando">Procurando rostos na foto…</div>' : ""}</span></div>
+        ${erro ? `<p class="aviso" style="margin:0">Não consegui analisar a foto (${esc(erro)}). Informe abaixo quantos alunos aparecem.</p>`
+          : rostos ? `<p style="margin:0"><b>Encontrei ${rostos.rostos.length} rosto${rostos.rostos.length === 1 ? "" : "s"}</b> na foto.</p>` : ""}
+        <div class="campos">
+          <div class="field"><label for="af-n">Alunos na foto</label><input class="input" type="number" min="0" max="80" id="af-n" value="${pessoas}"></div>
+          <label class="check" style="align-self:end"><input type="checkbox" id="af-prof"${professorNaFoto ? " checked" : ""}${rostos ? "" : " disabled"}> O professor está na foto</label>
+        </div>
+        <div class="lista" style="max-height:34vh;overflow:auto">${sugestao.map(x => `<label class="sug${x.presente ? " ja" : ""}">
+          <input type="checkbox" data-a="${esc(x.aluno.id)}"${marcas.get(x.aluno.id) ? " checked" : ""}${x.presente ? " disabled" : ""}>
+          ${pessoa(x.aluno, x.presente ? "já estava na lista de presença" : x.vezes ? `veio ${x.vezes}× nesta turma nos últimos 3 meses` : x.mesmoDia ? `treina em outra turma deste dia (${x.mesmoDia}×)` : "não costuma vir neste horário")}
+          ${x.presente ? '<span class="pill ok">Presente</span>' : ""}</label>`).join("")}</div>
+        <div class="acoes"><button class="btn ghost" id="af-x">Cancelar</button><button class="btn" id="af-ok"${novos.length ? "" : " disabled"}>${novos.length ? `Confirmar ${novos.length} presença${novos.length === 1 ? "" : "s"}` : "Nada novo para marcar"}</button></div>`;
+      const n = el.querySelector("#af-n");
+      n.onchange = () => { pessoas = Math.max(0, Math.min(80, Math.floor(Number(n.value) || 0))); marcas = null; desenhar(); };
+      el.querySelector("#af-prof").onchange = e => {
+        professorNaFoto = e.target.checked;
+        pessoas = Math.max(0, rostos.rostos.length - (professorNaFoto ? 1 : 0)); marcas = null; desenhar();
+      };
+      el.querySelectorAll("[data-a]").forEach(c => c.onchange = () => { marcas.set(c.dataset.a, c.checked); desenhar(); });
+      el.querySelector("#af-x").onclick = () => { fechar(); pronto(); };
+      el.querySelector("#af-ok").onclick = () => {
+        for (const x of novos) {
+          if (!d.checkins.some(c => c.alunoId === x.aluno.id && c.turmaId === turma.id && c.data === data))
+            d.checkins.push({ id: store.novoId("c"), alunoId: x.aluno.id, turmaId: turma.id, data, hora: turma.horario, origem: "foto" });
+        }
+        store.salvar(); fechar(); toast(`${novos.length} presença${novos.length === 1 ? "" : "s"} confirmada${novos.length === 1 ? "" : "s"} pela foto`); pronto();
+      };
+    };
+    desenhar();
+    detectarRostos(foto).then(r => {
+      rostos = r; pessoas = Math.max(0, r.rostos.length - 1); marcas = null;
+      if (el.isConnected) desenhar();
+    }).catch(e => {
+      erro = /fetch|network|Failed/i.test(String(e?.message)) ? "sem internet para baixar o detector" : "detector indisponível";
+      if (el.isConnected) desenhar();
+    });
+  }, pronto);
 }
 
 export default {
@@ -77,7 +131,8 @@ export default {
           ${f ? `<div class="foto-corpo"><button class="foto-grande" id="foto-ver" aria-label="Ver foto da aula em tela cheia"><img src="${esc(f.foto)}" alt="Foto da aula de ${esc(dataLonga(data))}"><span>Ver em tela cheia</span></button>
             <div class="foto-lado"><label for="foto-leg" class="k">Legenda</label>
               <textarea class="input" id="foto-leg" rows="3" maxlength="140" placeholder="Ex.: drill de passagem com a turma toda">${esc(f.legenda || "")}</textarea>
-              <small class="muted">${doDia.filter(c => c.turmaId === turma.id).length} alunos presentes nesta aula</small></div></div>`
+              <small class="muted">${doDia.filter(c => c.turmaId === turma.id).length} alunos presentes nesta aula</small>
+              <button class="btn" id="foto-analisar">${icone("checkins")}Analisar foto e marcar presença</button></div></div>`
           : `<label class="foto-vazia">${icone("camera")}<b>Adicionar foto da aula</b><small>Tire na hora ou escolha da galeria · uma foto por aula</small>
               <input type="file" accept="image/*" capture="environment" id="foto-arq" hidden></label>`}</div>`; })() : ""}
       ${turma ? `<div class="card"><div class="card-cab"><div><h3>${horaTexto(turma.horario)} · ${etiquetaPrograma(turma.programa)}</h3><small>Prof. ${esc(nomeProfessor(d, turma.professorId))} · ${presentes.length} presente${presentes.length === 1 ? "" : "s"}</small></div>
@@ -114,8 +169,12 @@ export default {
       if (!store.salvar()) {
         d.fotosAula = d.fotosAula.filter(x => x !== nova).concat(antiga ? [antiga] : []);
         toast("Sem espaço no navegador para mais fotos. Remova fotos antigas.");
-      } else toast(antiga ? "Foto trocada" : "Foto da aula salva 📸");
-      ctx.redesenhar();
+        ctx.redesenhar();
+      } else { ctx.redesenhar(); abrirAnalise(store, turma, data, foto, ctx.redesenhar); }
+    });
+    el.querySelector("#foto-analisar")?.addEventListener("click", () => {
+      const f = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
+      if (f) abrirAnalise(store, turma, data, f.foto, ctx.redesenhar);
     });
     el.querySelector("#foto-leg")?.addEventListener("change", e => {
       const f = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);

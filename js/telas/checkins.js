@@ -1,7 +1,7 @@
 // Check-ins: presença por dia e turma, registro manual e remoção.
 import { esc, abrirFolha, perguntar, toast, horaTexto, dataLonga } from "../ui/util.js";
 import { normalizar } from "../ui/util-admin.js";
-import { hojeISO, diaSemana, dataValida } from "../logica/datas.js";
+import { hojeISO, diaSemana, dataValida, somarDias } from "../logica/datas.js";
 import { icone } from "../menu.js";
 import { comprimirImagem } from "../foto.js";
 import { cabecalho, etiquetaPrograma, nomeProfessor, pessoa, faixaCelula, porId, DIAS_LONGOS, aba, daAba, abasCategoria, ligarAbas, definirAba } from "./comum.js";
@@ -59,7 +59,11 @@ export default {
     const presentes = estado.turmaId === "outras" ? orfaos : turma ? doDia.filter(c => c.turmaId === turma.id).sort((a, b) => (alunos[a.alunoId]?.nome || "").localeCompare(alunos[b.alunoId]?.nome || "", "pt-BR")) : [];
 
     el.innerHTML = cabecalho("Check-ins", `${doDia.length} presença${doDia.length === 1 ? "" : "s"} em ${dataLonga(data)}`,
-      `<input class="input" type="date" id="data" value="${data}" max="${hoje}" style="width:auto" aria-label="Data">`) +
+      `<div class="dia-aula"><label for="data" class="k">Dia da aula</label><div class="dia-aula-ctl">
+        <button class="btn sec peq" id="dia-ant" aria-label="Dia anterior">‹</button>
+        <input class="input" type="date" id="data" value="${data}" max="${hoje}" style="width:auto">
+        <button class="btn sec peq" id="dia-prox" aria-label="Próximo dia"${data >= hoje ? " disabled" : ""}>›</button>
+        ${data !== hoje ? '<button class="link" id="dia-hoje">Hoje</button>' : ""}</div></div>`) +
       abasCategoria(d) +
       `<div class="card">${turmas.length || orfaos.length ? `<div class="k" style="margin-bottom:8px">Escolha a aula</div><div class="aulas-dia" id="turmas">${turmas.map(t => `<button class="aula-opcao${t.id === estado.turmaId ? " on" : ""}" data-id="${esc(t.id)}" aria-pressed="${t.id === estado.turmaId}"><b>${horaTexto(t.horario)}</b>${etiquetaPrograma(t.programa)}<small>Prof. ${esc(nomeProfessor(d, t.professorId))}${t.publico ? ` · ${esc(t.publico)}` : ""}</small><small>${doDia.filter(c => c.turmaId === t.id).length} presentes${d.fotosAula.some(f => f.turmaId === t.id && f.data === data) ? " · 📸" : ""}</small></button>`).join("")}${orfaos.length ? `<button class="aula-opcao${estado.turmaId === "outras" ? " on" : ""}" data-id="outras"><b>Turmas antigas</b><small>${orfaos.length} presenças</small></button>` : ""}</div>`
         : `<div class="vazio">Sem aulas em ${DIAS_LONGOS[diaSemana(data)].toLowerCase()}.</div>`}</div>
@@ -82,6 +86,10 @@ export default {
             <td class="num"><button class="btn sec peq" data-remover="${esc(c.id)}" aria-label="Remover presença">Remover</button></td></tr>`;
         }).join("")}</tbody></table>` : `<div class="vazio">Nenhuma presença registrada nesta aula.</div>`}</div>` : ""}`;
 
+    const irPara = iso => { estado.data = iso; estado.turmaId = null; ctx.redesenhar(); };
+    el.querySelector("#dia-ant").onclick = () => irPara(somarDias(data, -1));
+    el.querySelector("#dia-prox").onclick = () => { if (data < hoje) irPara(somarDias(data, 1)); };
+    el.querySelector("#dia-hoje")?.addEventListener("click", () => irPara(hoje));
     el.querySelector("#data").onchange = e => {
       if (dataValida(e.target.value) && e.target.value <= hoje) estado.data = e.target.value;
       else toast("Escolha uma data até hoje.");

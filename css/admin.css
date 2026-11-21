@@ -360,3 +360,6 @@ button.kpi{font:inherit;color:inherit;cursor:pointer}
 .aula-opcao:hover{border-color:#d5cfce}
 .aula-opcao.on{border-color:var(--red);background:var(--red-soft);box-shadow:0 0 0 3px #c8201b14}
 .foto-aula .card-cab h3{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dia-aula{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.dia-aula-ctl{display:flex;align-items:center;gap:6px}
+@media (max-width:899px){.dia-aula{align-items:flex-start}}

@@ -340,3 +340,4 @@ button.kpi{font:inherit;color:inherit;cursor:pointer}
   .grade-agenda{display:none}
   .lista-agenda{display:grid}
 }
+.resumo-fin{display:flex;flex-direction:column;gap:18px}

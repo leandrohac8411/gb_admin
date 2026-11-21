@@ -154,8 +154,8 @@ export default {
 
     el.innerHTML = cabecalho("Financeiro", "Mensalidades e recebimentos (valores fictícios).", `<button class="btn" id="lancar">${icone("financeiro")}Novo lançamento</button>`) +
       seletorMes + abasCategoria(d) +
-      `<div class="grade2">
-        <div class="kpis kpis2">
+      `<div class="resumo-fin">
+        <div class="kpis">
           ${kpi("Previsto", reais(r.previsto), `${doMes.length} mensalidades`)}
           ${kpi("Recebido", reais(r.recebido), `das mensalidades de ${competenciaTexto(comp).split(" ")[0].toLowerCase()}`, "destaque")}
           ${kpi("Pendente", reais(r.pendente), "a vencer")}

@@ -379,3 +379,14 @@ button.kpi{font:inherit;color:inherit;cursor:pointer}
 .sug input{width:18px;height:18px;accent-color:var(--red);flex:none}
 .sug.ja{opacity:.75}
 .sug .pessoa{flex:1}
+
+/* Marca GRACIE BARRA no canto superior direito de todas as telas */
+#faixa-marca{display:flex;justify-content:flex-end;padding:20px 32px 0;width:100%}
+#faixa-marca img{height:34px;width:auto;display:block}
+#faixa-marca + #tela{padding-top:4px}
+.topo-wordmark{display:none}
+@media (max-width:899px){
+  #faixa-marca{display:none}
+  #faixa-marca + #tela{padding-top:18px}
+  .topo-wordmark{display:block;height:20px;width:auto;margin-left:auto}
+}

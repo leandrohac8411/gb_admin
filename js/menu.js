@@ -21,7 +21,6 @@ export const ICONES = {
   documentos: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/>',
   mensagens: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
   permissoes: '<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
-  portal: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',
   config: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
   eventos: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/>',
   restaurar: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>'
@@ -37,7 +36,7 @@ export const MENU = [
   { grupo: "Operação", itens: [item("financeiro", "Financeiro", true), item("planos", "Planos"),
     item("contratos", "Contratos"), item("prospects", "Prospects"), item("comunicacao", "Comunicação"), item("relatorios", "Relatórios")] },
   { grupo: "Administração", itens: [item("documentos", "Modelos de documentos"), item("mensagens", "Modelos de mensagens"),
-    item("permissoes", "Permissões"), item("portal", "Portal do aluno"), item("config", "Configurações")] }
+    item("permissoes", "Permissões"), item("config", "Configurações")] }
 ];
 
 export const icone = nome => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONES[nome] || ""}</svg>`;

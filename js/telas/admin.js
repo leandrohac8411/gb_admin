@@ -141,79 +141,6 @@ export const permissoes = {
 };
 const porIdLocal = l => Object.fromEntries(l.map(x => [x.id, x]));
 
-// ---------- Portal do aluno ----------
-const estadoPt = { alunoId: null };
-
-// Visão do responsável: um cartão por filho (irmãos juntos) e o total das mensalidades.
-function portalResponsavel(el, ctx, crianca, seletor) {
-  const { store } = ctx, d = store.dados, hoje = hojeISO(), r = crianca.responsavel || {};
-  const filhos = [crianca, ...irmaos(crianca, d.alunos)].sort((x, y) => (x.nascimento || "").localeCompare(y.nascimento || ""));
-  const comDesconto = filhos.some(f => { const p = d.planos.find(x => x.id === f.plano); return p && Number(f.valor) < p.valor; });
-  const agora = new Date(), hhmm = `${String(agora.getHours()).padStart(2, "0")}:${String(agora.getMinutes()).padStart(2, "0")}`;
-  const abertas = d.mensalidades.filter(m => filhos.some(f => f.id === m.alunoId) && !m.pagoEm);
-  const total = abertas.reduce((s, m) => s + (Number(m.valor) || 0), 0);
-  const atrasada = abertas.some(m => statusMensalidade(m, hoje) === "atrasado");
-  el.innerHTML = cabecalho("Portal do aluno", "Visão do responsável: tudo dos filhos num lugar só.") + seletor +
-    `<div class="celular"><div class="cel-tela">
-      <div class="cel-topo"><span class="av">${esc(iniciais(r.nome || "?"))}</span><div><small>${saudacao()}</small><b>${esc((r.nome || "Responsável").split(" ")[0])}</b></div><img src="img/logo-gb.png" alt=""></div>
-      ${filhos.map(f => {
-        const apt = aptidao(f, d.checkins, hoje), R = regrasDe(f), m = mediaComportamento(d.avaliacoes || [], f.id);
-        const prox = d.turmas.filter(t => t.categoria === "kids" && t.diaSemana === diaSemana(hoje) && t.horario >= hhmm).sort((x, y) => x.horario.localeCompare(y.horario))
-          .find(t => d.checkins.some(c => c.alunoId === f.id && c.turmaId === t.id));
-        return `<div class="cel-card">
-          <div class="linha"><b style="font-size:16px">${esc(f.nome.split(" ")[0])}</b><span class="tag kids">${idadeEmTexto(f, hoje)}</span></div>
-          <div class="cel-faixa" style="border:1px solid var(--line)">${faixaSVG(f.faixa, f.graus)}</div>
-          <small class="muted">${nomeFaixa(f.faixa)}${f.graus ? ` · ${f.graus}º grau` : ""} · ${apt.tipo ? "pronta(o) para graduar! 🥋" : `${Math.min(apt.aulas, R.aulasPorGrau)} de ${R.aulasPorGrau} aulas para o próximo grau`}</small>
-          <div class="linha"><span>Treinos em 30 dias</span><b style="font-size:15px">${aulasNosUltimos(f.id, d.checkins, hoje, 30)}</b></div>
-          <div class="linha"><span>Comportamento</span>${m == null ? '<span class="muted">—</span>' : estrelas(m)}</div>
-          <div class="linha"><span>Próxima aula hoje</span><b style="font-size:13px">${prox ? horaTexto(prox.horario) : "—"}</b></div>
-        </div>`;
-      }).join("")}
-      <div class="cel-card"><small>Mensalidades em aberto</small><b>${reais(total)}</b>${abertas.length ? (atrasada ? PILL_STATUS.atrasado : PILL_STATUS.pendente) : PILL_STATUS.pago}
-        <small>${filhos.length > 1 ? `${filhos.length} filhos${comDesconto ? " · desconto de irmãos aplicado" : ""}` : "1 filho"}</small></div>
-    </div></div>`;
-  el.querySelector("#pt-aluno").onchange = e => { estadoPt.alunoId = e.target.value; ctx.redesenhar(); };
-}
-const idadeEmTexto = (f, hoje) => { const n = Math.floor((Date.parse(hoje) - Date.parse(f.nascimento)) / (365.25 * 864e5)); return Number.isFinite(n) ? `${n} anos` : "Kids"; };
-
-export const portal = {
-  titulo: "Portal do aluno",
-  montar(el, params, ctx) {
-    const { store } = ctx, d = store.dados, hoje = hojeISO(), ativos = ativosOrdenados(d);
-    if (!ativos.some(a => a.id === estadoPt.alunoId)) estadoPt.alunoId = ativos[0]?.id || null;
-    const a = ativos.find(x => x.id === estadoPt.alunoId);
-    if (!a) { el.innerHTML = cabecalho("Portal do aluno") + `<div class="card vazio">Nenhum aluno ativo.</div>`; return; }
-    const meta = d.config.metaAulas30 || 12, n30 = aulasNosUltimos(a.id, d.checkins, hoje, 30), apt = aptidao(a, d.checkins, hoje);
-    const seletor = `<div class="card filtros"><label for="pt-aluno" class="forte" style="font-size:13px">Ver como</label><select class="input" id="pt-aluno" style="max-width:320px">${opcoes(ativos.map(x => [x.id, x.categoria === "kids" ? `${x.nome} (responsável: ${x.responsavel?.nome || "—"})` : x.nome]), a.id)}</select></div>`;
-    if (a.categoria === "kids") return portalResponsavel(el, ctx, a, seletor);
-    const agora = new Date(), hhmm = `${String(agora.getHours()).padStart(2, "0")}:${String(agora.getMinutes()).padStart(2, "0")}`;
-    const R = regrasDe(a), lista = faixasDe(a.categoria), proximaCor = lista[lista.indexOf(a.faixa) + 1];
-    const deHoje = d.turmas.filter(t => t.diaSemana === diaSemana(hoje) && (t.categoria || "adulto") === (a.categoria || "adulto")).sort((x, y) => x.horario.localeCompare(y.horario));
-    const proxima = deHoje.find(t => t.horario >= hhmm) || null;
-    const jaFez = proxima && d.checkins.some(c => c.alunoId === a.id && c.turmaId === proxima.id && c.data === hoje);
-    const mens = d.mensalidades.filter(m => m.alunoId === a.id).sort((x, y) => y.competencia.localeCompare(x.competencia))[0];
-    const ultimas = d.checkins.filter(c => c.alunoId === a.id).sort((x, y) => (y.data + y.hora).localeCompare(x.data + x.hora)).slice(0, 4);
-    el.innerHTML = cabecalho("Portal do aluno", "Como o aluno vê o app dele. Escolha um aluno para simular; criança mostra a visão do responsável.") + seletor +
-      `<div class="celular"><div class="cel-tela">
-        <div class="cel-topo"><span class="av">${esc(iniciais(a.nome))}</span><div><small>${saudacao()}</small><b>${esc(a.nome.split(" ")[0])}</b></div><img src="img/logo-gb.png" alt=""></div>
-        <div class="cel-prog"><small>Rumo ${apt.tipo === "faixa" || a.graus === 4 ? `à faixa ${a.faixa === "preta" ? "preta" : nomeFaixa(proximaCor || a.faixa).toLowerCase()}` : `ao ${a.graus + 1}º grau`}</small>
-          <b>${a.faixa === "preta" ? "Faixa preta" : apt.tipo ? "Pronto para graduar! 🥋" : `${Math.min(apt.aulas, R.aulasPorGrau)} de ${R.aulasPorGrau} aulas`}</b>
-          <div class="cel-faixa">${faixaSVG(a.faixa, a.graus)}</div>
-          ${a.faixa === "preta" ? "" : `<div class="progresso" style="background:rgba(255,255,255,.25)"><i style="background:#fff;width:${Math.min(100, Math.round(apt.aulas / R.aulasPorGrau * 100))}%"></i></div>`}</div>
-        <div class="cel-card"><small>Próxima aula hoje</small>${proxima ? `<div class="linha"><b>${horaTexto(proxima.horario)}</b>${etiquetaPrograma(proxima.programa)}</div><small>Prof. ${esc(nomeProfessor(d, proxima.professorId))}</small>
-          <button class="btn bloco" id="pt-check"${jaFez ? " disabled" : ""}>${jaFez ? "Check-in feito ✓" : "Fazer check-in"}</button>` : `<b>Sem mais aulas hoje</b><small>${DIAS_LONGOS[diaSemana(hoje)]}</small>`}</div>
-        <div class="cel-duo"><div class="cel-card"><small>Treinos em 30 dias</small><b>${n30}<span>/${meta}</span></b></div>
-          <div class="cel-card"><small>Mensalidade</small>${mens ? `<b style="font-size:15px">${reais(mens.valor)}</b>${PILL_STATUS[statusMensalidade(mens, hoje)]}<small>${competenciaTexto(mens.competencia)}</small>` : "<b>—</b>"}</div></div>
-        <div class="cel-card"><small>Últimos treinos</small>${ultimas.length ? ultimas.map(c => `<div class="linha"><span>${dataLonga(c.data)}</span><span class="muted">${horaTexto(c.hora)}</span></div>`).join("") : "<span class='muted'>Nenhum ainda</span>"}</div>
-      </div></div>`;
-    el.querySelector("#pt-aluno").onchange = e => { estadoPt.alunoId = e.target.value; ctx.redesenhar(); };
-    el.querySelector("#pt-check")?.addEventListener("click", () => {
-      d.checkins.push({ id: store.novoId("c"), alunoId: a.id, turmaId: proxima.id, data: hoje, hora: proxima.horario });
-      store.salvar(); toast("Check-in feito! Bom treino 🥋"); ctx.redesenhar();
-    });
-  }
-};
-
 // ---------- Configurações ----------
 export const config = {
   titulo: "Configurações",
@@ -227,6 +154,11 @@ export const config = {
           <div class="field"><label for="cf-unome">Seu nome</label><input class="input" id="cf-unome" value="${esc(c.usuario?.nome ?? "Leandro")}"></div>
           <div class="field"><label for="cf-usexo">Saudação</label><select class="input" id="cf-usexo"><option value="M"${(c.usuario?.sexo ?? "M") === "M" ? " selected" : ""}>Bem-vindo</option><option value="F"${c.usuario?.sexo === "F" ? " selected" : ""}>Bem-vinda</option></select></div>
           <small class="muted cheio">Aparece no topo do Dashboard. Com login de verdade, viria do usuário que entrou.</small>
+        </div></div>
+        <div class="card"><div class="card-cab"><h3>Portal do aluno</h3></div><div class="campos">
+          <p class="muted cheio" style="margin:0">O portal do aluno é o <b>Diário de Tatame</b>: o app no celular onde o aluno faz check-in, registra as aulas e acompanha a faixa.</p>
+          <div class="field cheio"><label for="cf-diario">Endereço do Diário de Tatame</label><input class="input" id="cf-diario" inputmode="url" value="${esc(c.diarioUrl || "https://gracie-taupe.vercel.app")}"></div>
+          <a class="btn sec cheio" href="${esc(c.diarioUrl || "https://gracie-taupe.vercel.app")}" target="_blank" rel="noopener noreferrer">Abrir o Diário de Tatame ↗</a>
         </div></div>
         <div class="card"><div class="card-cab"><h3>Academia</h3></div><div class="campos">
           <div class="field cheio"><label for="cf-nome">Nome</label><input class="input" id="cf-nome" value="${esc(c.academia.nome)}"></div>
@@ -285,6 +217,9 @@ export const config = {
       if (ruim) return erroEm(el, "#cf-erro", `Confira o campo "${el.querySelector(`label[for="${ruim.slice(1)}"]`).textContent}".`);
       const ik = ["cinza", "amarela", "laranja", "verde"].map(f => n(`#cf-k-${f}`));
       if (!ik.every((v, i) => i === 0 || ik[i - 1] <= v)) return erroEm(el, "#cf-erro", "As idades mínimas kids precisam subir: cinza ≤ amarela ≤ laranja ≤ verde.");
+      const diario = v("#cf-diario");
+      if (diario && !/^https:\/\/[^\s"'<>]+$/.test(diario)) return erroEm(el, "#cf-erro", "O endereço do Diário precisa começar com https://");
+      c.diarioUrl = diario || "https://gracie-taupe.vercel.app";
       c.usuario = { nome: v("#cf-unome") || "Leandro", sexo: el.querySelector("#cf-usexo").value };
       c.academia = { nome: v("#cf-nome"), endereco: v("#cf-end"), telefone: v("#cf-tel"), email: v("#cf-email") };
       c.vencimentoPadrao = n("#cf-venc"); c.metaAulas30 = n("#cf-meta");

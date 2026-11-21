@@ -7,7 +7,7 @@ export const MODULOS = [
   ["professores", "Professores"], ["acompanhamentos", "Acompanhamentos"], ["cronogramas", "Cronogramas"], ["modelos-aula", "Modelos de aula"],
   ["habilidades", "Habilidades"], ["financeiro", "Financeiro"], ["planos", "Planos"], ["produtos", "Produtos & estoque"], ["contratos", "Contratos"],
   ["prospects", "Prospects"], ["comunicacao", "Comunicação"], ["relatorios", "Relatórios"], ["documentos", "Modelos de documentos"],
-  ["mensagens", "Modelos de mensagens"], ["permissoes", "Permissões"], ["portal", "Portal do aluno"], ["config", "Configurações"]
+  ["mensagens", "Modelos de mensagens"], ["permissoes", "Permissões"], ["config", "Configurações"]
 ];
 
 // Temas genéricos de 16 semanas (fictícios, editáveis em Cronogramas).
@@ -95,7 +95,7 @@ export function gerarExtras(hojeISO, alunos, turmas = []) {
     ],
     perfis: [
       { id: "admin", nome: "Administrador", descricao: "Acesso total", modulos: MODULOS.map(m => m[0]) },
-      { id: "professor", nome: "Professor", descricao: "Turmas, alunos e graduações", modulos: ["dashboard", "agenda", "checkins", "alunos", "graduacoes", "acompanhamentos", "cronogramas", "modelos-aula", "habilidades", "portal"] },
+      { id: "professor", nome: "Professor", descricao: "Turmas, alunos e graduações", modulos: ["dashboard", "agenda", "checkins", "alunos", "graduacoes", "acompanhamentos", "cronogramas", "modelos-aula", "habilidades"] },
       { id: "recepcao", nome: "Recepção", descricao: "Atendimento e cobrança", modulos: ["dashboard", "agenda", "checkins", "alunos", "financeiro", "planos", "produtos", "contratos", "prospects", "comunicacao", "mensagens"] }
     ],
     usuarios: [
@@ -150,6 +150,7 @@ export function gerarExtras(hojeISO, alunos, turmas = []) {
     })),
     config: {
       usuario: { nome: "Leandro", sexo: "M" },
+      diarioUrl: "https://gracie-taupe.vercel.app",
       academia: { nome: "GB Sobradinho", endereco: "Sobradinho, Distrito Federal", telefone: "(61) 3000-0000", email: "contato@exemplo.com" },
       regras: { aulasPorGrau: 30, mesesPorGrau: 3, mesesMinFaixa: { branca: 12, azul: 24, roxa: 18, marrom: 12 } },
       regrasKids: { aulasPorGrau: 20, mesesPorGrau: 2, mesesMinFaixa: 6, idadeMin: { cinza: 4, amarela: 7, laranja: 10, verde: 13 } },

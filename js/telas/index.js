@@ -34,6 +34,6 @@ Object.entries({ dashboard, alunos, aluno, agenda, checkins, graduacoes, finance
   "modelos-aula": gestao.modelosAula, habilidades: gestao.habilidades,
   planos: operacao.planos, contratos: operacao.contratos, prospects: operacao.prospects,
   comunicacao: operacao.comunicacao, relatorios: operacao.relatorios,
-  documentos: admin.documentos, mensagens: admin.mensagens, permissoes: admin.permissoes, portal: admin.portal, config: admin.config }).forEach(([rota, tela]) => registrar(rota, tela));
+  documentos: admin.documentos, mensagens: admin.mensagens, permissoes: admin.permissoes, config: admin.config }).forEach(([rota, tela]) => registrar(rota, tela));
 
 desenhar();

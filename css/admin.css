@@ -92,9 +92,12 @@ h1,h2,h3{margin:0;line-height:1.2}
   body.menu-aberto #lateral{transform:none;visibility:visible}
   #fundo-menu{position:fixed;inset:0;background:#0007;z-index:25}
   #principal{margin-left:0}
-  #hero{flex-direction:column;min-height:0;padding:calc(18px + env(safe-area-inset-top,0px)) 14px 12px}
+  #hero{flex-direction:column;min-height:0;padding:calc(30px + env(safe-area-inset-top,0px)) 16px 14px}
+  .hero-esq{width:100%}
+  .ola{display:inline-flex;align-items:center;font-size:15px}
   .hero-kimono{left:20%;right:0}
-  #abrir-menu{display:inline-grid;place-items:center;background:#fff;border:1px solid var(--line);border-radius:9px;height:36px;width:36px;margin-right:8px;vertical-align:middle}
+  #abrir-menu{display:inline-grid;place-items:center;background:#fff;border:1px solid var(--line);border-radius:10px;height:40px;width:40px;margin-right:10px;vertical-align:middle;box-shadow:0 3px 8px #0000000b}
+  #hero h1{margin-top:12px}
   #abrir-menu svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
   #hero h1{font-size:30px}
   #hero p{font-size:12.5px}

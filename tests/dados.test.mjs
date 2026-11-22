@@ -12,7 +12,7 @@ const mapa = (inicial = {}) => {
 
 test("gera a academia de exemplo", () => {
   const d = gerarDados("2026-11-20");
-  assert.equal(d.versao, 6);
+  assert.equal(d.versao, 7);
   assert.equal(d.alunos.filter(a => a.categoria === "adulto").length, 40);
   assert.equal(d.alunos.filter(a => a.categoria === "kids").length, 18);
   assert.equal(d.turmas.filter(t => t.categoria === "adulto").length, 15);
@@ -52,10 +52,10 @@ test("histórico de graduações bate com o aluno", () => {
 });
 
 test("store descarta lixo e versão antiga", () => {
-  const mem = mapa({ "gb-admin:v6": "{quebrado" });
+  const mem = mapa({ "gb-admin:v7": "{quebrado" });
   assert.equal(criarStore("2026-11-20", mem).dados.alunos.length, 58);
-  mem.setItem("gb-admin:v6", JSON.stringify({ versao: 0 }));
-  assert.equal(criarStore("2026-11-20", mem).dados.versao, 6);
+  mem.setItem("gb-admin:v7", JSON.stringify({ versao: 0 }));
+  assert.equal(criarStore("2026-11-20", mem).dados.versao, 7);
 });
 
 test("store salva, relê e restaura", () => {

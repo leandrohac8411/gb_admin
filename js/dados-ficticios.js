@@ -2,7 +2,7 @@
 import { somarDias, diasEntre, diaSemana, deISO } from "./logica/datas.js";
 import { gerarExtras, COLECOES_EXTRAS } from "./dados-extras.js";
 
-export const VERSAO = 6;
+export const VERSAO = 7;
 export const DIAS_CHECKIN = 120;
 export const COLECOES = ["professores", "turmas", "alunos", "checkins", "mensalidades", "graduacoes", ...COLECOES_EXTRAS];
 
@@ -90,7 +90,7 @@ export function gerarDados(hojeISO, semente = 7) {
   const anosAtras = anos => somarDias(hojeISO, -Math.round(anos * 365));
 
   const turmas = GRADE.map(([diaSemana_, horario, programa, professorId]) =>
-    ({ id: idTurma(diaSemana_, horario), diaSemana: diaSemana_, horario, programa, professorId, duracaoMin: 60, categoria: "adulto" }));
+    ({ id: idTurma(diaSemana_, horario), diaSemana: diaSemana_, horario, programa, professorId, duracaoMin: 60, categoria: "adulto", modeloAulaId: { GB1: "ma1", GB2: "ma2", "GB1+GB2": "ma3" }[programa] }));
   for (const [dia, horario, professorId, idadeMin, idadeMax] of GRADE_KIDS) {
     turmas.push({ id: idTurma(dia, horario), diaSemana: dia, horario, programa: "Kids", professorId, duracaoMin: 50, categoria: "kids",
       idadeMin, idadeMax, publico: publicoKids(idadeMin, idadeMax) });

@@ -6,6 +6,7 @@ import { icone } from "../menu.js";
 import { comprimirImagem } from "../foto.js";
 import { detectarRostos } from "../rostos.js";
 import { sugerirPresenca } from "../logica/presenca-foto.js";
+import { temaDaAula } from "../logica/tema.js";
 import { cabecalho, etiquetaPrograma, nomeProfessor, pessoa, faixaCelula, porId, DIAS_LONGOS, aba, daAba, abasCategoria, ligarAbas, definirAba } from "./comum.js";
 
 const estado = { data: null, turmaId: null };
@@ -98,7 +99,7 @@ export default {
     const { store } = ctx, d = store.dados, hoje = hojeISO();
     if (!Array.isArray(d.fotosAula)) d.fotosAula = [];
     if (params[0]) {
-      estado.data = hoje; estado.turmaId = params[0];
+      estado.data = params[1] && dataValida(params[1]) && params[1] <= hoje ? params[1] : hoje; estado.turmaId = params[0];
       const t = d.turmas.find(x => x.id === params[0]); if (t) definirAba(t.categoria);
       history.replaceState(null, "", "#checkins");
     }
@@ -136,6 +137,11 @@ export default {
               <button class="btn" id="foto-analisar">${icone("checkins")}Analisar foto e marcar presença</button></div></div>`
           : `<label class="foto-vazia">${icone("camera")}<b>Adicionar foto da aula</b><small>Tire na hora ou escolha da galeria · uma foto por aula</small>
               <input type="file" accept="image/*" capture="environment" id="foto-arq" hidden></label>`}</div>`; })() : ""}
+      ${turma ? (() => { const temas = temaDaAula(d, turma, data), modelo = (d.modelosAula || []).find(m => m.id === turma.modeloAulaId);
+        return temas.length || modelo ? `<div class="card plano-aula">
+          ${temas.map(x => `<div class="pa-tema"><span class="k">${x.programa} · semana ${x.semana} · ${esc(x.categoria)}</span><b>${esc(x.tema)}</b></div>`).join("")}
+          ${modelo ? `<div class="pa-roteiro"><span class="k">Roteiro: ${esc(modelo.nome)}</span><div class="chips">${modelo.blocos.map(b => `<span class="chip">${esc(b.nome)} · ${b.min} min</span>`).join("")}</div></div>` : ""}
+        </div>` : ""; })() : ""}
       ${turma ? `<div class="card"><div class="card-cab"><div><h3>${horaTexto(turma.horario)} · ${etiquetaPrograma(turma.programa)}</h3><small>Prof. ${esc(nomeProfessor(d, turma.professorId))} · ${presentes.length} presente${presentes.length === 1 ? "" : "s"}</small></div>
           <button class="btn" id="registrar">${icone("checkins")}Registrar presença</button></div>
         ${presentes.length ? `<table class="tabela resp"><thead><tr><th>Aluno</th><th>Faixa</th><th>Hora</th><th></th></tr></thead><tbody>${presentes.map(c => {

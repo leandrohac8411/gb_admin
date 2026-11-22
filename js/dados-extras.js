@@ -153,7 +153,7 @@ export function gerarExtras(hojeISO, alunos, turmas = []) {
       diarioUrl: "https://gracie-taupe.vercel.app",
       academia: { nome: "GB Sobradinho", endereco: "Sobradinho, Distrito Federal", telefone: "(61) 3000-0000", email: "contato@exemplo.com" },
       regras: { aulasPorGrau: 30, mesesPorGrau: 3, mesesMinFaixa: { branca: 12, azul: 24, roxa: 18, marrom: 12 } },
-      regrasKids: { aulasPorGrau: 20, mesesPorGrau: 2, mesesMinFaixa: 6, idadeMin: { cinza: 4, amarela: 7, laranja: 10, verde: 13 } },
+      regrasKids: { aulasPorGrau: 4, mesesPorGrau: 1, mesesMinFaixa: 6, idadeMin: { cinza: 4, amarela: 7, laranja: 10, verde: 13 } },
       metaAulas30: 12,
       vencimentoPadrao: 10,
       descontoIrmaos: 10,

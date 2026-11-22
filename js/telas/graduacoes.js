@@ -42,7 +42,7 @@ export default {
     const maxF = Math.max(1, ...porFaixa.map(([, n]) => n));
     const alunos = porId(d.alunos);
     const regraTexto = kids
-      ? `Regra kids: ${R.aulasPorGrau} aulas e ${R.mesesPorGrau} meses por grau; troca de faixa com 4 graus, ${R.mesesMinFaixa} meses na faixa e idade mínima da cor (cinza ${R.idadeMin.cinza}, amarela ${R.idadeMin.amarela}, laranja ${R.idadeMin.laranja}, verde ${R.idadeMin.verde} anos).`
+      ? `Regra kids: grau mensal (${R.mesesPorGrau === 1 ? "a cada mês" : `a cada ${R.mesesPorGrau} meses`}, com pelo menos ${R.aulasPorGrau} aula${R.aulasPorGrau === 1 ? "" : "s"} no período); troca de faixa com 4 graus, ${R.mesesMinFaixa} meses na faixa e idade mínima da cor (cinza ${R.idadeMin.cinza}, amarela ${R.idadeMin.amarela}, laranja ${R.idadeMin.laranja}, verde ${R.idadeMin.verde} anos).`
       : `Regra adulto: ${R.aulasPorGrau} aulas e ${R.mesesPorGrau} meses por grau; troca de faixa com 4 graus e tempo mínimo na faixa.`;
 
     const cartaoVirarAdulto = viramAdultos.length ? `<div class="card" style="border-color:#f0d39a;background:#fffaf0">

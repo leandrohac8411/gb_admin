@@ -5,6 +5,7 @@ import { semanaDoCiclo, aulaPadrao } from "../logica/ciclo.js";
 import { icone } from "../menu.js";
 import { cabecalho, etiquetaPrograma, nomeProfessor, DIAS_CURTOS, DIAS_LONGOS } from "./comum.js";
 import { publicoKids } from "../dados-ficticios.js";
+import { temaDaAula } from "../logica/tema.js";
 
 const estado = { semana: 0, filtro: "Todas" };
 
@@ -23,6 +24,7 @@ function abrirFormTurma(store, turma, aoSalvar) {
           <div class="chips"><button type="button" class="chip${gb1 ? " on" : ""}" data-p="1">GB1</button><button type="button" class="chip${gb2 ? " on" : ""}" data-p="2">GB2</button><button type="button" class="chip${kids ? " on" : ""}" data-p="k">Kids</button></div></div>
         <div class="field" id="t-idades"${kids ? "" : " hidden"}><label for="t-imin">Idade mínima</label><input class="input" type="number" min="3" max="17" id="t-imin" value="${esc(t.idadeMin ?? 4)}"></div>
         <div class="field" id="t-idades2"${kids ? "" : " hidden"}><label for="t-imax">Idade máxima</label><input class="input" type="number" min="3" max="17" id="t-imax" value="${esc(t.idadeMax ?? 6)}"></div>
+        <div class="field cheio"><label for="t-modelo">Modelo de aula (roteiro)</label><select class="input" id="t-modelo"><option value="">Sem modelo</option>${(d.modelosAula || []).map(m => `<option value="${esc(m.id)}"${t.modeloAulaId === m.id ? " selected" : ""}>${esc(m.nome)}</option>`).join("")}</select></div>
         <div class="field cheio"><label for="t-prof">Professor</label><select class="input" id="t-prof">${d.professores.map(p => `<option value="${p.id}"${t.professorId === p.id ? " selected" : ""}>${esc(p.nome)}</option>`).join("")}</select></div>
         <p class="aviso cheio" id="t-erro" hidden></p>
         <div class="acoes cheio"><button type="button" class="btn ghost" id="t-cancelar">Cancelar</button><button class="btn" type="submit">${nova ? "Criar turma" : "Salvar"}</button></div>
@@ -55,7 +57,7 @@ function abrirFormTurma(store, turma, aoSalvar) {
         : kids && !(Number.isInteger(imin) && Number.isInteger(imax) && imin >= 3 && imax <= 17 && imin <= imax) ? "Idades entre 3 e 17 anos, mínima menor ou igual à máxima."
         : d.turmas.some(x => x !== turma && x.diaSemana === diaSemana && x.horario === horario) ? "Já existe uma turma nesse dia e horário." : "";
       if (falha) { erro.textContent = falha; erro.hidden = false; return; }
-      const campos = { diaSemana, horario, programa, professorId: el.querySelector("#t-prof").value, categoria: kids ? "kids" : "adulto",
+      const campos = { diaSemana, horario, programa, professorId: el.querySelector("#t-prof").value, modeloAulaId: el.querySelector("#t-modelo").value || undefined, categoria: kids ? "kids" : "adulto",
         ...(kids ? { idadeMin: imin, idadeMax: imax, publico: publicoKids(imin, imax) } : { idadeMin: undefined, idadeMax: undefined, publico: undefined }) };
       if (nova) d.turmas.push({ id: store.novoId("t"), ...campos, duracaoMin: kids ? 50 : 60 });
       else {
@@ -82,9 +84,10 @@ export default {
     const visiveis = d.turmas.filter(t => estado.filtro === "Todas" || (estado.filtro === "Kids") === (t.categoria === "kids"));
     const horarios = [...new Set(visiveis.map(t => t.horario))].sort();
     const experimentais = (t, data) => d.prospects.filter(p => p.etapa === "experimental" && p.experimental?.turmaId === t.id && p.experimental?.data === data).length;
-    const cartao = (t, data, comHora) => `<button class="turma${t.categoria === "kids" ? " kids" : ""}" data-id="${esc(t.id)}">
+    const cartao = (t, data, comHora) => `<button class="turma${t.categoria === "kids" ? " kids" : ""}" data-id="${esc(t.id)}" data-data="${data}">
         <div class="linha">${comHora ? `<span class="hora">${horaTexto(t.horario)}</span>` : ""}${etiquetaPrograma(t.programa)}${t.publico ? `<small>${esc(t.publico)}</small>` : ""}</div>
         <small>${esc(nomeProfessor(d, t.professorId))}</small>
+        ${temaDaAula(d, t, data).map(x => `<small class="tema-aula" title="${esc(x.programa)} · semana ${x.semana}: ${esc(x.tema)}">${t.programa === "GB1+GB2" ? `${x.programa}: ` : ""}${esc(x.tema)}</small>`).join("")}
         <small>${data <= hoje ? `${contagem[t.id + data] || 0} check-ins` : "—"}${(d.fotosAula || []).some(f => f.turmaId === t.id && f.data === data) ? " · 📸 foto" : ""}</small>
         ${experimentais(t, data) ? `<span class="pill ok" style="align-self:flex-start">+${experimentais(t, data)} experimental</span>` : ""}</button>`;
     el.innerHTML = cabecalho("Agenda & turmas", `${d.turmas.filter(t => t.categoria !== "kids").length} turmas adultas e ${d.turmas.filter(t => t.categoria === "kids").length} kids na semana`,
@@ -119,6 +122,19 @@ export default {
     el.querySelector("#prox").onclick = () => { estado.semana++; ctx.redesenhar(); };
     el.querySelector("#hoje")?.addEventListener("click", () => { estado.semana = 0; ctx.redesenhar(); });
     el.querySelector("#nova").onclick = () => abrirFormTurma(store, null, ctx.redesenhar);
-    el.querySelectorAll(".turma[data-id]").forEach(b => b.onclick = () => abrirFormTurma(store, d.turmas.find(t => t.id === b.dataset.id), ctx.redesenhar));
+    el.querySelectorAll(".turma[data-id]").forEach(b => b.onclick = () => {
+      const t = d.turmas.find(x => x.id === b.dataset.id), data = b.dataset.data;
+      abrirFolha((f, fechar) => {
+        const temas = temaDaAula(d, t, data);
+        f.innerHTML = `<h3>${DIAS_LONGOS[t.diaSemana]}, ${data.slice(8)}/${data.slice(5, 7)} · ${horaTexto(t.horario)}</h3>
+          <p class="muted" style="margin:0">${esc(nomeProfessor(d, t.professorId))}${temas.length ? ` · ${temas.map(x => `${x.programa} semana ${x.semana}: ${esc(x.tema)}`).join(" · ")}` : ""}</p>
+          ${data <= hoje ? `<button class="btn bloco" id="op-check">${icone("checkins")}Abrir check-ins e foto desta aula</button>` : `<p class="aviso" style="margin:0;background:var(--soft);color:var(--muted2)">Aula futura: a presença abre no dia da aula.</p>`}
+          <button class="btn sec bloco" id="op-editar">Editar turma</button>
+          <button class="btn ghost bloco" id="op-x">Fechar</button>`;
+        f.querySelector("#op-check")?.addEventListener("click", () => { fechar(); ctx.ir(`checkins/${encodeURIComponent(t.id)}/${data}`); });
+        f.querySelector("#op-editar").onclick = () => { fechar(); abrirFormTurma(store, t, ctx.redesenhar); };
+        f.querySelector("#op-x").onclick = fechar;
+      });
+    });
   }
 };

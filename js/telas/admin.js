@@ -146,7 +146,7 @@ export const config = {
   titulo: "Configurações",
   montar(el, params, ctx) {
     const { store } = ctx, d = store.dados, c = d.config, r = c.regras;
-    const rk = c.regrasKids || { aulasPorGrau: 20, mesesPorGrau: 2, mesesMinFaixa: 6, idadeMin: { cinza: 4, amarela: 7, laranja: 10, verde: 13 } };
+    const rk = c.regrasKids || { aulasPorGrau: 4, mesesPorGrau: 1, mesesMinFaixa: 6, idadeMin: { cinza: 4, amarela: 7, laranja: 10, verde: 13 } };
     const num = (id, rot, val, min, max) => `<div class="field"><label for="${id}">${rot}</label><input class="input" type="number" inputmode="numeric" id="${id}" min="${min}" max="${max}" step="1" value="${esc(val)}"></div>`;
     el.innerHTML = cabecalho("Configurações", "Dados da academia e regras usadas em todo o painel.") +
       `<form id="cfg" novalidate class="grade2">
@@ -172,7 +172,7 @@ export const config = {
           ${["branca", "azul", "roxa", "marrom"].map(f => num(`cf-min-${f}`, `Meses mínimos na ${f}`, r.mesesMinFaixa[f], 0, 120)).join("")}
         </div></div>
         <div class="card"><div class="card-cab"><h3>Regras de graduação kids</h3><span class="tag kids">Kids</span></div><div class="campos">
-          ${num("cf-k-aulas", "Aulas por grau", rk.aulasPorGrau, 1, 200)}${num("cf-k-meses", "Meses mínimos por grau", rk.mesesPorGrau, 0, 24)}
+          ${num("cf-k-meses", "Grau a cada (meses)", rk.mesesPorGrau, 1, 24)}${num("cf-k-aulas", "Mínimo de aulas no período", rk.aulasPorGrau, 0, 60)}
           ${num("cf-k-faixa", "Meses mínimos na faixa", rk.mesesMinFaixa, 0, 60)}
           ${["cinza", "amarela", "laranja", "verde"].map(f => num(`cf-k-${f}`, `Idade mínima: ${f}`, rk.idadeMin[f], 3, 17)).join("")}
         </div></div>

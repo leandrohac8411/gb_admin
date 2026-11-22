@@ -8,8 +8,8 @@ const aulas = (alunoId, n, aPartir) => Array.from({ length: n }, (_, i) => ({ al
 const kid = (extra) => ({ id: "k", categoria: "kids", status: "ativo", ...extra });
 
 test("regras kids padrão", () => {
-  assert.equal(REGRAS_KIDS.aulasPorGrau, 20);
-  assert.equal(REGRAS_KIDS.mesesPorGrau, 2);
+  assert.equal(REGRAS_KIDS.aulasPorGrau, 4);   // mínimo de aulas no mês
+  assert.equal(REGRAS_KIDS.mesesPorGrau, 1);   // grau kids é mensal
   assert.equal(REGRAS_KIDS.mesesMinFaixa, 6);
   assert.deepEqual(REGRAS_KIDS.idadeMin, { cinza: 4, amarela: 7, laranja: 10, verde: 13 });
 });
@@ -19,10 +19,17 @@ test("idade em anos completos", () => {
   assert.equal(idadeEm("2019-11-20", H), 7);
 });
 
-test("grau kids com 20 aulas e 2 meses", () => {
-  const k = kid({ faixa: "branca", graus: 1, nascimento: "2019-01-01", ultimaGraduacao: "2026-09-01", desdeFaixa: "2026-01-01" });
-  assert.equal(aptidao(k, aulas("k", 20, "2026-09-02"), H).tipo, "grau");
-  assert.equal(aptidao(k, aulas("k", 19, "2026-09-02"), H).faltamAulas, 1);
+test("grau kids é mensal: 1 mês e 4 aulas", () => {
+  const k = kid({ faixa: "branca", graus: 1, nascimento: "2019-01-01", ultimaGraduacao: "2026-10-15", desdeFaixa: "2026-01-01" });
+  assert.equal(aptidao(k, aulas("k", 4, "2026-10-20"), H).tipo, "grau");
+  assert.equal(aptidao(k, aulas("k", 3, "2026-10-20"), H).faltamAulas, 1);
+  const recente = { ...k, ultimaGraduacao: "2026-11-01" };
+  assert.equal(aptidao(recente, aulas("k", 8, "2026-11-02"), H).tipo, null);   // ainda não fez 1 mês
+});
+
+test("adulto continua por aulas e tempo (30 aulas e 3 meses)", () => {
+  const a = { id: "a", categoria: "adulto", status: "ativo", faixa: "azul", graus: 1, ultimaGraduacao: "2026-10-15", desdeFaixa: "2025-01-01" };
+  assert.equal(aptidao(a, aulas("a", 30, "2026-10-16"), H).tipo, null);
 });
 
 test("troca de faixa kids depende da idade mínima da próxima cor", () => {

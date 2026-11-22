@@ -5,7 +5,8 @@ import { deISO } from "./datas.js";
 import { FAIXAS, FAIXAS_KIDS, corBase } from "../ui/faixa.js";
 
 export const REGRAS = { aulasPorGrau: 30, mesesPorGrau: 3, mesesMinFaixa: { branca: 12, azul: 24, roxa: 18, marrom: 12 } };
-export const REGRAS_KIDS = { aulasPorGrau: 20, mesesPorGrau: 2, mesesMinFaixa: 6, idadeMin: { cinza: 4, amarela: 7, laranja: 10, verde: 13 }, idadeAdulto: 16 };
+// Kids: grau MENSAL (1 mês desde a última graduação + mínimo de aulas no período).
+export const REGRAS_KIDS = { aulasPorGrau: 4, mesesPorGrau: 1, mesesMinFaixa: 6, idadeMin: { cinza: 4, amarela: 7, laranja: 10, verde: 13 }, idadeAdulto: 16 };
 
 // Meses de calendário completos entre duas datas (20/11/2025 → 20/11/2026 = 12).
 export function mesesEntre(a, b) {

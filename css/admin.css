@@ -391,3 +391,10 @@ button.kpi{font:inherit;color:inherit;cursor:pointer}
   #faixa-marca + #tela{padding-top:18px}
   .topo-wordmark{display:block;height:20px;width:auto;margin-left:auto}
 }
+
+/* Tema da semana e roteiro da aula */
+.turma .tema-aula{color:var(--fg);font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.plano-aula{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
+.pa-tema{display:flex;flex-direction:column;gap:4px;min-width:220px}
+.pa-tema b{font-size:16px}
+.pa-roteiro{display:flex;flex-direction:column;gap:6px;flex:1;min-width:260px}

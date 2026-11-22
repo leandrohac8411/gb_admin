@@ -1,12 +1,12 @@
 // Dashboard (v02): números do mês, presença das últimas semanas, aulas de hoje, pendências,
 // mensalidades do mês e aniversariantes — no layout do "Dashboard claro".
-import { esc, saudacao, dataLonga, horaTexto, iniciais } from "../ui/util.js";
+import { esc, horaTexto, iniciais } from "../ui/util.js";
 import { reais } from "../ui/util-admin.js";
 import { hojeISO, deISO, somarDias } from "../logica/datas.js";
 import { resumoDashboard } from "../logica/indicadores.js";
 import { temaDaAula } from "../logica/tema.js";
 import { icone } from "../menu.js";
-import { cabecalho, nomeProfessor, DIAS_LONGOS } from "./comum.js";
+import { cabecalho, nomeProfessor } from "./comum.js";
 
 const estado = { semanas: 8 };
 
@@ -63,8 +63,7 @@ export default {
       r.inadimplentes && ["financeiro", "financeiro", `${r.inadimplentes} com mensalidade atrasada`, "cobre pelo WhatsApp ou na recepção"]
     ].filter(Boolean);
 
-    el.innerHTML = cabecalho("Dashboard", `${saudacao().replace(",", "!")} Hoje é ${DIAS_LONGOS[new Date().getDay()].toLowerCase()}, ${dataLonga(hoje)}.`,
-      `<a class="btn sec" href="#checkins">${icone("checkins")}Check-ins de hoje</a><a class="btn" href="#alunos/novo">${icone("prospects")}Novo aluno</a>`) +
+    el.innerHTML = cabecalho("Dashboard", "GB Sobradinho – Gestão completa da sua academia") +
       `<section class="stats">
         <a class="stat vermelho" href="#alunos"><div class="stat-topo">${icone("alunos")}${novosMes ? `<span class="pilula boa">↑ +${novosMes} no mês</span>` : ""}</div>
           <div class="stat-rot">Alunos ativos</div><strong>${r.ativos}</strong><div class="stat-pe">${r.ativos - r.kids} adultos · ${r.kids} kids</div>

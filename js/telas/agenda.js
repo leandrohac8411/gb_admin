@@ -5,7 +5,7 @@ import { semanaDoCiclo, aulaPadrao } from "../logica/ciclo.js";
 import { icone } from "../menu.js";
 import { cabecalho, etiquetaPrograma, nomeProfessor, DIAS_CURTOS, DIAS_LONGOS } from "./comum.js";
 import { publicoKids } from "../dados-ficticios.js";
-import { temaDaAula } from "../logica/tema.js";
+import { temaDaAula, diaDeReferencia } from "../logica/tema.js";
 
 const estado = { semana: 0, filtro: "Todas" };
 
@@ -74,7 +74,7 @@ export default {
   titulo: "Agenda & turmas",
   montar(el, params, ctx) {
     const { store } = ctx, d = store.dados, hoje = hojeISO();
-    const segunda = somarDias(segundaDaSemana(hoje), 7 * estado.semana);
+    const segunda = somarDias(segundaDaSemana(diaDeReferencia(hoje)), 7 * estado.semana);
     const dias = [1, 2, 3, 4, 5, 6].map(i => ({ i, data: somarDias(segunda, i - 1) }));
     const fim = dias[5].data;
     const contagem = {};
@@ -87,7 +87,7 @@ export default {
     const cartao = (t, data, comHora) => `<button class="turma${t.categoria === "kids" ? " kids" : ""}" data-id="${esc(t.id)}" data-data="${data}">
         <div class="linha">${comHora ? `<span class="hora">${horaTexto(t.horario)}</span>` : ""}${etiquetaPrograma(t.programa)}${t.publico ? `<small>${esc(t.publico)}</small>` : ""}</div>
         <small>${esc(nomeProfessor(d, t.professorId))}</small>
-        ${temaDaAula(d, t, data).map(x => `<small class="tema-aula" title="${esc(x.programa)} · semana ${x.semana}: ${esc(x.tema)}">${t.programa === "GB1+GB2" ? `${x.programa}: ` : ""}${esc(x.tema)}</small>`).join("")}
+        ${(() => { const ts = temaDaAula(d, t, data), varias = ts.length > 1; return ts.map(x => `<small class="tema-aula" title="${esc(x.programa)} · semana ${x.semana} · Aula ${x.aula}: ${esc(x.tema)}">${varias ? `${t.programa === "GB1+GB2" ? x.programa + " " : ""}${x.aula}: ` : ""}${esc(x.tema)}</small>`).join(""); })()}
         <small>${data <= hoje ? `${contagem[t.id + data] || 0} check-ins` : "—"}${(d.fotosAula || []).some(f => f.turmaId === t.id && f.data === data) ? " · 📸 foto" : ""}</small>
         ${experimentais(t, data) ? `<span class="pill ok" style="align-self:flex-start">+${experimentais(t, data)} experimental</span>` : ""}</button>`;
     el.innerHTML = cabecalho("Agenda & turmas", `${d.turmas.filter(t => t.categoria !== "kids").length} turmas adultas e ${d.turmas.filter(t => t.categoria === "kids").length} kids na semana`,
@@ -127,7 +127,7 @@ export default {
       abrirFolha((f, fechar) => {
         const temas = temaDaAula(d, t, data);
         f.innerHTML = `<h3>${DIAS_LONGOS[t.diaSemana]}, ${data.slice(8)}/${data.slice(5, 7)} · ${horaTexto(t.horario)}</h3>
-          <p class="muted" style="margin:0">${esc(nomeProfessor(d, t.professorId))}${temas.length ? ` · ${temas.map(x => `${x.programa} semana ${x.semana}: ${esc(x.tema)}`).join(" · ")}` : ""}</p>
+          <p class="muted" style="margin:0">${esc(nomeProfessor(d, t.professorId))}${temas.length ? ` · ${temas.map(x => `${x.programa} semana ${x.semana}, Aula ${x.aula}: ${esc(x.tema)}`).join(" · ")}` : ""}</p>
           ${data <= hoje ? `<button class="btn bloco" id="op-check">${icone("checkins")}Abrir check-ins e foto desta aula</button>` : `<p class="aviso" style="margin:0;background:var(--soft);color:var(--muted2)">Aula futura: a presença abre no dia da aula.</p>`}
           <button class="btn sec bloco" id="op-editar">Editar turma</button>
           <button class="btn ghost bloco" id="op-x">Fechar</button>`;

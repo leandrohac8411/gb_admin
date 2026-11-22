@@ -29,10 +29,16 @@ export function gerarExtras(hojeISO, alunos, turmas = []) {
   const kidsAtivos = alunos.filter(a => a.categoria === "kids" && a.status === "ativo");
   const adultosAtivos = alunos.filter(a => a.categoria !== "kids" && a.status === "ativo");
   const turmaId = (dia, hora) => turmas.find(t => t.diaSemana === dia && t.horario === hora)?.id || null;
-  const cronograma = ["GB1", "GB2"].flatMap(programa => TEMAS.map(([categoria, tema], i) => ({
-    id: `${programa}-${i + 1}`, programa, semana: i + 1, categoria,
-    tema: programa === "GB2" ? tema.replace(/^(\S+)/, "$1 avançado:").replace(":", "") : tema
-  })));
+  // Cronograma fictício: cada semana com Aula A (seg/ter) e Aula B (qua/qui), tema e técnicas.
+  const cronograma = ["GB1", "GB2"].flatMap(programa => TEMAS.map(([categoria, tema], i) => {
+    const t = programa === "GB2" ? `${tema} (avançado)` : tema;
+    const tec = (...nomes) => nomes.map(nome => ({ nome, categoria }));
+    return {
+      id: `${programa}-${i + 1}`, programa, semana: i + 1,
+      aulaA: { tema: `${t}: fundamentos`, tecnicas: tec(`${tema}: entrada básica`, `${tema}: detalhe de pegada`, "Drill em dupla") },
+      aulaB: { tema: `${t}: variações e defesa`, tecnicas: tec(`${tema}: variação`, `Defesa contra ${tema.toLowerCase()}`, "Rola específico da posição") }
+    };
+  }));
   return {
     planos: [
       { id: "Mensal", nome: "Mensal", meses: 1, valor: 280, ativo: true, descricao: "Treinos livres na grade adulta." },

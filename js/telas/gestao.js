@@ -5,6 +5,7 @@ import { hojeISO, somarDias, segundaDaSemana, diasEntre } from "../logica/datas.
 import { semanaDoCiclo, CICLO_SEMANAS } from "../logica/ciclo.js";
 import { aptidao } from "../logica/graduacao.js";
 import { CATEGORIAS_TECNICAS } from "../dados-extras.js";
+import { lerCurriculo, diaDeReferencia } from "../logica/tema.js";
 import { icone } from "../menu.js";
 import { cabecalho, pessoa, faixaCelula, etiquetaPrograma, porId, DIAS_CURTOS, daAba, abasCategoria, ligarAbas } from "./comum.js";
 import { aulas30 } from "./alunos.js";
@@ -125,42 +126,68 @@ export const acompanhamentos = {
 // ---------- Cronogramas ----------
 const estadoCr = { programa: "GB1" };
 
+const linhasTecnicas = tecnicas => (tecnicas || []).map(t => t.categoria ? `${t.nome} | ${t.categoria}` : t.nome).join("\n");
+const lerTecnicas = texto => texto.split("\n").map(l => l.split("|")).filter(p => p[0].trim())
+  .map(([nome, categoria]) => ({ nome: nome.trim().slice(0, 200), categoria: String(categoria || "").trim().slice(0, 40) }));
+
+function formSemana(store, s, pronto) {
+  abrirFolha((f, fechar) => {
+    const bloco = (letra, a) => `<div class="secao">Aula ${letra} <small class="muted" style="text-transform:none;letter-spacing:0;font-weight:600">${letra === "A" ? "segunda e terça" : "quarta e quinta"}</small></div>
+      <div class="field cheio"><label for="c-tema${letra}">Tema da aula ${letra}</label><input class="input" id="c-tema${letra}" value="${esc(a?.tema || "")}"></div>
+      <div class="field cheio"><label for="c-tec${letra}">Técnicas (uma por linha; opcional: técnica | posição)</label><textarea class="input" id="c-tec${letra}" rows="4">${esc(linhasTecnicas(a?.tecnicas))}</textarea></div>`;
+    f.innerHTML = `<h3>${esc(s.programa)} · semana ${s.semana}</h3><form class="campos" novalidate>
+      ${bloco("A", s.aulaA)}${bloco("B", s.aulaB)}
+      <p class="aviso cheio" id="c-erro" hidden></p>
+      <div class="acoes cheio"><button type="button" class="btn ghost" id="c-x">Cancelar</button><button class="btn">Salvar</button></div></form>`;
+    f.querySelector("#c-x").onclick = fechar;
+    f.querySelector("form").onsubmit = e => {
+      e.preventDefault();
+      const tA = f.querySelector("#c-temaA").value.trim(), tB = f.querySelector("#c-temaB").value.trim();
+      if (!tA && !tB) return erroEm(f, "#c-erro", "Escreva o tema de pelo menos uma das aulas.");
+      s.aulaA = { tema: tA, tecnicas: lerTecnicas(f.querySelector("#c-tecA").value) };
+      s.aulaB = { tema: tB, tecnicas: lerTecnicas(f.querySelector("#c-tecB").value) };
+      store.salvar(); fechar(); toast("Semana salva"); pronto();
+    };
+  });
+}
+
 export const cronogramas = {
   titulo: "Cronogramas",
   montar(el, params, ctx) {
     const { store } = ctx, d = store.dados, hoje = hojeISO(), prog = estadoCr.programa;
-    const atual = semanaDoCiclo(hoje, d.config.ancoras, prog), segunda = segundaDaSemana(hoje);
+    const ref = diaDeReferencia(hoje), atual = semanaDoCiclo(ref, d.config.ancoras, prog), segunda = segundaDaSemana(ref);
     const inicioDa = n => somarDias(segunda, 7 * ((((n - atual) % CICLO_SEMANAS) + CICLO_SEMANAS) % CICLO_SEMANAS));
     const semanas = d.cronograma.filter(s => s.programa === prog).sort((a, b) => a.semana - b.semana);
     const fmt = iso => `${iso.slice(8)}/${iso.slice(5, 7)}`;
-    el.innerHTML = cabecalho("Cronogramas", "Ciclo de 16 semanas de cada currículo. Temas fictícios e editáveis.",
-      `<button class="btn sec" id="ajustar">${icone("agenda")}Ajustar semana atual</button>`) +
-      `<div class="chips">${["GB1", "GB2"].map(p => `<button class="chip${p === prog ? " on" : ""}" data-p="${p}">${p} · semana ${semanaDoCiclo(hoje, d.config.ancoras, p)}</button>`).join("")}</div>
-      <div class="card"><table class="tabela resp"><thead><tr><th>Semana</th><th>Posição</th><th>Tema</th><th>Próxima vez</th><th></th></tr></thead><tbody>${semanas.map(s => {
+    const resumo = a => a?.tema ? `<b>${esc(a.tema)}</b>${a.tecnicas?.length ? `<small>${a.tecnicas.length} técnica${a.tecnicas.length === 1 ? "" : "s"}: ${esc(a.tecnicas.slice(0, 3).map(t => t.nome).join(" · "))}${a.tecnicas.length > 3 ? "…" : ""}</small>` : ""}` : '<small class="muted">—</small>';
+    el.innerHTML = cabecalho("Cronogramas", "O que o professor dá em cada semana do ciclo: Aula A (seg/ter) e Aula B (qua/qui); sexta e sábado revisam as duas.",
+      `<label class="btn sec" style="cursor:pointer">${icone("documentos")}Importar currículo (JSON)<input type="file" id="importar-cur" accept="application/json,.json" hidden></label>
+       <button class="btn sec" id="ajustar">${icone("agenda")}Ajustar semana atual</button>`) +
+      `<div class="chips">${["GB1", "GB2"].map(p => `<button class="chip${p === prog ? " on" : ""}" data-p="${p}">${p} · semana ${semanaDoCiclo(ref, d.config.ancoras, p)}</button>`).join("")}</div>
+      <div class="card"><table class="tabela resp cronograma"><thead><tr><th>Semana</th><th>Aula A · seg/ter</th><th>Aula B · qua/qui</th><th>Quando</th><th></th></tr></thead><tbody>${semanas.map(s => {
         const ini = inicioDa(s.semana);
-        return `<tr${s.semana === atual ? ' style="background:var(--red-soft)"' : ""}><td><b>${s.semana === atual ? "▶ " : ""}Semana ${s.semana}</b></td><td><span class="pill">${esc(s.categoria)}</span></td>
-          <td class="cheia">${esc(s.tema)}</td><td data-l="Quando:">${s.semana === atual ? "esta semana" : `${fmt(ini)} a ${fmt(somarDias(ini, 5))}`}</td>
+        return `<tr${s.semana === atual ? ' class="atual"' : ""}><td><b>${s.semana === atual ? "▶ " : ""}Semana ${s.semana}</b></td>
+          <td class="cheia" data-l="A:">${resumo(s.aulaA)}</td><td class="cheia" data-l="B:">${resumo(s.aulaB)}</td>
+          <td data-l="Quando:">${s.semana === atual ? "esta semana" : `${fmt(ini)} a ${fmt(somarDias(ini, 5))}`}</td>
           <td class="num"><button class="btn sec peq" data-editar="${esc(s.id)}">Editar</button></td></tr>`;
       }).join("")}</tbody></table></div>`;
     el.querySelectorAll("[data-p]").forEach(b => b.onclick = () => { estadoCr.programa = b.dataset.p; ctx.redesenhar(); });
-    el.querySelectorAll("[data-editar]").forEach(b => b.onclick = () => {
-      const s = d.cronograma.find(x => x.id === b.dataset.editar);
-      abrirFolha((f, fechar) => {
-        f.innerHTML = `<h3>${prog} · semana ${s.semana}</h3><form class="campos" novalidate>
-          <div class="field cheio"><label for="c-cat">Posição</label><select class="input" id="c-cat">${opcoes(CATEGORIAS_TECNICAS, s.categoria)}</select></div>
-          <div class="field cheio"><label for="c-tema">Tema</label><input class="input" id="c-tema" value="${esc(s.tema)}"></div>
-          <p class="aviso cheio" id="c-erro" hidden></p>
-          <div class="acoes cheio"><button type="button" class="btn ghost" id="c-x">Cancelar</button><button class="btn">Salvar</button></div></form>`;
-        f.querySelector("#c-x").onclick = fechar;
-        f.querySelector("form").onsubmit = e => {
-          e.preventDefault();
-          const tema = f.querySelector("#c-tema").value.trim();
-          if (tema.length < 3) return erroEm(f, "#c-erro", "Escreva o tema.");
-          Object.assign(s, { tema, categoria: f.querySelector("#c-cat").value });
-          store.salvar(); fechar(); toast("Tema salvo"); ctx.redesenhar();
-        };
-      });
-    });
+    el.querySelectorAll("[data-editar]").forEach(b => b.onclick = () => formSemana(store, d.cronograma.find(x => x.id === b.dataset.editar), ctx.redesenhar));
+    el.querySelector("#importar-cur").onchange = async e => {
+      const arq = e.target.files?.[0]; e.target.value = "";
+      if (!arq) return;
+      let semanasNovas;
+      try { semanasNovas = lerCurriculo(await arq.text()); } catch (err) { toast(err.message); return; }
+      const progs = [...new Set(semanasNovas.map(s => s.programa))];
+      if (!await perguntar("Importar currículo?", `${semanasNovas.length} semana(s) de ${progs.join(" e ")} vão substituir o que está no cronograma dessas semanas.`, "Importar", "Cancelar")) return;
+      for (const s of semanasNovas) {
+        const atualS = d.cronograma.find(x => x.programa === s.programa && x.semana === s.semana);
+        if (atualS) Object.assign(atualS, { aulaA: s.aulaA, aulaB: s.aulaB });
+        else d.cronograma.push({ id: `${s.programa}-${s.semana}`, ...s });
+      }
+      if (!store.salvar()) { toast("Sem espaço no navegador para salvar o currículo."); return; }
+      toast(`Currículo importado: ${semanasNovas.length} semana(s)`); ctx.redesenhar();
+    };
     el.querySelector("#ajustar").onclick = () => abrirFolha((f, fechar) => {
       f.innerHTML = `<h3>Em que semana o ${prog} está?</h3><p class="muted" style="margin:0">Vale a partir desta semana (${fmt(segunda)}).</p>
         <div class="chips">${Array.from({ length: 16 }, (_, i) => `<button class="chip${i + 1 === atual ? " on" : ""}" data-s="${i + 1}">${i + 1}</button>`).join("")}</div>

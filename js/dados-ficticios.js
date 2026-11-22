@@ -2,7 +2,7 @@
 import { somarDias, diasEntre, diaSemana, deISO } from "./logica/datas.js";
 import { gerarExtras, COLECOES_EXTRAS } from "./dados-extras.js";
 
-export const VERSAO = 7;
+export const VERSAO = 8;
 export const DIAS_CHECKIN = 120;
 export const COLECOES = ["professores", "turmas", "alunos", "checkins", "mensalidades", "graduacoes", ...COLECOES_EXTRAS];
 

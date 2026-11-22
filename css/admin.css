@@ -398,3 +398,7 @@ button.kpi{font:inherit;color:inherit;cursor:pointer}
 .pa-tema{display:flex;flex-direction:column;gap:4px;min-width:220px}
 .pa-tema b{font-size:16px}
 .pa-roteiro{display:flex;flex-direction:column;gap:6px;flex:1;min-width:260px}
+.pa-tecnicas{margin:6px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:3px;font-size:13px}
+.tabela.cronograma td b{display:block}
+.tabela.cronograma td small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
+.tabela.cronograma tr.atual td{background:var(--red-soft)}

@@ -162,7 +162,7 @@ export default {
           ${kpi("Atrasado", reais(r.atrasado), `${r.inadimplentes.length} ${kids ? "criança" : "aluno"}${r.inadimplentes.length === 1 ? "" : "s"}`, r.atrasado ? "ruim" : "")}
         </div>
         <div class="card" style="display:flex;align-items:center;gap:20px">
-          <div class="anel">${anelClaroSVG(r.previsto ? r.recebido / r.previsto : 0, "#1f8a5b")}<b>${r.previsto ? Math.round(r.recebido / r.previsto * 100) : 0}%<small>recebido</small></b></div>
+          <div class="anel">${anelClaroSVG(r.previsto ? r.recebido / r.previsto : 0, "#009b45")}<b>${r.previsto ? Math.round(r.recebido / r.previsto * 100) : 0}%<small>recebido</small></b></div>
           <div><h3 style="font-size:15px">${reais(r.recebido)} de ${reais(r.previsto)}</h3>
           <p class="muted" style="margin:6px 0 0">${emAtraso.length ? `${emAtraso.length} mensalidade${emAtraso.length === 1 ? "" : "s"} em atraso somando todos os meses.` : "Nenhuma mensalidade em atraso."}</p></div>
         </div>

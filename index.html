@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#faf9f8">
+  <meta name="theme-color" content="#f7f8fa">
   <title>GB Admin</title>
   <link rel="icon" href="img/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Manrope:wght@400;600;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
   <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
@@ -16,14 +16,26 @@
     <aside id="lateral" aria-label="Menu principal"></aside>
     <div id="fundo-menu" hidden></div>
     <div id="principal">
-      <header id="topo">
-        <button id="abrir-menu" aria-label="Abrir menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-        <div class="topo-marca"><img src="img/logo-gb.png" alt=""><b>GB Admin</b></div>
-        <img class="topo-wordmark" src="img/gracie-barra.png" alt="Gracie Barra">
+      <header id="hero">
+        <div class="hero-kimono" aria-hidden="true"></div>
+        <div class="hero-esq">
+          <button id="abrir-menu" aria-label="Abrir menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+          <span class="ola" id="ola"></span>
+          <h1 id="hero-titulo">Dashboard</h1>
+          <p id="hero-sub"></p>
+        </div>
+        <div class="hero-acoes">
+          <form class="busca-topo" id="busca-topo" role="search">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="busca-topo-q" type="search" placeholder="Buscar aluno pelo nome..." aria-label="Buscar aluno">
+          </form>
+          <button class="circulo" id="sino" aria-label="Avisos" aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><i id="sino-ponto" hidden></i></button>
+          <a class="circulo logo-mini" href="#dashboard" aria-label="Início"><img src="img/gb-redondo.png" alt=""></a>
+          <div class="avisos" id="avisos" hidden></div>
+        </div>
       </header>
-      <div id="faixa-marca"><img src="img/gracie-barra.png" alt="Gracie Barra"></div>
       <main id="tela" tabindex="-1"></main>
-      <footer id="rodape">GB Sobradinho Admin · Vitrine de teste · dados fictícios</footer>
+      <footer id="rodape">GB Sobradinho Admin · v02 · Vitrine de teste · dados fictícios</footer>
     </div>
   </div>
   <script type="module" src="js/app.js"></script>

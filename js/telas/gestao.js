@@ -232,7 +232,7 @@ function formModeloAula(store, m, pronto) {
   });
 }
 
-const CORES_BLOCO = ["#c8201b", "#2449c9", "#6b2fa8", "#1f8a5b", "#d98a16", "#151517"];
+const CORES_BLOCO = ["#e10b16", "#2449c9", "#6b2fa8", "#1f8a5b", "#d98a16", "#151517"];
 export const modelosAula = {
   titulo: "Modelos de aula",
   montar(el, params, ctx) {

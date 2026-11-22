@@ -16,7 +16,7 @@ export function meiaLuaSVG(fracao) {
   const c = Math.PI * 45, x = limitar(fracao) * c;
   const arco = 'd="M15 62 A45 45 0 0 1 105 62" fill="none" stroke-width="12" stroke-linecap="round"';
   return `<svg viewBox="0 0 120 70" aria-hidden="true"><path ${arco} stroke="#eeeae9"/>` +
-    (x > 0 ? `<path ${arco} stroke="#c8201b" stroke-dasharray="${f2(x)} ${f2(c)}"/>` : "") + `</svg>`;
+    (x > 0 ? `<path ${arco} stroke="#e10b16" stroke-dasharray="${f2(x)} ${f2(c)}"/>` : "") + `</svg>`;
 }
 
 // Radar do Meu jogo. itens: [{ rotulo, nota (0–100) | null }]
@@ -33,13 +33,13 @@ export function radarSVG(itens) {
   }
   for (const it of com) {
     const p = pt(it.i, R * it.nota / 100);
-    h += `<circle cx="${f2(p[0])}" cy="${f2(p[1])}" r="3.5" fill="${it.nota < 45 ? "#c8201b" : "#2449c9"}"/>`;
+    h += `<circle cx="${f2(p[0])}" cy="${f2(p[1])}" r="3.5" fill="${it.nota < 45 ? "#e10b16" : "#2449c9"}"/>`;
   }
   itens.forEach((it, i) => {
     const q = pt(i, R + 16), baixo = it.nota !== null && it.nota !== undefined && it.nota < 45;
     const anc = Math.abs(q[0] - cx) < 6 ? "middle" : q[0] > cx ? "start" : "end";
     h += `<text x="${f2(q[0])}" y="${f2(q[1] + 4)}" text-anchor="${anc}" font-size="10.5" font-weight="${baixo ? 700 : 600}" ` +
-      `fill="${baixo ? "#c8201b" : it.nota == null ? "#b3adb3" : "#4b474e"}" font-family="Sora,sans-serif">${it.rotulo}</text>`;
+      `fill="${baixo ? "#e10b16" : it.nota == null ? "#b3adb3" : "#4b474e"}" font-family="Inter,sans-serif">${it.rotulo}</text>`;
   });
   return `<svg viewBox="-42 0 384 250" role="img" aria-label="Aproveitamento por posição">${h}</svg>`;
 }

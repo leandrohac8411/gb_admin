@@ -7,7 +7,7 @@ import { inadimplentes } from "../logica/financeiro.js";
 import { idadeEm } from "../logica/graduacao.js";
 import { irmaos, valorComDesconto } from "../logica/familia.js";
 import { icone } from "../menu.js";
-import { cabecalho, pessoa, faixaCelula, PILL_STATUS, aba, daAba, abasCategoria, ligarAbas, anosTexto } from "./comum.js";
+import { cabecalho, pessoa, faixaCelula, PILL_STATUS, aba, definirAba, daAba, abasCategoria, ligarAbas, anosTexto } from "./comum.js";
 
 const estado = { busca: "", status: "Todos", faixa: null };
 
@@ -96,6 +96,13 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
 export default {
   titulo: "Alunos",
   montar(el, params, ctx) {
+    if (params[0] === "busca") {
+      // Veio da busca do topo: procura nas duas abas e abre a que tem resultado.
+      const q = normalizar(params[1] || ""), acha = c => ctx.store.dados.alunos.some(a => (a.categoria || "adulto") === c && (normalizar(a.nome).includes(q) || normalizar(a.responsavel?.nome).includes(q)));
+      Object.assign(estado, { busca: params[1] || "", status: "Todos", faixa: null });
+      if (!acha(aba()) && acha(aba() === "kids" ? "adulto" : "kids")) definirAba(aba() === "kids" ? "adulto" : "kids");
+      history.replaceState(null, "", "#alunos");
+    }
     const { store } = ctx, hoje = hojeISO(), kids = aba() === "kids";
     const faixas = faixasDe(aba());
     if (estado.faixa && !faixas.includes(estado.faixa)) estado.faixa = null;

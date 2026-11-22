@@ -20,5 +20,5 @@ test("radar marca em vermelho nota baixa e pula sem dados", () => {
   assert.match(s, /viewBox="-42 0 384 250"/);
   assert.equal(conta(s, /<circle /g), 2);
   assert.match(s, />Costas<\/text>/);
-  assert.match(s, /fill="#c8201b"[^>]*>Costas/);
+  assert.match(s, /fill="#e10b16"[^>]*>Costas/);
 });

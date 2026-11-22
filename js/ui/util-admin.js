@@ -19,10 +19,10 @@ export function somarMeses(comp, n) {
 }
 
 // Anel claro (fundo branco): trilho cinza + arco na cor pedida.
-export function anelClaroSVG(fracao, cor = "#c8201b") {
+export function anelClaroSVG(fracao, cor = "#e10b16") {
   const f = Number.isFinite(fracao) ? Math.max(0, Math.min(1, fracao)) : 0;
   const c = 2 * Math.PI * 50, x = (f * c).toFixed(2);
-  return `<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="50" fill="none" stroke="#efecea" stroke-width="13"/>` +
+  return `<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="50" fill="none" stroke="#e6e8ec" stroke-width="13"/>` +
     (f > 0 ? `<circle cx="60" cy="60" r="50" fill="none" stroke="${cor}" stroke-width="13" stroke-linecap="round" stroke-dasharray="${x} ${c.toFixed(2)}"/>` : "") + `</svg>`;
 }
 

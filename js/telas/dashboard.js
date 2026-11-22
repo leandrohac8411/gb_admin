@@ -1,56 +1,119 @@
-// Dashboard: números do mês, presença das últimas 8 semanas, aulas de hoje e alertas.
-import { esc, saudacao, dataLonga, horaTexto } from "../ui/util.js";
+// Dashboard (v02): números do mês, presença das últimas semanas, aulas de hoje, pendências,
+// mensalidades do mês e aniversariantes — no layout do "Dashboard claro".
+import { esc, saudacao, dataLonga, horaTexto, iniciais } from "../ui/util.js";
 import { reais } from "../ui/util-admin.js";
-import { hojeISO, deISO } from "../logica/datas.js";
+import { hojeISO, deISO, somarDias } from "../logica/datas.js";
 import { resumoDashboard } from "../logica/indicadores.js";
+import { temaDaAula } from "../logica/tema.js";
 import { icone } from "../menu.js";
-import { cabecalho, etiquetaPrograma, nomeProfessor, pessoa, DIAS_LONGOS } from "./comum.js";
-import { boasVindas } from "./comum.js";
+import { cabecalho, nomeProfessor, DIAS_LONGOS } from "./comum.js";
 
-function kpi(rotulo, valor, sub, ic, classe = "") {
-  return `<div class="kpi ${classe}"><div class="kpi-top"><span>${rotulo}</span><span class="kpi-ic">${icone(ic)}</span></div><b>${valor}</b><small>${sub}</small></div>`;
+const estado = { semanas: 8 };
+
+// Linha suave com área esmaecida embaixo (valores → pontos num quadro 90×44).
+function spark(valores, cor) {
+  const max = Math.max(1, ...valores), min = Math.min(...valores), faixa = Math.max(1, max - min);
+  const pts = valores.map((v, i) => `${Math.round(i / Math.max(1, valores.length - 1) * 90)},${Math.round(36 - (v - min) / faixa * 32)}`).join(" ");
+  const id = "sp" + cor.slice(1);
+  return `<svg class="spark" viewBox="0 0 94 44" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${cor}" stop-opacity=".17"/><stop offset="1" stop-color="${cor}" stop-opacity="0"/></linearGradient></defs>` +
+    `<polygon points="0,44 ${pts} 90,44" fill="url(#${id})"/><polyline points="${pts}" stroke="${cor}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`;
 }
 
 function variacao(atual, anterior) {
   if (!anterior) return "primeiro mês com dados";
   const p = Math.round((atual - anterior) / anterior * 100);
-  return `<span class="var ${p >= 0 ? "sobe" : "desce"}">${p >= 0 ? "▲" : "▼"} ${Math.abs(p)}%</span> vs. mesmo período do mês passado`;
+  return `<span class="var ${p >= 0 ? "sobe" : "desce"}">${p >= 0 ? "↑ +" : "↓ "}${p}%</span> vs. mês passado`;
 }
+
+const fimDaAula = t => {
+  const [h, m] = t.horario.split(":").map(Number), fim = h * 60 + m + (Number(t.duracaoMin) || 60);
+  return `${String(Math.floor(fim / 60) % 24).padStart(2, "0")}:${String(fim % 60).padStart(2, "0")}`;
+};
+const nomeDaTurma = t => t.categoria === "kids" ? `Kids${t.publico ? ` (${t.publico})` : ""}` : `Adulto – ${t.programa}`;
 
 export default {
   titulo: "Dashboard",
-  montar(el, params, { store }) {
-    const hoje = hojeISO(), d = store.dados, r = resumoDashboard(d, hoje);
-    const max = Math.max(1, ...r.presencaSemanas);
-    const checkinsHoje = t => d.checkins.filter(c => c.turmaId === t.id && c.data === hoje).length;
-    const { dia, mes } = deISO(hoje);
+  montar(el, params, ctx) {
+    const { store } = ctx, hoje = hojeISO(), d = store.dados, r = resumoDashboard(d, hoje);
+    const { dia, mes } = deISO(hoje), comp = hoje.slice(0, 7);
+
+    // Entradas no caixa por semana (mesmas 8 semanas do gráfico de presença).
+    const caixaSemanas = r.semanas.map(ini => d.mensalidades.filter(m => m.pagoEm && m.pagoEm >= ini && m.pagoEm < somarDias(ini, 7) && m.pagoEm <= hoje)
+      .reduce((s, m) => s + (Number(m.valor) || 0), 0));
+    const novosMes = d.alunos.filter(a => a.status === "ativo" && (a.desde || "").startsWith(comp)).length;
+
+    // Mensalidades do mês: pagas x em aberto.
+    const doMes = d.mensalidades.filter(m => m.competencia === comp);
+    const pagas = doMes.filter(m => m.pagoEm).length, pct = doMes.length ? Math.round(pagas / doMes.length * 100) : 0;
+
+    const presentes = t => d.checkins.filter(c => c.turmaId === t.id && c.data === hoje).length;
+    // Referência de lotação: o maior número de presentes que a turma já teve.
+    const recorde = t => {
+      const porDia = {};
+      for (const c of d.checkins) if (c.turmaId === t.id) porDia[c.data] = (porDia[c.data] || 0) + 1;
+      return Math.max(1, ...Object.values(porDia));
+    };
+
+    const n = estado.semanas, pres = r.presencaSemanas.slice(-n), sems = r.semanas.slice(-n);
+    const topo = Math.max(10, Math.ceil(Math.max(...pres) * 1.1 / 10) * 10);
+
+    const tarefas = [
+      r.aptos && ["graduacoes", "graduacoes", `${r.aptos} aluno${r.aptos === 1 ? "" : "s"} apto${r.aptos === 1 ? "" : "s"} a graduar`, `${r.aptos - r.aptosKids} adultos e ${r.aptosKids} kids, pelas aulas e pelo tempo`],
+      r.viramAdultos && ["graduacoes", "alunos", `${r.viramAdultos} criança${r.viramAdultos === 1 ? "" : "s"} fez 16 anos`, `passa${r.viramAdultos === 1 ? "" : "m"} para a turma de Adultos`],
+      r.inadimplentes && ["financeiro", "financeiro", `${r.inadimplentes} com mensalidade atrasada`, "cobre pelo WhatsApp ou na recepção"]
+    ].filter(Boolean);
 
     el.innerHTML = cabecalho("Dashboard", `${saudacao().replace(",", "!")} Hoje é ${DIAS_LONGOS[new Date().getDay()].toLowerCase()}, ${dataLonga(hoje)}.`,
-      `<a class="btn sec" href="#checkins">${icone("checkins")}Check-ins de hoje</a><a class="btn" href="#alunos/novo">${icone("prospects")}Novo aluno</a>`, boasVindas(d)) +
-      `<div class="kpis">
-        ${kpi("Alunos ativos", r.ativos, `${r.ativos - r.kids} adultos · ${r.kids} kids`, "alunos", "destaque")}
-        ${kpi("Check-ins no mês", r.checkinsMes, variacao(r.checkinsMes, r.checkinsMesAnterior), "checkins")}
-        ${kpi("Entrou no caixa", reais(r.recebidoMes), "pagamentos feitos este mês", "financeiro")}
-        ${kpi("Inadimplentes", r.inadimplentes, r.inadimplentes ? `${r.inadimplentes - r.inadimplentesKids} adultos · ${r.inadimplentesKids} kids · <a class="link" href="#financeiro">ver</a>` : "tudo em dia", "permissoes", r.inadimplentes ? "ruim" : "")}
-      </div>
-      <div class="grade-dash">
-        <div class="card"><div class="card-cab"><h3>Presença nas últimas 8 semanas</h3><small>check-ins por semana</small></div>
-          <div class="barras">${r.presencaSemanas.map((n, i) => `<div class="col"><div class="bar ${i === 7 ? "on" : ""}" style="height:${Math.round(n / max * 100)}%"><i>${n}</i></div>` +
-            `<small>${i === 7 ? "Atual" : r.semanas[i].slice(8) + "/" + r.semanas[i].slice(5, 7)}</small></div>`).join("")}</div></div>
-        <div class="card"><div class="card-cab"><h3>Aulas de hoje</h3><a class="link" href="#agenda">Agenda</a></div>
-          ${r.aulasHoje.length ? `<div class="lista">${r.aulasHoje.map(t => `<a href="#checkins/${t.id}"><span class="hora">${horaTexto(t.horario)}</span>
-            <div class="cresce"><b>${etiquetaPrograma(t.programa)}</b><small>Prof. ${esc(nomeProfessor(d, t.professorId))}</small></div>
-            <span class="pill info">${checkinsHoje(t)} presente${checkinsHoje(t) === 1 ? "" : "s"}</span></a>`).join("")}</div>` : `<div class="vazio">Sem aulas hoje. Bom descanso!</div>`}
-        </div>
-        <div class="card"><div class="card-cab"><h3>Atenção</h3></div><div class="lista">
-          <a href="#graduacoes"><span class="kpi-ic">${icone("graduacoes")}</span><div class="cresce"><b>${r.aptos} aluno${r.aptos === 1 ? "" : "s"} apto${r.aptos === 1 ? "" : "s"} a graduar</b><small>${r.aptos - r.aptosKids} adultos e ${r.aptosKids} kids, pelas aulas e pelo tempo</small></div><span class="link">Ver</span></a>
-          ${r.viramAdultos ? `<a href="#graduacoes"><span class="kpi-ic">${icone("alunos")}</span><div class="cresce"><b>${r.viramAdultos} criança${r.viramAdultos === 1 ? "" : "s"} fez 16 anos</b><small>passa${r.viramAdultos === 1 ? "" : "m"} para a turma de Adultos</small></div><span class="link">Ver</span></a>` : ""}
-          <a href="#financeiro"><span class="kpi-ic">${icone("financeiro")}</span><div class="cresce"><b>${r.inadimplentes} com mensalidade atrasada</b><small>cobre pelo WhatsApp ou na recepção</small></div><span class="link">Ver</span></a>
-        </div></div>
-        <div class="card"><div class="card-cab"><h3>Aniversariantes do mês</h3><small>${r.aniversariantes.length}</small></div>
-          ${r.aniversariantes.length ? `<div class="lista">${r.aniversariantes.map(a => `<a href="#aluno/${a.id}">${pessoa(a, `${a.nascimento.slice(8)}/${a.nascimento.slice(5, 7)}${Number(a.nascimento.slice(8)) === dia && Number(a.nascimento.slice(5, 7)) === mes ? " · é hoje! 🎉" : ""}`)}</a>`).join("")}</div>`
-            : `<div class="vazio">Ninguém faz aniversário este mês.</div>`}
-        </div>
-      </div>`;
+      `<a class="btn sec" href="#checkins">${icone("checkins")}Check-ins de hoje</a><a class="btn" href="#alunos/novo">${icone("prospects")}Novo aluno</a>`) +
+      `<section class="stats">
+        <a class="stat vermelho" href="#alunos"><div class="stat-topo">${icone("alunos")}${novosMes ? `<span class="pilula boa">↑ +${novosMes} no mês</span>` : ""}</div>
+          <div class="stat-rot">Alunos ativos</div><strong>${r.ativos}</strong><div class="stat-pe">${r.ativos - r.kids} adultos · ${r.kids} kids</div>
+          <span class="marca-dagua">${icone("alunos")}</span></a>
+        <a class="stat" href="#checkins"><div class="stat-topo">${icone("checkins")}</div>
+          <div class="stat-rot">Check-ins no mês</div><strong>${r.checkinsMes}</strong><div class="stat-pe">${variacao(r.checkinsMes, r.checkinsMesAnterior)}</div>
+          ${spark(r.presencaSemanas, "#e71920")}</a>
+        <a class="stat" href="#financeiro"><div class="stat-topo"><span class="ic-dinheiro">$</span></div>
+          <div class="stat-rot">Entrou no caixa</div><strong class="dinheiro">${reais(r.recebidoMes)}</strong><div class="stat-pe">pagamentos feitos este mês</div>
+          ${spark(caixaSemanas, "#08a34a")}</a>
+        <a class="stat" href="#financeiro"><div class="stat-topo">${icone("alerta")}${r.inadimplentes ? `<span class="pilula ruim">${r.inadimplentes} em atraso</span>` : `<span class="pilula boa" style="border:1px solid #cdebd9">em dia</span>`}</div>
+          <div class="stat-rot">Inadimplentes</div><strong>${r.inadimplentes}</strong><div class="stat-pe">${r.inadimplentes ? `${r.inadimplentes - r.inadimplentesKids} adultos · ${r.inadimplentesKids} kids` : "tudo em dia"}</div></a>
+      </section>
+
+      <section class="dash-meio">
+        <article class="card"><div class="card-cab"><div class="titulo-ic">${icone("relatorios")}<h3>Presença nas últimas ${n} semanas</h3></div>
+          <select id="periodo" aria-label="Período">${[4, 8].map(x => `<option value="${x}"${x === n ? " selected" : ""}>${x} semanas</option>`).join("")}</select></div>
+          <div class="grafico"><div class="eixo">${[0, 1, 2, 3, 4, 5].map(i => `<span style="bottom:${i * 20}%">${Math.round(topo * i / 5)}</span>`).join("")}</div>
+            <div class="area"><div class="grade"></div><div class="barras">${pres.map((v, i) => `<div class="col"><div class="bar ${i === pres.length - 1 ? "on" : ""}" style="height:${Math.round(v / topo * 100)}%" title="${v} check-ins"><i>${v}</i></div>` +
+              `<small>${i === pres.length - 1 ? "Atual" : sems[i].slice(8) + "/" + sems[i].slice(5, 7)}</small></div>`).join("")}</div></div></div>
+        </article>
+        <article class="card"><div class="card-cab"><div class="titulo-ic">${icone("agenda")}<h3>Aulas de hoje</h3></div><a class="link" href="#agenda" style="display:flex;align-items:center;gap:5px">Ver agenda ${icone("seta")}</a></div>
+          ${r.aulasHoje.length ? `<div class="aulas-hoje">${r.aulasHoje.map(t => {
+            const p = presentes(t), tema = temaDaAula(d, t, hoje)[0];
+            return `<a class="aula-linha${t.categoria === "kids" ? " kids" : ""}" href="#checkins/${encodeURIComponent(t.id)}"><span class="acento"></span>
+              <span class="tempo"><b>${horaTexto(t.horario)}</b><span>${fimDaAula(t)}</span></span><span class="ic-kimono">${icone("kimono")}</span>
+              <span class="nome"><b>${esc(nomeDaTurma(t))}</b><small>Prof. ${esc(nomeProfessor(d, t.professorId))}${tema ? ` · ${esc(tema.tema)}` : ""}</small></span>
+              <span class="qtd">${icone("alunos")}${p} presente${p === 1 ? "" : "s"}</span><span class="mini-anel" style="--pct:${Math.min(100, Math.round(p / recorde(t) * 100))}%" title="em relação à aula mais cheia desta turma"></span></a>`;
+          }).join("")}</div>` : `<div class="vazio">Sem aulas hoje. Bom descanso!</div>`}
+        </article>
+      </section>
+
+      <section class="dash-base">
+        <article class="card"><div class="card-cab"><div class="titulo-ic">${icone("alerta")}<h3>Atenção <span>– ações pendentes</span></h3></div><span class="contador">${tarefas.length}</span></div>
+          ${tarefas.length ? `<div class="tarefas">${tarefas.map(([rota, ic, t, s]) => `<a class="tarefa" href="#${rota}"><span class="tarefa-ic">${icone(ic)}</span><span class="tarefa-txt"><b>${t}</b><small>${s}</small></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a>`).join("")}</div>`
+            : `<div class="vazio">Tudo em dia!</div>`}
+        </article>
+        <article class="card"><div class="card-cab"><div class="titulo-ic">${icone("financeiro")}<h3>Mensalidades do mês</h3></div></div>
+          <div class="rosca-area"><div class="rosca" style="--pct:${pct}%"><div class="rosca-furo"><strong>${pct}%</strong><span>pagas</span></div></div>
+            <div class="legenda-r"><div><i class="ponto-v"></i>Pagas <b>${pagas}</b></div><div><i class="ponto-c"></i>Em aberto <b>${doMes.length - pagas}</b></div><div>Total <b>${doMes.length}</b></div></div></div>
+        </article>
+        <article class="card"><div class="card-cab"><div class="titulo-ic">${icone("presente")}<h3>Aniversariantes do mês</h3></div><span class="contador">${r.aniversariantes.length}</span></div>
+          ${r.aniversariantes.length ? `<div class="nivers">${r.aniversariantes.map(a => {
+            const ehHoje = Number(a.nascimento.slice(8)) === dia && Number(a.nascimento.slice(5, 7)) === mes;
+            return `<a class="niver${ehHoje ? " hoje" : ""}" href="#aluno/${encodeURIComponent(a.id)}"><span class="iniciais">${esc(iniciais(a.nome))}</span><span class="quem"><b>${esc(a.nome)}</b><small>${a.nascimento.slice(8)}/${a.nascimento.slice(5, 7)}${ehHoje ? " – é hoje! 🎉" : ""}</small></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a>`;
+          }).join("")}</div>` : `<div class="vazio">Ninguém faz aniversário este mês.</div>`}
+        </article>
+      </section>`;
+
+    el.querySelector("#periodo").onchange = e => { estado.semanas = Number(e.target.value); ctx.redesenhar(); };
   }
 };

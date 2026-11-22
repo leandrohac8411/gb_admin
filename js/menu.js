@@ -21,9 +21,14 @@ export const ICONES = {
   documentos: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/>',
   mensagens: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
   permissoes: '<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
+  alerta: '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17.5v.5"/>',
+  presente: '<rect x="3" y="9" width="18" height="12" rx="2"/><path d="M12 9v12M3 13h18M12 9C9 9 7 7.5 7 6s1.5-2.5 3-1.5S12 9 12 9zm0 0c3 0 5-1.5 5-3s-1.5-2.5-3-1.5S12 9 12 9z"/>',
+  relogio: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  seta: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   config: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
   eventos: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/>',
   camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  kimono: '<path d="M8 3h8l4 4-3 3v11H7V10L4 7z"/><path d="m8 3 4 6 4-6M12 9v12"/>',
   restaurar: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>'
 };
 
@@ -47,10 +52,30 @@ export function itemDoMenu(rota) {
   return null;
 }
 
-export function desenharMenu(ativa) {
-  return `<a class="lat-marca" href="#dashboard" aria-label="GB Sobradinho — início"><img src="img/logo-sobradinho.png" alt="GB Sobradinho" onerror="this.onerror=null;this.src='img/logo-gb.png'"></a>` +
-    `<nav class="lat-nav">` + MENU.map(g => `<div class="lat-grupo"><span>${g.grupo}</span>` + g.itens.map(i =>
-      `<a href="#${i.rota}" class="${i.rota === ativa ? "on" : ""}"${i.rota === ativa ? ' aria-current="page"' : ""}>` +
-      `${icone(i.rota)}<span>${i.nome}</span>${i.pronto ? "" : '<em>em breve</em>'}</a>`).join("") + `</div>`).join("") +
-    `</nav><button class="lat-restaurar" id="restaurar">${icone("restaurar")}Restaurar dados de exemplo</button>`;
+// Grupos abrem e fecham; o grupo da tela atual abre sozinho.
+const abertos = new Set();
+let ultimaAtiva = null;
+const SETA = '<svg class="ic seta" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+const textoSeguro = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+export function alternarGrupo(nome) { abertos.has(nome) ? abertos.delete(nome) : abertos.add(nome); }
+
+export function desenharMenu(ativa, usuario = {}) {
+  const grupoAtivo = MENU.find(g => g.itens.some(i => i.rota === ativa))?.grupo;
+  // Ao trocar de tela, fica aberto só o grupo dela (sanfona); clicar num grupo abre/fecha à mão.
+  if (ativa !== ultimaAtiva) { abertos.clear(); ultimaAtiva = ativa; }
+  if (grupoAtivo) abertos.add(grupoAtivo);
+  const link = i => `<a href="#${i.rota}" class="lat-item${i.rota === ativa ? " on" : ""}"${i.rota === ativa ? ' aria-current="page"' : ""}>` +
+    `${icone(i.rota)}<span>${i.nome}</span>${i.pronto ? "" : "<em>em breve</em>"}</a>`;
+  const [principal, ...grupos] = MENU;
+  const nome = textoSeguro((usuario.nome || "").trim() || "Visitante");
+  return `<a class="lat-marca" href="#dashboard" aria-label="GB Sobradinho — início"><img src="img/gb-redondo.png" alt="Gracie Barra"><strong>GB SOBRADINHO</strong><i></i></a>` +
+    `<nav class="lat-nav">${principal.itens.map(link).join("")}` +
+    grupos.map(g => {
+      const aberto = abertos.has(g.grupo);
+      return `<div class="lat-grupo${aberto ? " aberto" : ""}"><button class="lat-grupo-cab${g.grupo === grupoAtivo ? " tem-ativa" : ""}" data-grupo="${g.grupo}" aria-expanded="${aberto}"><span>${g.grupo}</span>${SETA}</button>` +
+        `<div class="lat-sub">${g.itens.map(link).join("")}</div></div>`;
+    }).join("") +
+    `</nav><a class="lat-perfil" href="#config"><span class="av-foto">🥋</span><span class="quem"><b>${nome}</b><small>Administrador</small></span>${SETA}</a>` +
+    `<button class="lat-restaurar" id="restaurar">${icone("restaurar")}Restaurar dados de exemplo</button>`;
 }

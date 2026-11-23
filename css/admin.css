@@ -764,23 +764,24 @@ a.stat:hover{border-color:var(--red-borda)}
   .lp-lado-itens li{display:flex;flex-direction:column;align-items:center;text-align:center;font-size:1.1cqw;font-weight:700;line-height:1.2;color:#22252c}
   .lp-lado-itens li>span{width:4.2cqw;height:4.2cqw;border-radius:1.1cqw;background:#fff;display:grid;place-items:center;box-shadow:0 .5cqw 1.4cqw #1b26301a;margin-bottom:.8cqw;color:#e0101b}
   .lp-lado-itens .ic{width:2.1cqw;height:2.1cqw;stroke-width:2.2}
-  /* O cartão cobre o cartão do desenho; o conteúdo ocupa a largura dele (como no desenho), em ~80% da escala, com teto em px */
-  .lp-conteudo{position:absolute;left:60.3%;top:15.45%;width:35.6%;min-height:36.7cqw;padding:2.6cqw 3.05cqw;background:#fff;border-radius:1.7cqw;box-shadow:0 1.4cqw 4cqw #1b263020;
-    display:flex;flex-direction:column;justify-content:center}
-  .lp-desk-cab{display:block;margin-bottom:clamp(20px,2cqw,32px)}
-  .lp-desk-cab .lp-lado-regua{width:clamp(44px,4.2cqw,72px);height:clamp(3px,.24cqw,4px)}
-  .lp-desk-cab h2{margin:clamp(10px,.9cqw,14px) 0 0;font-size:clamp(26px,2.4cqw,40px);font-weight:900;letter-spacing:-.045em;color:#0d0f14;line-height:1.1}
-  .lp-desk-cab p{margin:6px 0 0;color:#6b6f78;font-size:clamp(14px,1.1cqw,18px)}
-  .lp-form{gap:clamp(14px,1.3cqw,20px)}
-  .lp-grupo label{font-size:clamp(13px,.98cqw,16px);margin:0 0 8px 0;color:#0d0f14}
-  .lp-campo{height:clamp(46px,3.3cqw,56px);border-radius:14px;padding:0 16px;gap:12px;box-shadow:0 3px 10px #1b26300a}
-  .lp-campo>svg{width:20px;height:20px}
-  .lp-campo input{font-size:clamp(15px,1.05cqw,17px)}
-  .lp-olho svg{width:20px;height:20px}
-  .lp-esqueci{margin:-4px 0 4px}
-  .lp-esqueci button{font-size:clamp(13px,.95cqw,15px);font-weight:500}
-  .lp-entrar{height:clamp(48px,3.6cqw,60px);border-radius:14px;font-size:clamp(14px,1.15cqw,18px);letter-spacing:.03em;gap:12px;background:linear-gradient(100deg,#e3121d,#d10e18 60%,#b30a12)}
-  .lp-entrar svg{width:21px;height:21px}
+  /* Cartão menor que o do desenho (o fundo não tem mais o cartão pintado). A borda esquerda fica
+     colada no corte do patch (x≈60% do pôster) e a altura cobre o patch inteiro. */
+  .lp-conteudo{position:absolute;left:59.9%;top:50.2%;transform:translateY(-50%);width:26.5%;min-height:max(33%,300px);padding:clamp(26px,2.3cqw,40px) clamp(26px,2.4cqw,42px);
+    background:#fff;border-radius:clamp(18px,1.4cqw,24px);box-shadow:0 1.2cqw 3.4cqw #1b263024;display:flex;flex-direction:column;justify-content:center}
+  .lp-desk-cab{display:block;margin-bottom:clamp(16px,1.5cqw,24px)}
+  .lp-desk-cab .lp-lado-regua{width:clamp(36px,3cqw,52px);height:3px}
+  .lp-desk-cab h2{margin:clamp(8px,.7cqw,12px) 0 0;font-size:clamp(22px,1.75cqw,30px);font-weight:900;letter-spacing:-.04em;color:#0d0f14;line-height:1.1}
+  .lp-desk-cab p{margin:4px 0 0;color:#6b6f78;font-size:clamp(13px,.9cqw,15px)}
+  .lp-form{gap:clamp(12px,1cqw,16px)}
+  .lp-grupo label{font-size:clamp(12px,.82cqw,14px);margin:0 0 6px 0;color:#0d0f14}
+  .lp-campo{height:clamp(42px,2.75cqw,50px);border-radius:12px;padding:0 14px;gap:10px;box-shadow:0 3px 10px #1b26300a}
+  .lp-campo>svg{width:18px;height:18px}
+  .lp-campo input{font-size:clamp(14px,.95cqw,16px)}
+  .lp-olho svg{width:18px;height:18px}
+  .lp-esqueci{margin:-4px 0 2px}
+  .lp-esqueci button{font-size:clamp(12px,.82cqw,14px);font-weight:500}
+  .lp-entrar{height:clamp(44px,2.9cqw,52px);border-radius:12px;font-size:clamp(13px,.95cqw,16px);letter-spacing:.03em;gap:10px;background:linear-gradient(100deg,#e3121d,#d10e18 60%,#b30a12)}
+  .lp-entrar svg{width:19px;height:19px}
   .lp-aviso{font-size:12px;margin-top:10px}
 }
 /* Telas ultralargas: o pôster não cobre a largura toda; as bordas somem num degradê */

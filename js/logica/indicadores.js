@@ -34,6 +34,6 @@ export function resumoDashboard(dados, hojeISO) {
     kids: ativos.filter(a => a.categoria === "kids").length,
     aptosKids: ativos.filter(a => a.categoria === "kids" && aptidao(a, checkins, hojeISO).tipo).length,
     viramAdultos: ativos.filter(a => passaParaAdulto(a, hojeISO)).length,
-    aniversariantes: ativos.filter(a => a.nascimento.slice(5, 7) === comp.slice(5)).sort((a, b) => a.nascimento.slice(8).localeCompare(b.nascimento.slice(8)))
+    aniversariantes: ativos.filter(a => a.nascimento && a.nascimento.slice(5, 7) === comp.slice(5)).sort((a, b) => a.nascimento.slice(8).localeCompare(b.nascimento.slice(8)))
   };
 }

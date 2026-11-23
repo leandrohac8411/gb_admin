@@ -1,4 +1,5 @@
 // Alunos: abas Adultos | Kids, busca, filtros, tabela (cartões no celular), cadastro e exportação CSV.
+import { salvarComAviso } from "../logica/mesclar.js";
 import { esc, abrirFolha, toast, dataLonga } from "../ui/util.js";
 import { normalizar, csv } from "../ui/util-admin.js";
 import { faixasDe, nomeFaixa, CORES_FAIXA } from "../ui/faixa.js";
@@ -43,6 +44,7 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
         <div class="secao">Saúde e autorizações</div>
         <div class="field cheio"><label for="f-saude">Alergias e observações</label><input class="input" id="f-saude" name="saude" value="${esc(a.saude || "")}" placeholder="Ex.: alergia a amendoim"></div>
         <label class="check cheio"><input type="checkbox" name="autorizaImagem"${a.autorizaImagem ? " checked" : ""}> Autoriza uso de imagem em fotos e vídeos da academia</label>` : ""}
+        ${novo && store.modo === "painel" ? `<label class="check cheio"><input type="checkbox" name="real" checked> Aluno real (salvar no banco, para o check-in por rosto)</label>` : ""}
         <p class="aviso cheio" id="f-erro" hidden></p>
         <div class="acoes cheio"><button type="button" class="btn ghost" id="f-cancelar">Cancelar</button><button class="btn" type="submit">${novo ? "Cadastrar" : "Salvar"}</button></div>
       </form>`;
@@ -71,6 +73,15 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
       else campos.telefone = (f.telefone || "").trim();
       const d = store.dados;
       let alvo = aluno;
+      // Aluno real: vai para a nuvem; quem traz de volta para a tela é o aviso da nuvem (mesclar).
+      if ((novo && f.real) || (!novo && aluno.real)) {
+        alvo = novo ? { id: store.novoId(kids ? "k" : "a"), categoria, ...campos, faixa: f.faixa, graus: Number(f.graus) || 0, desde: hoje, desdeFaixa: hoje, ultimaGraduacao: hoje, status: "ativo", real: true }
+          : Object.assign(aluno, campos);
+        fechar();
+        import("../nuvem/dados.js").then(m => salvarComAviso(m.salvarAluno(alvo), novo ? `${nome.split(" ")[0]} cadastrado no banco` : "Dados salvos"))
+          .then(ok => { if (ok) aoSalvar?.(alvo); });
+        return;
+      }
       if (novo) {
         const graus = Number(f.graus) || 0;
         alvo = { id: store.novoId(kids ? "k" : "a"), categoria, ...campos, faixa: f.faixa, graus, desde: hoje, desdeFaixa: hoje, ultimaGraduacao: hoje, status: "ativo", vencimentoDia: d.config.vencimentoPadrao || 10 };

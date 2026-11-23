@@ -65,6 +65,7 @@ function subirTitulo(titulo) {
 
 export function registrar(rota, modulo) { TELAS[rota] = modulo; }
 export function definirStore(store) { ctx.store = store; }
+export const lerStore = () => ctx.store;
 
 const naoEncontrada = {
   titulo: "Não encontrado",

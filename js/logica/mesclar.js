@@ -45,5 +45,12 @@ export function paraLocal(dados) {
 // Grava na nuvem com aviso: nunca diz "salvo" se não salvou.
 export async function salvarComAviso(promessa, mensagemOk, avisar = toast) {
   try { await promessa; if (mensagemOk) avisar(mensagemOk); return true; }
-  catch (e) { console.error(e); avisar("Não salvou na nuvem: verifique a internet e tente de novo."); return false; }
+  catch (e) {
+    console.error(e);
+    avisar(e?.code === "permission-denied" || e?.code === "unauthenticated"
+      ? "Não salvou: sem permissão. Saia e entre de novo na conta."
+      : e?.message === "dado inválido" ? "Não salvou: algum dado está fora do formato esperado."
+      : "Não salvou na nuvem: verifique a internet e tente de novo.");
+    return false;
+  }
 }

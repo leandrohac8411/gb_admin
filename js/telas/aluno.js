@@ -10,6 +10,8 @@ import { statusMensalidade, inadimplentes } from "../logica/financeiro.js";
 import { icone } from "../menu.js";
 import { etiquetaPrograma, porId, PILL_STATUS, DIAS_CURTOS, estrelas } from "./comum.js";
 import { aulas30, abrirFormAluno } from "./alunos.js";
+import { cartaoRosto, ligarCartaoRosto } from "./rosto.js";
+import { salvarComAviso } from "../logica/mesclar.js";
 
 
 const MOTIVOS = ["Mudança", "Financeiro", "Lesão", "Horário", "Falta de tempo", "Insatisfação", "Outro"];
@@ -51,12 +53,13 @@ export default {
     el.innerHTML = `<a class="voltar" href="#alunos">‹ Alunos</a>
       <div class="card ficha-topo">
         <span class="av g">${esc(iniciais(a.nome))}</span>
-        <div class="quem"><h1>${esc(a.nome)}</h1><p class="muted" style="margin:4px 0 8px">${nomeFaixa(a.faixa)}${a.graus ? ` · ${a.graus}º grau` : ""}${kids ? ` · ${anos ?? "idade não informada"}${anos != null ? " anos" : ""}` : ""} · desde ${dataLonga(a.desde)}</p>
+        <div class="quem"><h1>${esc(a.nome)}${a.real ? '<span class="etq-real">Real</span>' : ""}</h1><p class="muted" style="margin:4px 0 8px">${nomeFaixa(a.faixa)}${a.graus ? ` · ${a.graus}º grau` : ""}${kids ? ` · ${anos ?? "idade não informada"}${anos != null ? " anos" : ""}` : ""} · desde ${dataLonga(a.desde)}</p>
           ${kids ? '<span class="pill kids">Kids</span> ' : ""}${devendo ? PILL_STATUS.inadimplente : PILL_STATUS[a.status]}${passaParaAdulto(a, hoje) ? ' <span class="pill alerta">Passa para Adultos</span>' : ""}</div>
         <div class="faixa-grande">${faixaSVG(a.faixa, a.graus)}</div>
         <div class="acoes-cab" style="display:flex;gap:8px"><button class="btn sec" id="editar">Editar</button>
           <button class="btn ${a.status === "ativo" ? "sec" : ""}" id="status">${a.status === "ativo" ? "Trancar matrícula" : "Reativar matrícula"}</button></div>
       </div>
+      ${a.real && store.modo === "painel" ? cartaoRosto(a, d) : ""}
       <div class="card dados">
         ${kids ? `<div><small>Idade · turma</small><b>${anos != null ? `${anos} anos` : "Sem data de nascimento"}${turmaKids ? ` · ${esc(turmaKids.publico)}` : ""}</b></div>
         <div><small>Peso</small><b>${a.peso ? `${String(a.peso).replace(".", ",")} kg` : "—"}</b></div>`
@@ -104,11 +107,14 @@ export default {
       </div>`;
 
     el.querySelector("#editar").onclick = () => abrirFormAluno(store, a, () => ctx.redesenhar());
+    if (a.real) ligarCartaoRosto(el, store, a, ctx);
+    // Aluno real: o status também vai para a nuvem (senão o próximo aviso da nuvem desfaria a mudança).
+    const salvarStatus = msg => a.real ? import("../nuvem/dados.js").then(m => salvarComAviso(m.salvarAluno(a), msg)) : (store.salvar(), toast(msg));
     el.querySelector("#status").onclick = async () => {
       if (a.status !== "ativo") {
         if (!await perguntar("Reativar matrícula?", `${a.nome} volta a contar como ativo.`, "Reativar", "Cancelar")) return;
         a.status = "ativo"; delete a.trancamento;
-        store.salvar(); toast("Matrícula reativada"); ctx.redesenhar(); return;
+        salvarStatus("Matrícula reativada"); ctx.redesenhar(); return;
       }
       abrirFolha((f, fechar) => {
         f.innerHTML = `<h3>Trancar matrícula</h3><p class="muted" style="margin:0">${esc(a.nome)} deixa de contar como ativo e sai das cobranças.</p>
@@ -122,7 +128,7 @@ export default {
         f.querySelector("#tr-ok").onclick = () => {
           if (!motivo) { const e = f.querySelector("#tr-erro"); e.textContent = "Escolha o motivo."; e.hidden = false; return; }
           a.status = "trancado"; a.trancamento = { data: hoje, motivo, obs: f.querySelector("#tr-obs").value.trim() };
-          store.salvar(); fechar(); toast("Matrícula trancada"); ctx.redesenhar();
+          fechar(); salvarStatus("Matrícula trancada"); ctx.redesenhar();
         };
       });
     };

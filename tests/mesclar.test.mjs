@@ -75,3 +75,18 @@ test("store.salvar nunca grava dado real no navegador", () => {
   const gravado = [...mem.values()].join("");
   assert.ok(!gravado.includes("Aluno Real Teste") && !gravado.includes('"real":true') && !gravado.includes("d-1-1230"));
 });
+
+import { resumoDashboard } from "../js/logica/indicadores.js";
+
+test("aluno real sem data de nascimento não derruba o Dashboard", () => {
+  const d = mesclar(gerarDados("2026-11-20"), reais());
+  assert.doesNotThrow(() => resumoDashboard(d, "2026-11-20"));
+  assert.ok(!resumoDashboard(d, "2026-11-20").aniversariantes.some(a => a.id === "R1"));
+});
+
+test("salvarComAviso: sem permissão diz para entrar de novo, não fala de internet", async () => {
+  const avisos = [];
+  const e = Object.assign(new Error("x"), { code: "permission-denied" });
+  assert.equal(await salvarComAviso(Promise.reject(e), "ok", t => avisos.push(t)), false);
+  assert.match(avisos[0], /permissão/);
+});

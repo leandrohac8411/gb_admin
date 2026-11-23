@@ -25,7 +25,7 @@ export function etiquetaPrograma(p) {
 }
 
 export function pessoa(aluno, sub = "") {
-  return `<div class="pessoa"><span class="av">${esc(iniciais(aluno.nome))}</span><div style="min-width:0"><b>${esc(aluno.nome)}</b>` +
+  return `<div class="pessoa"><span class="av">${esc(iniciais(aluno.nome))}</span><div style="min-width:0"><b>${esc(aluno.nome)}</b>${aluno.real ? '<span class="etq-real">Real</span>' : ""}` +
     `${sub ? `<small>${sub}</small>` : ""}</div></div>`;
 }
 

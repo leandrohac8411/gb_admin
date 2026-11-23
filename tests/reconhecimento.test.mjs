@@ -52,3 +52,18 @@ test("cadastro: exige um rosto claro", () => {
   assert.equal(escolherRostoCadastro({ rostos: [r(100), r(90)] }).motivo, "varios");
   assert.equal(escolherRostoCadastro({ rostos: [r(100), r(40)] }).rosto.w, 100);
 });
+
+import { consentimentoPadrao, recorte } from "../js/logica/cadastro-rosto.js";
+
+test("consentimento: kids ou menor de 18 pede responsável; adulto autoriza por si", () => {
+  assert.deepEqual(consentimentoPadrao({ categoria: "kids", nascimento: "2018-05-05" }, "Leandro", "2026-11-23"), { por: "Leandro", responsavel: true, data: "2026-11-23" });
+  assert.equal(consentimentoPadrao({ categoria: "adulto", nascimento: "2010-01-01" }, "Leandro", "2026-11-23").responsavel, true);
+  assert.deepEqual(consentimentoPadrao({ categoria: "adulto", nascimento: "1996-01-01", nome: "João Silva" }, "Leandro", "2026-11-23"), { por: "João Silva", responsavel: false, data: "2026-11-23" });
+});
+
+test("recorte: amplia o rosto com margem e não sai da imagem", () => {
+  const r = recorte({ x: 100, y: 100, w: 100, h: 100 }, 1000, 800);
+  assert.deepEqual(r, { x: 75, y: 75, w: 150, h: 150 });
+  const borda = recorte({ x: 0, y: 760, w: 60, h: 40 }, 1000, 800);
+  assert.ok(borda.x >= 0 && borda.y >= 0 && borda.x + borda.w <= 1000 && borda.y + borda.h <= 800);
+});

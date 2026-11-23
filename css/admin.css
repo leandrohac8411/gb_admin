@@ -571,8 +571,8 @@ a.stat:hover{border-color:var(--red-borda)}
 .marca-dagua{position:absolute;right:2px;bottom:-6px;opacity:.18}
 .marca-dagua .ic{width:112px;height:112px;stroke-width:1.4}
 
-.dash-meio{display:grid;grid-template-columns:1.28fr 1fr;gap:15px}
-.dash-base{display:grid;grid-template-columns:1.18fr .94fr 1fr;gap:15px}
+.dash-meio{display:grid;grid-template-columns:minmax(0,1.28fr) minmax(0,1fr);gap:15px}
+.dash-base{display:grid;grid-template-columns:minmax(0,1.18fr) minmax(0,.94fr) minmax(0,1fr);gap:15px}
 .dash-meio .card{min-height:278px}
 .dash-base .card{min-height:242px}
 .card-cab select{font-size:12px;color:#42444c;padding:8px 13px;background:#fff;border:1px solid #d9dce2;border-radius:10px}
@@ -586,7 +586,7 @@ a.stat:hover{border-color:var(--red-borda)}
 .grafico .barras{gap:clamp(6px,2.2%,22px)}
 .grafico .barras .bar{max-width:67px}
 
-.aulas-hoje{display:grid;gap:8px}
+.aulas-hoje{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
 .aula-linha{width:100%;min-height:59px;border:1px solid #e0e3e8;border-radius:12px;background:#fdfdfd;display:flex;align-items:center;gap:12px;padding:6px 12px 6px 10px;transition:.2s}
 .aula-linha:hover,.tarefa:hover,.niver:hover{background:var(--red-hover);border-color:var(--red-borda)}
 .aula-linha .acento{width:6px;height:42px;background:#ee151f;border-radius:6px;flex:none}
@@ -604,7 +604,7 @@ a.stat:hover{border-color:var(--red-borda)}
 .mini-anel::after{content:"";position:absolute;inset:6px;background:#fff;border-radius:50%}
 
 .contador{background:#d60b14;color:#fff;border-radius:99px;height:28px;min-width:28px;padding:0 8px;display:grid;place-items:center;font-size:13px;font-weight:800;flex:none}
-.tarefas{display:grid;gap:6px}
+.tarefas{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
 .tarefa{width:100%;min-height:57px;background:#fcfcfd;border:1px solid #e9e9ed;border-radius:12px;display:flex;align-items:center;gap:10px;padding:6px 9px}
 .tarefa-ic{height:39px;width:39px;border-radius:50%;background:var(--red-soft);color:#dc0914;display:grid;place-items:center;flex:none}
 .tarefa-ic .ic{width:22px;height:22px}
@@ -626,7 +626,7 @@ a.stat:hover{border-color:var(--red-borda)}
 .ponto-v{background:#ee101a}
 .ponto-c{background:#c6c9ce}
 
-.nivers{display:grid}
+.nivers{display:grid;grid-template-columns:minmax(0,1fr)}
 .niver{border:0;border-bottom:1px solid #e6e8eb;width:100%;display:flex;align-items:center;gap:12px;min-height:57px;padding:4px 4px;border-radius:0}
 .niver:last-child{border-bottom:0}
 .iniciais{height:41px;width:41px;display:grid;place-items:center;border-radius:50%;background:linear-gradient(140deg,#9ca0a7,#555b66);color:#fff;font-weight:800;font-size:12px;flex:none}
@@ -640,7 +640,7 @@ a.stat:hover{border-color:var(--red-borda)}
 }
 @media (max-width:1100px){
   .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .dash-meio,.dash-base{grid-template-columns:1fr 1fr}
+  .dash-meio,.dash-base{grid-template-columns:repeat(2,minmax(0,1fr))}
   .dash-base>:last-child{grid-column:1/-1}
 }
 @media (max-width:760px){
@@ -650,16 +650,16 @@ a.stat:hover{border-color:var(--red-borda)}
   .stat-rot{font-size:12px} .stat-pe{font-size:10.5px;max-width:calc(100% - 66px)}
   .pilula{font-size:10px;padding:5px 7px}
   .spark{width:62px;right:6px}
-  .dash-meio,.dash-base{grid-template-columns:1fr;gap:12px}
+  .dash-meio,.dash-base{grid-template-columns:minmax(0,1fr);gap:12px}
   .dash-base>:last-child{grid-column:auto}
   .rosca-area{justify-content:space-evenly}
 }
 
 /* Dashboard v02 — rotina com contador e timeline */
-.dash-rotina{display:grid;grid-template-columns:1fr 1.28fr;gap:15px;align-items:start}
+.dash-rotina{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.28fr);gap:15px;align-items:start}
 .contador.ok{background:#009b45}
 .contador.cinza{background:var(--soft);color:var(--muted2)}
-.rotina{display:grid;gap:8px}
+.rotina{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
 .rot{display:flex;align-items:center;gap:12px;min-height:66px;padding:8px 12px 8px 10px;border:1px solid #e9e9ed;border-radius:12px;background:#fcfcfd;transition:.2s}
 .rot:hover{background:var(--red-hover);border-color:var(--red-borda)}
 .rot-ic{height:40px;width:40px;border-radius:50%;background:var(--red-soft);color:#dc0914;display:grid;place-items:center;flex:none}
@@ -692,7 +692,7 @@ a.stat:hover{border-color:var(--red-borda)}
 .tempo-item time{font-size:11.5px;font-weight:700;color:var(--muted2);flex:none}
 .tempo-mais{width:100%;margin-top:8px;padding:9px;border-radius:10px;border:1px dashed #d5d7dc;font-size:12px;font-weight:700;color:var(--muted2)}
 .tempo-mais:hover{color:var(--red);border-color:var(--red)}
-@media (max-width:1100px){.dash-rotina{grid-template-columns:1fr}}
+@media (max-width:1100px){.dash-rotina{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:760px){.dash-rotina{gap:12px} .tempo-lista{max-height:420px}}
 .rot.vazia{opacity:.62}
 .rot.vazia .rot-ic{background:var(--soft);color:var(--muted2)}

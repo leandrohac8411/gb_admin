@@ -34,3 +34,9 @@ test("servidor local também sem jsDelivr e servindo vendor/", () => {
   assert.ok(!s.includes("jsdelivr"));
   assert.ok(s.includes('"vendor/"'));
 });
+
+test("servidor local usa os mesmos cabeçalhos do vercel.json (sem drift)", () => {
+  const s = readFileSync("servidor.py", "utf8");
+  assert.ok(s.includes('open("vercel.json"'), "servidor.py lê vercel.json");
+  assert.ok(s.includes("upgrade-insecure-requests"), "remove upgrade-insecure-requests no http local");
+});

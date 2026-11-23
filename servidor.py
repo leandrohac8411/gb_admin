@@ -1,31 +1,24 @@
 # Servidor local do GB Admin: igual ao "python -m http.server", mas
 #  - manda o navegador não guardar cópia dos arquivos (evita misturar versões antigas e novas do código);
 #  - só serve o app: pastas/arquivos internos (.git, tests, docs, este script...) dão 404;
-#  - manda os cabeçalhos de segurança que um site de verdade deve ter (CSP etc.).
+#  - manda os mesmos cabeçalhos de segurança do site publicado (lidos do vercel.json).
 # Uso: python servidor.py [porta]   (padrão 8767, só em 127.0.0.1 — ninguém da rede acessa)
-import http.server, os, sys, posixpath, urllib.parse
+import http.server, json, os, sys, posixpath, urllib.parse
 
 # O que pode ser servido: só o app.
 PERMITIDO = ("index.html", "css/", "js/", "img/", "vendor/")
 
-CABECALHOS = {
-    "Cache-Control": "no-store, must-revalidate",
-    "Content-Security-Policy": "; ".join([
-        "default-src 'self'",
-        # face-api (rostos na foto da aula) é servida pelo próprio site, em vendor/.
-        "script-src 'self' 'wasm-unsafe-eval'",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-        "font-src 'self' https://fonts.gstatic.com",
-        "img-src 'self' data: blob:",
-        "connect-src 'self'",
-        "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'",
-    ]),
-    "X-Content-Type-Options": "nosniff",
-    "X-Frame-Options": "DENY",
-    "Referrer-Policy": "no-referrer",
-    "Permissions-Policy": "geolocation=(), camera=(), microphone=(), payment=(), usb=()",
-    "Cross-Origin-Opener-Policy": "same-origin",
-}
+def cabecalhos_da_vercel():
+    # Os mesmos cabeçalhos de segurança do site publicado (vercel.json), para o teste local
+    # ser fiel à produção. Só tira o que não faz sentido em http://localhost.
+    with open("vercel.json", encoding="utf-8") as f:
+        regras = json.load(f)["headers"]
+    h = {x["key"]: x["value"] for x in next(r for r in regras if r["source"] == "/(.*)")["headers"]}
+    h.pop("Strict-Transport-Security", None)
+    h["Content-Security-Policy"] = "; ".join(
+        p.strip() for p in h["Content-Security-Policy"].split(";") if p.strip() != "upgrade-insecure-requests")
+    h["Cache-Control"] = "no-store, must-revalidate"
+    return h
 
 
 def permitido(caminho_url):
@@ -64,5 +57,6 @@ class Seguro(http.server.SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    CABECALHOS = cabecalhos_da_vercel()
     porta = int(sys.argv[1]) if len(sys.argv) > 1 else 8767
     http.server.ThreadingHTTPServer(("127.0.0.1", porta), Seguro).serve_forever()

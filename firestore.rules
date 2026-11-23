@@ -1,0 +1,95 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Só estes dois e-mails entram (em minúsculas). Mantenha igual a USERS em js/nuvem/config.js.
+    function permitido() {
+      return request.auth != null
+        && request.auth.token.email in [
+          'leandrohacarvalho@gmail.com',
+          'strandrade@gmail.com'
+        ];
+    }
+
+    function texto(d, campo, max) {
+      return !(campo in d) || (d[campo] is string && d[campo].size() <= max);
+    }
+    function dataISO(v) { return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'); }
+    function hora(v) { return v is string && v.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'); }
+    function faixa(v) {
+      return v is string && v.size() <= 20 && v.matches('^[a-z]+(-[a-z]+)?$');
+    }
+    // A regra não consegue olhar cada número da lista; o app confere (128 números entre -1 e 1).
+    function descritor(v) { return v is list && v.size() == 128; }
+
+    // ---------- Alunos reais ----------
+    match /alunos/{id} {
+      allow read, delete: if permitido();
+      allow create, update: if permitido() && alunoOk(request.resource.data);
+    }
+    function alunoOk(d) {
+      return d.keys().hasOnly(['nome', 'faixa', 'graus', 'categoria', 'status', 'desde', 'desdeFaixa',
+          'ultimaGraduacao', 'real', 'nascimento', 'telefone', 'sexo'])
+        && d.nome is string && d.nome.size() >= 1 && d.nome.size() <= 80
+        && faixa(d.faixa)
+        && d.graus is int && d.graus >= 0 && d.graus <= 10
+        && d.categoria in ['adulto', 'kids'] && d.status in ['ativo', 'trancado']
+        && dataISO(d.desde) && dataISO(d.desdeFaixa) && dataISO(d.ultimaGraduacao)
+        && d.real == true
+        && (!('nascimento' in d) || dataISO(d.nascimento))
+        && texto(d, 'telefone', 30)
+        && (!('sexo' in d) || d.sexo in ['M', 'F']);
+    }
+
+    // ---------- Rosto: só números (descritores), miniatura pequena e consentimento ----------
+    match /rostos/{alunoId} {
+      allow read, delete: if permitido();
+      allow create, update: if permitido() && rostoOk(request.resource.data)
+        && exists(/databases/$(database)/documents/alunos/$(alunoId));
+    }
+    function rostoOk(d) {
+      return d.keys().hasOnly(['d0', 'd1', 'd2', 'mini', 'consentimento', 'atualizadoEm'])
+        && descritor(d.d0)
+        && (!('d1' in d) || descritor(d.d1))
+        && (!('d2' in d) || descritor(d.d2))
+        && (!('mini' in d) || (d.mini is string && d.mini.size() < 20000 && d.mini.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+$')))
+        && d.consentimento is map
+        && d.consentimento.keys().hasOnly(['por', 'responsavel', 'data'])
+        && d.consentimento.por is string && d.consentimento.por.size() >= 2 && d.consentimento.por.size() <= 80
+        && d.consentimento.responsavel is bool
+        && dataISO(d.consentimento.data)
+        && d.atualizadoEm == request.time;
+    }
+
+    // ---------- Turmas (grade copiada do Diário) ----------
+    match /turmas/{id} {
+      allow read, delete: if permitido();
+      allow create, update: if permitido() && turmaOk(request.resource.data);
+    }
+    function turmaOk(d) {
+      return d.keys().hasOnly(['diaSemana', 'horario', 'programa', 'professor', 'duracaoMin', 'categoria'])
+        && d.diaSemana is int && d.diaSemana >= 0 && d.diaSemana <= 6
+        && hora(d.horario)
+        && texto(d, 'programa', 20) && texto(d, 'professor', 80)
+        && d.duracaoMin is int && d.duracaoMin >= 1 && d.duracaoMin <= 600
+        && d.categoria in ['adulto', 'kids'];
+    }
+
+    // ---------- Check-ins dos alunos reais ----------
+    match /checkins/{id} {
+      allow read, delete: if permitido();
+      allow create, update: if permitido() && checkinOk(request.resource.data);
+    }
+    function checkinOk(d) {
+      return d.keys().hasOnly(['alunoId', 'turmaId', 'data', 'hora', 'origem'])
+        && d.alunoId is string && d.alunoId.size() >= 1 && d.alunoId.size() <= 64
+        && d.turmaId is string && d.turmaId.size() >= 1 && d.turmaId.size() <= 64
+        && dataISO(d.data) && hora(d.hora)
+        && d.origem in ['manual', 'foto', 'rosto'];
+    }
+
+    // Qualquer outro caminho: negado (é o padrão do Firestore, deixado explícito).
+    match /{caminho=**} {
+      allow read, write: if false;
+    }
+  }
+}

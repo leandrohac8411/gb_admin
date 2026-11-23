@@ -43,3 +43,13 @@ export function reconhecer(rostos, cadastrados) {
   }
   return resultado;
 }
+
+// Quem pode ser reconhecido: aluno ativo que ainda existe e tem pelo menos um descritor.
+export function cadastradosDe({ alunos, rostos }) {
+  if (!(rostos instanceof Map)) return [];
+  const ativos = new Set(alunos.filter(a => a.status === "ativo").map(a => a.id));
+  return [...rostos].filter(([id, r]) => ativos.has(id) && r.descritores?.length).map(([alunoId, r]) => ({ alunoId, descritores: r.descritores }));
+}
+
+// Como cada rosto começa na tela de conferência.
+export const escolhaInicial = r => ({ alunoId: r.alunoId || "", marcado: r.estado === "reconhecido" });

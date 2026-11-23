@@ -67,3 +67,18 @@ test("recorte: amplia o rosto com margem e não sai da imagem", () => {
   const borda = recorte({ x: 0, y: 760, w: 60, h: 40 }, 1000, 800);
   assert.ok(borda.x >= 0 && borda.y >= 0 && borda.x + borda.w <= 1000 && borda.y + borda.h <= 800);
 });
+
+import { cadastradosDe, escolhaInicial } from "../js/logica/reconhecimento.js";
+
+test("cadastradosDe: só alunos ativos que existem e têm descritor", () => {
+  const rostos = new Map([["a", { descritores: [v(0)] }], ["b", { descritores: [v(0)] }], ["sumiu", { descritores: [v(0)] }], ["c", { descritores: [] }]]);
+  const alunos = [{ id: "a", status: "ativo" }, { id: "b", status: "trancado" }, { id: "c", status: "ativo" }];
+  assert.deepEqual(cadastradosDe({ alunos, rostos }).map(x => x.alunoId), ["a"]);
+  assert.deepEqual(cadastradosDe({ alunos, rostos: undefined }), []);
+});
+
+test("escolhaInicial: reconhecido vem marcado, dúvida vem escolhido mas desmarcado, desconhecido vazio", () => {
+  assert.deepEqual(escolhaInicial({ estado: "reconhecido", alunoId: "a" }), { alunoId: "a", marcado: true });
+  assert.deepEqual(escolhaInicial({ estado: "duvida", alunoId: "a" }), { alunoId: "a", marcado: false });
+  assert.deepEqual(escolhaInicial({ estado: "desconhecido", alunoId: null }), { alunoId: "", marcado: false });
+});

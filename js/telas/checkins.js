@@ -4,7 +4,10 @@ import { normalizar } from "../ui/util-admin.js";
 import { hojeISO, diaSemana, dataValida, somarDias } from "../logica/datas.js";
 import { icone } from "../menu.js";
 import { comprimirImagem } from "../foto.js";
-import { detectarRostos } from "../rostos.js";
+import { detectarRostos, descreverRostos } from "../rostos.js";
+import { reconhecer, cadastradosDe, escolhaInicial } from "../logica/reconhecimento.js";
+import { recorte } from "../logica/cadastro-rosto.js";
+import { salvarComAviso } from "../logica/mesclar.js";
 import { sugerirPresenca } from "../logica/presenca-foto.js";
 import { temaDaAula } from "../logica/tema.js";
 import { cabecalho, etiquetaPrograma, nomeProfessor, pessoa, faixaCelula, porId, DIAS_LONGOS, aba, daAba, abasCategoria, ligarAbas, definirAba } from "./comum.js";
@@ -29,6 +32,10 @@ function abrirRegistro(store, turma, data, aoFechar) {
       lista.querySelectorAll("[data-id]").forEach(b => b.onclick = () => {
         const a = d.alunos.find(x => x.id === b.dataset.id);
         if (d.checkins.some(c => c.alunoId === a.id && c.turmaId === turma.id && c.data === data)) { toast(`${a.nome.split(" ")[0]} já está presente`); return; }
+        if (a.real) {
+          import("../nuvem/dados.js").then(m => salvarComAviso(m.salvarCheckin({ alunoId: a.id, turmaId: turma.id, data, hora: turma.horario, origem: "manual" }), `Presença de ${a.nome.split(" ")[0]} registrada`));
+          return;
+        }
         d.checkins.push({ id: store.novoId("c"), alunoId: a.id, turmaId: turma.id, data, hora: turma.horario });
         store.salvar(); toast(`Presença de ${a.nome.split(" ")[0]} registrada`); desenhar();
       });
@@ -40,53 +47,105 @@ function abrirRegistro(store, turma, data, aoFechar) {
   }, aoFechar);
 }
 
-// Presença pela foto: detecta os rostos, sugere quem estava e o professor confirma.
+// Presença pela foto. Com alunos reais com rosto cadastrado, reconhece quem é quem (cada rosto
+// aparece recortado ao lado do aluno sugerido); o resto segue pela sugestão por frequência.
+// O professor sempre confirma antes de gravar.
 function abrirAnalise(store, turma, data, foto, pronto) {
   const d = store.dados;
-  let rostos = null, erro = null, pessoas = 0, professorNaFoto = true, marcas = null;
+  const cadastrados = cadastradosDe(d);
+  const reconhecendo = cadastrados.length > 0;
+  let rostos = null, erro = null, pessoas = 0, professorNaFoto = true, marcas = null, escolhas = null;
+  const reaisAtivos = d.alunos.filter(a => a.real && a.status === "ativo").sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
   abrirFolha((el, fechar) => {
+    const jaPresente = id => d.checkins.some(c => c.alunoId === id && c.turmaId === turma.id && c.data === data);
     const desenhar = () => {
-      const sugestao = sugerirPresenca(d, turma, data, pessoas);
+      const porRosto = new Set((escolhas || []).filter(e => e.marcado && e.alunoId).map(e => e.alunoId));
+      const sugestao = sugerirPresenca(d, turma, data, pessoas).filter(x => !porRosto.has(x.aluno.id));
       if (!marcas) marcas = new Map(sugestao.map(x => [x.aluno.id, x.marcado]));
       const novos = sugestao.filter(x => !x.presente && marcas.get(x.aluno.id));
+      const novosRosto = (escolhas || []).filter(e => e.marcado && e.alunoId && !jaPresente(e.alunoId));
+      const total = novos.length + novosRosto.length;
       el.innerHTML = `<h3>Presença pela foto</h3>
-        <p class="muted" style="margin:0">${horaTexto(turma.horario)} · ${dataLonga(data)} · a foto mostra quantos; a lista sugere quem. Confira antes de confirmar.</p>
+        <p class="muted" style="margin:0">${horaTexto(turma.horario)} · ${dataLonga(data)} · ${reconhecendo ? "os rostos cadastrados são reconhecidos" : "a foto mostra quantos; a lista sugere quem"}. Confira antes de confirmar.</p>
         <div class="analise-foto"><span class="af-quadro"><img src="${esc(foto)}" alt="Foto da aula">
           ${rostos ? `<svg class="af-marcas" viewBox="0 0 ${rostos.largura} ${rostos.altura}" preserveAspectRatio="none" aria-hidden="true">${rostos.rostos.map(r =>
             `<rect x="${r.x.toFixed(1)}" y="${r.y.toFixed(1)}" width="${r.w.toFixed(1)}" height="${r.h.toFixed(1)}" rx="${(r.w * 0.12).toFixed(1)}"/>`).join("")}</svg>` : ""}
-          ${!rostos && !erro ? '<div class="analise-carregando">Procurando rostos na foto…</div>' : ""}</span></div>
+          ${!rostos && !erro ? `<div class="analise-carregando">${reconhecendo ? "Reconhecendo os rostos…" : "Procurando rostos na foto…"}</div>` : ""}</span></div>
         ${erro ? `<p class="aviso" style="margin:0">Não consegui analisar a foto (${esc(erro)}). Informe abaixo quantos alunos aparecem.</p>`
           : rostos ? `<p style="margin:0"><b>Encontrei ${rostos.rostos.length} rosto${rostos.rostos.length === 1 ? "" : "s"}</b> na foto.</p>` : ""}
+        ${escolhas?.length ? `<div class="secao">Reconhecidos na foto</div>
+          <div class="lista rec-lista">${escolhas.map((e, i) => `<div class="rec-linha">
+            <canvas class="rec-rosto" width="72" height="72" data-i="${i}" aria-hidden="true"></canvas>
+            <div class="cresce"><select class="input" data-sel="${i}" aria-label="Quem é o rosto ${i + 1}">
+              <option value="">Ninguém / não é aluno</option>
+              ${reaisAtivos.map(a => `<option value="${esc(a.id)}"${a.id === e.alunoId ? " selected" : ""}>${esc(a.nome)}</option>`).join("")}</select>
+              ${e.alunoId && jaPresente(e.alunoId) ? '<small class="muted">já estava na lista de presença</small>' : ""}</div>
+            <span class="pill ${e.estado === "reconhecido" ? "ok" : e.estado === "duvida" ? "alerta" : ""}">${e.estado === "reconhecido" ? "Reconhecido" : e.estado === "duvida" ? "Confira" : "Desconhecido"}</span>
+            <label class="check"><input type="checkbox" data-mar="${i}"${e.marcado ? " checked" : ""}${e.alunoId ? "" : " disabled"}> Presente</label></div>`).join("")}</div>
+          <div class="secao">Outros alunos (sugestão pela frequência)</div>` : ""}
         <div class="campos">
-          <div class="field"><label for="af-n">Alunos na foto</label><input class="input" type="number" min="0" max="80" id="af-n" value="${pessoas}"></div>
+          <div class="field"><label for="af-n">Alunos na foto${escolhas?.length ? " (sem contar os reconhecidos)" : ""}</label><input class="input" type="number" min="0" max="80" id="af-n" value="${pessoas}"></div>
           <label class="check" style="align-self:end"><input type="checkbox" id="af-prof"${professorNaFoto ? " checked" : ""}${rostos ? "" : " disabled"}> O professor está na foto</label>
         </div>
         <div class="lista" style="max-height:34vh;overflow:auto">${sugestao.map(x => `<label class="sug${x.presente ? " ja" : ""}">
           <input type="checkbox" data-a="${esc(x.aluno.id)}"${marcas.get(x.aluno.id) ? " checked" : ""}${x.presente ? " disabled" : ""}>
           ${pessoa(x.aluno, x.presente ? "já estava na lista de presença" : x.vezes ? `veio ${x.vezes}× nesta turma nos últimos 3 meses` : x.mesmoDia ? `treina em outra turma deste dia (${x.mesmoDia}×)` : "não costuma vir neste horário")}
           ${x.presente ? '<span class="pill ok">Presente</span>' : ""}</label>`).join("")}</div>
-        <div class="acoes"><button class="btn ghost" id="af-x">Cancelar</button><button class="btn" id="af-ok"${novos.length ? "" : " disabled"}>${novos.length ? `Confirmar ${novos.length} presença${novos.length === 1 ? "" : "s"}` : "Nada novo para marcar"}</button></div>`;
+        <div class="acoes"><button class="btn ghost" id="af-x">Cancelar</button><button class="btn" id="af-ok"${total ? "" : " disabled"}>${total ? `Confirmar ${total} presença${total === 1 ? "" : "s"}` : "Nada novo para marcar"}</button></div>`;
+      // Recortes dos rostos, desenhados da própria foto (só na tela, nada é guardado).
+      if (escolhas?.length) {
+        const img = el.querySelector(".af-quadro img");
+        const pintar = () => el.querySelectorAll(".rec-rosto").forEach(c => {
+          const r = rostos.rostos[Number(c.dataset.i)], q = recorte(r, rostos.largura, rostos.altura), lado = Math.max(q.w, q.h);
+          c.getContext("2d").drawImage(img, q.x + (q.w - lado) / 2, q.y + (q.h - lado) / 2, lado, lado, 0, 0, 72, 72);
+        });
+        if (img.complete) pintar(); else img.addEventListener("load", pintar, { once: true });
+      }
+      const recalcular = () => {
+        const restantes = escolhas ? escolhas.filter(e => !(e.marcado && e.alunoId)).length : rostos?.rostos.length || 0;
+        pessoas = Math.max(0, restantes - (professorNaFoto ? 1 : 0)); marcas = null;
+      };
+      el.querySelectorAll("[data-sel]").forEach(sel => sel.onchange = () => {
+        const i = Number(sel.dataset.sel), id = sel.value;
+        // Um aluno só pode estar em um rosto: escolher aqui tira dos outros.
+        escolhas.forEach((e, j) => { if (j !== i && id && e.alunoId === id) { e.alunoId = ""; e.marcado = false; } });
+        Object.assign(escolhas[i], { alunoId: id, marcado: !!id });
+        recalcular(); desenhar();
+      });
+      el.querySelectorAll("[data-mar]").forEach(c => c.onchange = () => { escolhas[Number(c.dataset.mar)].marcado = c.checked; recalcular(); desenhar(); });
       const n = el.querySelector("#af-n");
       n.onchange = () => { pessoas = Math.max(0, Math.min(80, Math.floor(Number(n.value) || 0))); marcas = null; desenhar(); };
-      el.querySelector("#af-prof").onchange = e => {
-        professorNaFoto = e.target.checked;
-        pessoas = Math.max(0, rostos.rostos.length - (professorNaFoto ? 1 : 0)); marcas = null; desenhar();
-      };
+      el.querySelector("#af-prof").onchange = e => { professorNaFoto = e.target.checked; recalcular(); desenhar(); };
       el.querySelectorAll("[data-a]").forEach(c => c.onchange = () => { marcas.set(c.dataset.a, c.checked); desenhar(); });
       el.querySelector("#af-x").onclick = () => { fechar(); pronto(); };
-      el.querySelector("#af-ok").onclick = () => {
-        for (const x of novos) {
-          if (!d.checkins.some(c => c.alunoId === x.aluno.id && c.turmaId === turma.id && c.data === data))
-            d.checkins.push({ id: store.novoId("c"), alunoId: x.aluno.id, turmaId: turma.id, data, hora: turma.horario, origem: "foto" });
+      el.querySelector("#af-ok").onclick = async () => {
+        el.querySelector("#af-ok").disabled = true;
+        const lancar = [...novosRosto.map(e => ({ alunoId: e.alunoId, origem: "rosto" })), ...novos.map(x => ({ alunoId: x.aluno.id, origem: "foto" }))];
+        const reais = [], locais = [];
+        for (const l of lancar) (d.alunos.find(a => a.id === l.alunoId)?.real ? reais : locais).push(l);
+        for (const l of locais) if (!jaPresente(l.alunoId)) d.checkins.push({ id: store.novoId("c"), alunoId: l.alunoId, turmaId: turma.id, data, hora: turma.horario, origem: l.origem });
+        if (locais.length) store.salvar();
+        let ok = true;
+        if (reais.length) {
+          const { salvarCheckin } = await import("../nuvem/dados.js");
+          ok = await salvarComAviso(Promise.all(reais.map(l => salvarCheckin({ alunoId: l.alunoId, turmaId: turma.id, data, hora: turma.horario, origem: l.origem }))), null);
         }
-        store.salvar(); fechar(); toast(`${novos.length} presença${novos.length === 1 ? "" : "s"} confirmada${novos.length === 1 ? "" : "s"} pela foto`); pronto();
+        fechar();
+        if (ok) toast(`${lancar.length} presença${lancar.length === 1 ? "" : "s"} confirmada${lancar.length === 1 ? "" : "s"} pela foto`);
+        pronto();
       };
     };
     desenhar();
-    detectarRostos(foto).then(r => {
-      rostos = r; pessoas = Math.max(0, r.rostos.length - 1); marcas = null;
+    (reconhecendo ? descreverRostos(foto) : detectarRostos(foto)).then(r => {
+      rostos = r;
+      if (reconhecendo && r.rostos.length) {
+        escolhas = reconhecer(r.rostos.map(x => x.descritor), cadastrados).map(x => ({ ...escolhaInicial(x), estado: x.estado }));
+        pessoas = Math.max(0, escolhas.filter(e => !e.marcado).length - 1);
+      } else pessoas = Math.max(0, r.rostos.length - 1);
+      marcas = null;
       if (el.isConnected) desenhar();
     }).catch(e => {
+      console.error(e);
       erro = /fetch|network|Failed/i.test(String(e?.message)) ? "sem internet para baixar o detector" : "detector indisponível";
       if (el.isConnected) desenhar();
     });
@@ -128,7 +187,7 @@ export default {
         return vis.length ? `<div class="card" style="border-color:#bfe3cf;background:#f4fbf7"><div class="card-cab"><h3>Aula experimental</h3><a class="link" href="#prospects">Prospects</a></div>
           <div class="lista">${vis.map(p => `<div><div class="cresce"><b>${esc(p.nome)}</b><small>${esc(p.interesse)} · ${esc(p.telefone)}</small></div><span class="pill ok">Visitante</span></div>`).join("")}</div></div>` : ""; })() : ""}
       ${turma ? (() => { const f = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
-        return `<div class="card foto-aula"><div class="card-cab"><div><h3>Foto da aula das ${horaTexto(turma.horario)} ${etiquetaPrograma(turma.programa)}</h3><small>${DIAS_LONGOS[diaSemana(data)]}, ${dataLonga(data)} · ${f ? `salva por Prof. ${esc(nomeProfessor(d, turma.professorId))}` : "o professor registra como foi a aula"}</small></div>
+        return `<div class="card foto-aula"><div class="card-cab"><div><h3>Foto da aula das ${horaTexto(turma.horario)} ${etiquetaPrograma(turma.programa)}</h3><small>${DIAS_LONGOS[diaSemana(data)]}, ${dataLonga(data)} · ${turma.real ? "a foto é analisada no aparelho e não é guardada" : f ? `salva por Prof. ${esc(nomeProfessor(d, turma.professorId))}` : "o professor registra como foi a aula"}</small></div>
           ${f ? `<div style="display:flex;gap:8px"><label class="btn sec peq" style="cursor:pointer">Trocar<input type="file" accept="image/*" capture="environment" id="foto-arq" hidden></label><button class="btn sec peq" id="foto-del">Remover</button></div>` : ""}</div>
           ${f ? `<div class="foto-corpo"><button class="foto-grande" id="foto-ver" aria-label="Ver foto da aula em tela cheia"><img src="${esc(f.foto)}" alt="Foto da aula de ${esc(dataLonga(data))}"><span>Ver em tela cheia</span></button>
             <div class="foto-lado"><label for="foto-leg" class="k">Legenda</label>
@@ -171,6 +230,8 @@ export default {
       let foto;
       try { foto = (await comprimirImagem(arq, 1280, 220 * 1024)).dados; }
       catch { toast("Não deu para ler essa imagem"); return; }
+      // Aula com grade real: a foto só é analisada no aparelho e nunca é guardada.
+      if (turma.real) { abrirAnalise(store, turma, data, foto, ctx.redesenhar); return; }
       const antiga = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
       const nova = { id: store.novoId("fa"), turmaId: turma.id, data, foto, legenda: antiga?.legenda || "", professorId: turma.professorId };
       d.fotosAula = d.fotosAula.filter(x => x !== antiga).concat(nova);
@@ -206,6 +267,7 @@ export default {
     el.querySelectorAll("[data-remover]").forEach(b => b.onclick = async () => {
       const c = d.checkins.find(x => x.id === b.dataset.remover), a = alunos[c?.alunoId];
       if (!c || !await perguntar("Remover presença?", `${a?.nome || "Aluno"} sai da lista desta aula.`, "Remover", "Cancelar")) return;
+      if (c.real) { const m = await import("../nuvem/dados.js"); await salvarComAviso(m.apagarCheckin(c.id), "Presença removida"); return; }
       d.checkins = d.checkins.filter(x => x.id !== c.id);
       store.salvar(); toast("Presença removida"); ctx.redesenhar();
     });

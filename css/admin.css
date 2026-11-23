@@ -715,3 +715,9 @@ a.stat:hover{border-color:var(--red-borda)}
 .rosto-linha{display:flex;align-items:center;gap:14px;margin-bottom:12px}
 .rosto-mini{width:64px;height:64px;border-radius:14px;object-fit:cover;flex:none;background:var(--soft)}
 .vazio-mini{display:grid;place-items:center;color:var(--muted);font-weight:800;font-size:22px}
+.rec-lista>.rec-linha{display:grid;grid-template-columns:72px minmax(0,1fr) auto;grid-template-areas:"foto sel pill" "foto sel marca";gap:4px 12px;align-items:center}
+.rec-rosto{grid-area:foto;width:72px;height:72px;border-radius:12px;background:var(--soft)}
+.rec-linha .cresce{grid-area:sel;min-width:0}
+.rec-linha .pill{grid-area:pill;justify-self:end}
+.rec-linha .check{grid-area:marca;justify-self:end;font-size:12.5px}
+.folha>.secao{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}

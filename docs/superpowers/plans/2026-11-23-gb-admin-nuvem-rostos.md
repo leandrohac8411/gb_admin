@@ -40,7 +40,7 @@
 
 ---
 
-### Tarefa 1: Modelos locais, cabeçalhos da Vercel e o que não vai para a publicação
+### Task 1: Modelos locais, cabeçalhos da Vercel e o que não vai para a publicação
 
 **Arquivos:**
 - Criar:
@@ -114,7 +114,7 @@ test("modelos de reconhecimento presentes", () => {
 - [ ] **Passo 7:** abrir Check-ins no navegador e analisar uma foto. A contagem de rostos tem que funcionar sem nenhuma requisição ao jsDelivr; conferir em `read_network_requests`.
 - [ ] **Passo 8:** commit `feat: face-api no próprio site, vercel.json com cabeçalhos de segurança`.
 
-### Tarefa 2: Comparação de rostos (lógica pura)
+### Task 2: Comparação de rostos (lógica pura)
 
 **Arquivos:**
 - Criar: `js/logica/reconhecimento.js`
@@ -175,7 +175,7 @@ test("descritoresDoRosto ignora campos inválidos", () => {
 - [ ] **Passo 4:** rodar `npm test`. Esperado: fail 0.
 - [ ] **Passo 5:** commit `feat: comparação de descritores de rosto com atribuição única`.
 
-### Tarefa 3: Descritores na face-api (navegador)
+### Task 3: Descritores na face-api (navegador)
 
 **Arquivos:**
 - Alterar: `js/rostos.js`
@@ -210,7 +210,7 @@ test("cadastro: exige um rosto claro", () => {
 
 > **Pausa com o Leandro, antes da Tarefa 4:** criar o projeto Firebase "gb-admin" no plano Spark; ligar Authentication (e-mail e senha) e o Firestore (modo produção, região `southamerica-east1`); criar as 2 contas; mandar a configuração do app da Web (Console › Configurações do projeto › Seus apps). Sem isso, as Tarefas 4 a 9 rodam só no modo "não configurado".
 
-### Tarefa 4: Camada Firebase e regras
+### Task 4: Camada Firebase e regras
 
 **Arquivos:**
 - Criar:
@@ -257,7 +257,7 @@ test("cadastro: exige um rosto claro", () => {
 - [ ] **Passo 5:** rodar `npm test`. Esperado: fail 0.
 - [ ] **Passo 6:** commit `feat: camada Firebase do GB Admin, validadores e regras`.
 
-### Tarefa 5: Login com bloqueio e modo demonstração local
+### Task 5: Login com bloqueio e modo demonstração local
 
 **Arquivos:**
 - Criar:
@@ -299,7 +299,7 @@ test("cadastro: exige um rosto claro", () => {
   - com a configuração real, 5 senhas erradas com um e-mail falso bloqueiam o botão.
 - [ ] **Passo 7:** commit `feat: login do GB Admin com bloqueio e modo demonstração local`.
 
-### Tarefa 6: Mesclar os dados reais aos fictícios
+### Task 6: Mesclar os dados reais aos fictícios
 
 **Arquivos:**
 - Criar: `js/logica/mesclar.js`
@@ -328,7 +328,7 @@ test("cadastro: exige um rosto claro", () => {
 - [ ] **Passo 4:** rodar `npm test`. Esperado: fail 0.
 - [ ] **Passo 5:** commit `feat: dados reais da nuvem mesclados aos fictícios, sem ir para o localStorage`.
 
-### Tarefa 7: Cadastro de aluno real e do rosto, com consentimento
+### Task 7: Cadastro de aluno real e do rosto, com consentimento
 
 **Arquivos:**
 - Alterar:
@@ -364,7 +364,7 @@ test("cadastro: exige um rosto claro", () => {
   - "Apagar dados do rosto" remove o documento.
 - [ ] **Passo 7:** commit `feat: aluno real com cadastro de rosto e consentimento`.
 
-### Tarefa 8: Check-in pela foto com reconhecimento
+### Task 8: Check-in pela foto com reconhecimento
 
 **Arquivos:**
 - Alterar: `js/telas/checkins.js` (`abrirAnalise`, linhas 44 a 94) e o CSS da análise
@@ -397,7 +397,7 @@ test("cadastro: exige um rosto claro", () => {
   - nenhuma foto gravada.
 - [ ] **Passo 7:** commit `feat: check-in pela foto reconhecendo os alunos reais`.
 
-### Tarefa 9: Grade do Diário para o GB Admin
+### Task 9: Grade do Diário para o GB Admin
 
 **Arquivos:**
 - No **Diário**:
@@ -428,7 +428,7 @@ test("cadastro: exige um rosto claro", () => {
 - [ ] **Passo 4:** rodar `npm test` nos dois projetos. Esperado: fail 0 nos dois.
 - [ ] **Passo 5:** commit no Diário `feat: exportar grade para o GB Admin`. Commit no GB Admin `feat: importar grade do Diário`.
 
-### Tarefa 10: Auditoria da etapa e roteiro de publicação
+### Task 10: Auditoria da etapa e roteiro de publicação
 
 **Arquivos:**
 - Criar: `docs/PUBLICAR.md`, com os passos do Leandro em ordem:

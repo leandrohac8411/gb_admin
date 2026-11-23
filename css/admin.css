@@ -654,3 +654,46 @@ a.stat:hover{border-color:var(--red-borda)}
   .dash-base>:last-child{grid-column:auto}
   .rosca-area{justify-content:space-evenly}
 }
+
+/* Dashboard v02 — rotina com contador e timeline */
+.dash-rotina{display:grid;grid-template-columns:1fr 1.28fr;gap:15px;align-items:start}
+.contador.ok{background:#009b45}
+.contador.cinza{background:var(--soft);color:var(--muted2)}
+.rotina{display:grid;gap:8px}
+.rot{display:flex;align-items:center;gap:12px;min-height:66px;padding:8px 12px 8px 10px;border:1px solid #e9e9ed;border-radius:12px;background:#fcfcfd;transition:.2s}
+.rot:hover{background:var(--red-hover);border-color:var(--red-borda)}
+.rot-ic{height:40px;width:40px;border-radius:50%;background:var(--red-soft);color:#dc0914;display:grid;place-items:center;flex:none}
+.rot.ok .rot-ic{background:var(--good-soft);color:var(--good)}
+.rot-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.rot-txt small{font-size:11px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.04em}
+.rot-txt b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rot.ok .rot-txt b{color:var(--muted2)}
+.rot-barra{height:5px;border-radius:9px;background:#eceef1;overflow:hidden;margin-top:3px}
+.rot-barra i{display:block;height:100%;border-radius:9px;background:var(--grad)}
+.rot.ok .rot-barra i{background:var(--good)}
+.rot>.ic{width:18px;height:18px;color:var(--muted)}
+.chips-tempo{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chips-tempo button{font-size:11.5px;font-weight:700;padding:6px 11px;border-radius:99px;border:1px solid #dfe1e6;background:#fff;color:#454852}
+.chips-tempo button:hover{border-color:var(--red-borda);color:var(--red)}
+.chips-tempo button.on{background:var(--grad);border-color:transparent;color:#fff}
+.tempo-lista{max-height:360px;overflow-y:auto;scrollbar-width:thin;padding-right:4px;position:relative}
+.tempo-dia{position:sticky;top:0;background:#fff;z-index:1;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:8px 0 5px}
+.tempo-item{display:flex;align-items:center;gap:11px;padding:7px 6px 7px 0;margin-left:16px;border-left:2px solid #eceef1;position:relative}
+.tempo-item:hover .tempo-txt b{color:var(--red)}
+.tempo-ic{height:30px;width:30px;border-radius:50%;display:grid;place-items:center;flex:none;margin-left:-16px;border:2px solid #fff;background:var(--soft);color:var(--muted2)}
+.tempo-ic .ic{width:15px;height:15px}
+.t-checkin .tempo-ic{background:var(--red-soft);color:#dc0914}
+.t-pagamento .tempo-ic{background:var(--good-soft);color:var(--good)}
+.t-graduacao .tempo-ic{background:var(--blue-soft);color:var(--blue)}
+.t-matricula .tempo-ic{background:var(--mid-soft);color:var(--mid)}
+.tempo-txt{flex:1;min-width:0}
+.tempo-txt b{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tempo-txt small{display:block;font-size:11.5px;color:#666b73;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tempo-item time{font-size:11.5px;font-weight:700;color:var(--muted2);flex:none}
+.tempo-mais{width:100%;margin-top:8px;padding:9px;border-radius:10px;border:1px dashed #d5d7dc;font-size:12px;font-weight:700;color:var(--muted2)}
+.tempo-mais:hover{color:var(--red);border-color:var(--red)}
+@media (max-width:1100px){.dash-rotina{grid-template-columns:1fr}}
+@media (max-width:760px){.dash-rotina{gap:12px} .tempo-lista{max-height:420px}}
+.rot.vazia{opacity:.62}
+.rot.vazia .rot-ic{background:var(--soft);color:var(--muted2)}
+.rot.vazia .rot-barra{visibility:hidden}

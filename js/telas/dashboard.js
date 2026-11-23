@@ -1,14 +1,17 @@
 // Dashboard (v02): números do mês, presença das últimas semanas, aulas de hoje, pendências,
 // mensalidades do mês e aniversariantes — no layout do "Dashboard claro".
-import { esc, horaTexto, iniciais } from "../ui/util.js";
+import { esc, horaTexto, iniciais, dataCurta } from "../ui/util.js";
 import { reais } from "../ui/util-admin.js";
 import { hojeISO, deISO, somarDias } from "../logica/datas.js";
 import { resumoDashboard } from "../logica/indicadores.js";
 import { temaDaAula } from "../logica/tema.js";
 import { icone } from "../menu.js";
+import { rotina, linhaDoTempo, TIPOS_TEMPO } from "../logica/rotina.js";
 import { cabecalho, nomeProfessor } from "./comum.js";
 
-const estado = { semanas: 8 };
+const estado = { semanas: 8, tipo: "", limite: 25 };
+const IC_TEMPO = { checkin: "checkins", pagamento: "financeiro", graduacao: "graduacoes", matricula: "alunos", outros: "relogio" };
+const diaTexto = (iso, hoje) => iso === hoje ? "Hoje" : iso === somarDias(hoje, -1) ? "Ontem" : dataCurta(iso);
 
 // Linha suave com área esmaecida embaixo (valores → pontos num quadro 90×44).
 function spark(valores, cor) {
@@ -54,6 +57,7 @@ export default {
       return Math.max(1, ...Object.values(porDia));
     };
 
+    const rot = rotina(d, hoje), tempo = linhaDoTempo(d, hoje, { tipo: estado.tipo });
     const n = estado.semanas, pres = r.presencaSemanas.slice(-n), sems = r.semanas.slice(-n);
     const topo = Math.max(10, Math.ceil(Math.max(...pres) * 1.1 / 10) * 10);
 
@@ -96,6 +100,21 @@ export default {
         </article>
       </section>
 
+      <section class="dash-rotina">
+        <article class="card"><div class="card-cab"><div class="titulo-ic">${icone("relogio")}<h3>Organize sua rotina</h3></div>${(() => { const conta = rot.filter(t => !t.vazio), ok = conta.filter(t => t.ok).length; return `<span class="contador${ok === conta.length ? " ok" : ""}" title="tarefas concluídas">${ok}/${conta.length}</span>`; })()}</div>
+          <div class="rotina">${rot.map(t => `<a class="rot${t.ok ? " ok" : ""}${t.vazio ? " vazia" : ""}" href="#${t.rota}"><span class="rot-ic">${t.ok ? '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>' : icone(t.icone)}</span>
+            <span class="rot-txt"><small>${t.quando} · ${t.vazio ? t.semNada : `${t.feitas} de ${t.total}`}</small><b>${t.titulo}</b><span class="rot-barra"><i style="width:${t.total ? Math.round(t.feitas / t.total * 100) : 100}%"></i></span></span>
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a>`).join("")}</div>
+        </article>
+        <article class="card"><div class="card-cab"><div class="titulo-ic">${icone("relatorios")}<h3>Timeline <span>– últimos 14 dias</span></h3></div><span class="contador cinza">${tempo.length}</span></div>
+          <div class="chips-tempo" role="group" aria-label="Filtrar a timeline">${[["", "Tudo"], ...Object.entries(TIPOS_TEMPO)].map(([k, v]) => `<button type="button" data-tipo="${k}" class="${k === estado.tipo ? "on" : ""}" aria-pressed="${k === estado.tipo}">${v}</button>`).join("")}</div>
+          ${tempo.length ? `<div class="tempo-lista">${tempo.slice(0, estado.limite).map((x, i, l) => (i === 0 || l[i - 1].data !== x.data ? `<div class="tempo-dia">${diaTexto(x.data, hoje)}</div>` : "") +
+            `<a class="tempo-item t-${x.tipo}" href="#${x.rota}"><span class="tempo-ic">${icone(IC_TEMPO[x.tipo])}</span><span class="tempo-txt"><b>${esc(x.titulo)}</b><small>${esc(x.detalhe)}</small></span>${x.hora ? `<time>${horaTexto(x.hora)}</time>` : ""}</a>`).join("")}
+            ${tempo.length > estado.limite ? `<button type="button" class="tempo-mais" id="tempo-mais">Ver mais (${tempo.length - estado.limite})</button>` : ""}</div>`
+            : `<div class="vazio">Nada por aqui nos últimos 14 dias.</div>`}
+        </article>
+      </section>
+
       <section class="dash-base">
         <article class="card"><div class="card-cab"><div class="titulo-ic">${icone("alerta")}<h3>Atenção <span>– ações pendentes</span></h3></div><span class="contador">${tarefas.length}</span></div>
           ${tarefas.length ? `<div class="tarefas">${tarefas.map(([rota, ic, t, s]) => `<a class="tarefa" href="#${rota}"><span class="tarefa-ic">${icone(ic)}</span><span class="tarefa-txt"><b>${t}</b><small>${s}</small></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a>`).join("")}</div>`
@@ -113,6 +132,11 @@ export default {
         </article>
       </section>`;
 
+    // Filtro e "ver mais" redesenham a tela sem pular para o topo.
+    const noLugar = muda => () => { const y = window.scrollY; muda(); ctx.redesenhar(); window.scrollTo(0, y); };
+    for (const b of el.querySelectorAll(".chips-tempo button")) b.onclick = noLugar(() => { estado.tipo = b.dataset.tipo; estado.limite = 25; });
+    const mais = el.querySelector("#tempo-mais");
+    if (mais) mais.onclick = noLugar(() => { estado.limite += 25; });
     el.querySelector("#periodo").onchange = e => { estado.semanas = Number(e.target.value); ctx.redesenhar(); };
   }
 };

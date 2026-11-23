@@ -40,7 +40,7 @@ Passos em ordem. Os comandos são para o PowerShell, rodados dentro de `C:\xampp
 Faça no celular, no site da Vercel:
 
 - [ ] Sem login, o site abre na tela de login, nunca no painel.
-- [ ] 5 senhas erradas mostram "Aguarde 60s".
+- [ ] 5 senhas erradas mostram "AGUARDE 60s" no botão.
 - [ ] Login certo abre o painel com "Bem-vindo, Leandro" e o botão **Sair** no menu.
 - [ ] **Configurações › Importar grade do Diário** (antes, no Diário, use **Perfil › Exportar grade para o GB Admin**): aparecem as 15 turmas.
 - [ ] **Alunos › Novo aluno**, com "Aluno real" marcado: o aluno aparece com a etiqueta **Real**.

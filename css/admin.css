@@ -700,6 +700,48 @@ a.stat:hover{border-color:var(--red-borda)}
 
 /* ---------- Login e faixa da demonstração ---------- */
 #login{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-left)) 24px max(16px,env(safe-area-inset-right))}
+#login:has(.lp){padding:0;background:#eef0f3}
+
+/* Login no visual do Diário de Tatame: faixa preta e kimono no fundo, logo da GB Sobradinho no topo */
+.lp{position:relative;isolation:isolate;overflow:hidden;width:100%;max-width:460px;min-height:100vh;min-height:100dvh;background:#fff;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#111a2e}
+.lp-fundo{position:absolute;inset:0;background:url(../img/login-fundo-preto.jpg) center/100% 100% no-repeat;z-index:-1;pointer-events:none}
+.lp-conteudo{position:relative;padding:calc(clamp(36px,6vh,64px) + env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-left,0px)) 24px max(24px,env(safe-area-inset-right,0px))}
+.lp-marca{text-align:center;margin-bottom:26px}
+.lp-linha-marca{display:flex;align-items:center;justify-content:center;gap:15px;min-height:96px}
+.lp-logo{width:92px;height:92px;flex:none;object-fit:contain;filter:drop-shadow(0 4px 10px #c51a1d22)}
+.lp-separador{height:52px;width:1px;flex:none;background:#8e9299}
+.lp-app{display:flex;flex-direction:column;text-align:left;margin:0;font-size:clamp(20px,5.6vw,25px);line-height:1.08;font-weight:900;letter-spacing:-.7px;white-space:nowrap}
+.lp-app span{font-size:.78em;font-weight:850;color:#d71920;letter-spacing:.5px;text-transform:uppercase;margin-top:4px}
+.lp-regua{height:1.5px;background:linear-gradient(90deg,transparent,#e31b23 12%,#e31b23 88%,transparent);margin:16px 0 20px}
+.lp-frase{font-size:clamp(15px,4vw,19px);font-weight:750;color:#424246;margin:0;line-height:1.35}
+.lp-frase em{font-style:italic;color:#d71920;position:relative;white-space:nowrap}
+.lp-frase em::after{content:"";position:absolute;left:4%;right:0;bottom:-7px;height:4px;background:#d71920;border-radius:70% 30% 50% 40%;transform:rotate(-3deg)}
+.lp-form{display:flex;flex-direction:column;gap:14px}
+.lp-grupo label{display:block;font-size:12px;font-weight:750;margin:0 0 8px 3px}
+.lp-campo{display:flex;align-items:center;gap:12px;height:54px;padding:0 15px;background:#fff;border:1px solid #e1e4e9;border-radius:16px;box-shadow:0 6px 20px #1b26300a;transition:border-color .2s,box-shadow .2s}
+.lp-campo:focus-within{border-color:#e25c60;box-shadow:0 0 0 4px #d7192010}
+.lp-campo>svg{width:20px;height:20px;fill:none;stroke:#888f9c;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.lp-campo input{border:0;outline:0;min-width:0;width:100%;height:100%;color:#111a2e;background:transparent;font-size:16px}
+.lp-campo input::placeholder{color:#9299a5}
+.lp-olho{padding:7px;display:grid;place-items:center;color:#747c89}
+.lp-olho svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.lp-esqueci{text-align:right;margin:-1px 2px 3px}
+.lp-esqueci button{color:#c71c23;font-size:11.5px;font-weight:600}
+.lp-entrar{height:54px;border-radius:15px;background:linear-gradient(110deg,#c81920,#e1222a 55%,#c81920);color:#fff;display:flex;align-items:center;justify-content:center;gap:12px;font-size:14px;font-weight:850;letter-spacing:.7px;box-shadow:0 10px 22px #d7192030;transition:transform .15s}
+.lp-entrar:active{transform:translateY(1px)}
+.lp-entrar:disabled{opacity:.6}
+.lp-entrar svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lp-aviso{text-align:center;color:#bd1b23;font-size:12px;font-weight:600;margin:10px 0 0;min-height:15px}
+.lp-ou{display:flex;align-items:center;gap:15px;color:#9298a1;font-size:12px;margin:10px 18px 12px}
+.lp-ou::before,.lp-ou::after{content:"";height:1px;flex:1;background:#e8e8eb}
+.lp-bio{width:100%;height:48px;display:flex;align-items:center;justify-content:center;border:1px solid #e2e3e7;border-radius:15px;background:#ffffffd9;color:#263044;font-size:12.5px;font-weight:650;box-shadow:0 5px 16px #1c28300a}
+@media(max-width:390px){.lp-conteudo{padding-left:17px;padding-right:17px}.lp-linha-marca{gap:10px}.lp-logo{width:74px;height:74px}.lp-separador{height:44px}.lp-app{font-size:20px}}
+@media(max-height:760px){.lp-conteudo{padding-top:26px}.lp-linha-marca{min-height:76px}.lp-logo{width:72px;height:72px}.lp-regua{margin:10px 0 13px}.lp-marca{margin-bottom:16px}.lp-form{gap:9px}.lp-campo{height:47px}.lp-entrar{height:48px}}
+/* No computador: o login vira um cartão do tamanho de um celular, no meio da tela */
+@media(min-width:600px) and (min-height:700px){
+  #login:has(.lp){padding:24px}
+  .lp{min-height:min(860px,calc(100dvh - 48px));border-radius:26px;box-shadow:0 24px 60px #1b263024}
+}
 .login-caixa{width:100%;max-width:360px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:28px 24px;box-shadow:var(--sombra);display:flex;flex-direction:column;gap:14px;text-align:center}
 .login-logo{width:120px;margin:0 auto}
 .login-caixa h1{font-size:22px}

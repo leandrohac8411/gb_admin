@@ -13,28 +13,53 @@ let ultimoReset = 0;
 
 const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Ícones do login (mesmo traço do Diário de Tatame).
+const ic = {
+  email: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6l8.5 7 8.5-7"/></svg>',
+  senha: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg>',
+  olho: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  olhoFechado: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M4 20L20 4"/></svg>',
+  entrar: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M3 12h11M10 8l4 4-4 4"/></svg>'
+};
+
 // aviso: mensagem inicial (ex.: "Este e-mail não tem acesso"). voltarDemo: só no computador.
 export function montarLogin(el, { aviso = "", voltarDemo = null } = {}) {
   el.innerHTML = `
-    <div class="login-caixa">
-      <img class="login-logo" src="img/logo-sobradinho.png" alt="GB Sobradinho">
-      <h1>GB Admin</h1>
-      <p class="muted">Acesso restrito à equipe da academia.</p>
-      <form id="lg-f" novalidate>
-        <div class="field"><label for="lg-email">E-mail</label>
-          <input class="input" id="lg-email" type="email" autocomplete="username" inputmode="email" maxlength="254" autocapitalize="none" spellcheck="false" required></div>
-        <div class="field"><label for="lg-senha">Senha</label>
-          <input class="input" id="lg-senha" type="password" autocomplete="current-password" maxlength="128" required></div>
-        <button class="btn bloco" type="submit" id="lg-entrar">Entrar</button>
-        <button class="login-link" type="button" id="lg-esqueci">Esqueci minha senha</button>
-      </form>
-      <p class="login-erro" id="lg-erro" role="status" aria-live="polite">${esc(aviso)}</p>
-      ${voltarDemo ? '<button class="login-link" type="button" id="lg-demo">Voltar para a demonstração</button>' : ""}
+    <div class="lp">
+      <div class="lp-fundo" aria-hidden="true"></div>
+      <div class="lp-conteudo">
+        <header class="lp-marca">
+          <div class="lp-linha-marca">
+            <img class="lp-logo" src="img/logo-sobradinho.png" alt="GB Sobradinho">
+            <span class="lp-separador" aria-hidden="true"></span>
+            <h1 class="lp-app">GB Sobradinho<span>Admin</span></h1>
+          </div>
+          <div class="lp-regua" aria-hidden="true"></div>
+          <p class="lp-frase">Gestão da academia, do <em>tatame</em> ao caixa</p>
+        </header>
+        <form id="lg-f" class="lp-form" novalidate>
+          <div class="lp-grupo"><label for="lg-email">E-mail</label>
+            <div class="lp-campo">${ic.email}<input id="lg-email" type="email" placeholder="seu@email.com" autocomplete="username" inputmode="email" maxlength="254" autocapitalize="none" spellcheck="false" required></div></div>
+          <div class="lp-grupo"><label for="lg-senha">Senha</label>
+            <div class="lp-campo">${ic.senha}<input id="lg-senha" type="password" placeholder="Digite sua senha" autocomplete="current-password" maxlength="128" required>
+              <button type="button" class="lp-olho" id="lg-olho" aria-label="Mostrar senha">${ic.olho}</button></div></div>
+          <div class="lp-esqueci"><button type="button" id="lg-esqueci">Esqueci minha senha</button></div>
+          <button class="lp-entrar" type="submit" id="lg-entrar">${ic.entrar}<span>ENTRAR</span></button>
+        </form>
+        <p class="lp-aviso" id="lg-erro" role="status" aria-live="polite">${esc(aviso)}</p>
+        ${voltarDemo ? '<div class="lp-ou"><span>ou</span></div><button class="lp-bio" type="button" id="lg-demo">Ver a demonstração</button>' : ""}
+      </div>
     </div>`;
   const $ = id => el.querySelector("#lg-" + id);
   const erro = t => { $("erro").textContent = t; };
-  const botao = (t, travado) => { $("entrar").textContent = t; $("entrar").disabled = travado; };
+  const botao = (t, travado) => { $("entrar").querySelector("span").textContent = t; $("entrar").disabled = travado; };
   if (voltarDemo) $("demo").onclick = voltarDemo;
+  $("olho").onclick = () => {
+    const ver = $("senha").type === "password";
+    $("senha").type = ver ? "text" : "password";
+    $("olho").innerHTML = ver ? ic.olhoFechado : ic.olho;
+    $("olho").setAttribute("aria-label", ver ? "Esconder senha" : "Mostrar senha");
+  };
 
   let relogio = null;
   const mostrarBloqueio = () => {
@@ -42,8 +67,8 @@ export function montarLogin(el, { aviso = "", voltarDemo = null } = {}) {
     const atualizar = () => {
       if (!el.isConnected) return clearInterval(relogio);
       const falta = esperaRestante(tentativas(), Date.now());
-      if (!falta) { clearInterval(relogio); botao("Entrar", false); erro(""); return; }
-      botao(`Aguarde ${Math.ceil(falta / 1000)}s`, true);
+      if (!falta) { clearInterval(relogio); botao("ENTRAR", false); erro(""); return; }
+      botao(`AGUARDE ${Math.ceil(falta / 1000)}s`, true);
       erro("Muitas tentativas erradas. Por segurança, espere 1 minuto para tentar de novo.");
     };
     atualizar(); relogio = setInterval(atualizar, 1000);
@@ -57,13 +82,13 @@ export function montarLogin(el, { aviso = "", voltarDemo = null } = {}) {
     if (!email || !senha) return erro("Preencha e-mail e senha.");
     // Campos absurdos nem vão para o servidor.
     if (email.length > 254 || senha.length > 128 || !EMAIL_OK.test(email)) return erro("E-mail ou senha incorretos.");
-    erro(""); botao("Entrando…", true);
+    erro(""); botao("ENTRANDO…", true);
     try {
       await entrar(email, senha);
       salvarTentativas(registrarSucesso());
       // Quem abre o painel é o aviso de "usuário mudou" (ver telas/index.js).
     } catch (err) {
-      botao("Entrar", false);
+      botao("ENTRAR", false);
       const codigo = err?.code || "";
       if (codigo === "auth/network-request-failed") return erro("Sem internet. Confira a conexão e tente de novo.");
       if (codigo === "auth/too-many-requests") {

@@ -2,6 +2,7 @@
 // o painel funciona só em memória.
 import { gerarDados, VERSAO, COLECOES } from "./dados-ficticios.js";
 import { faixaValida } from "./ui/faixa.js";
+import { paraLocal } from "./logica/mesclar.js";
 
 const CHAVE = `gb-admin:v${VERSAO}`;
 
@@ -58,8 +59,9 @@ export function criarStore(hojeISO, armazenamento = globalThis.localStorage) {
   const store = {
     dados: ler(armazenamento, hojeISO) || gerarDados(hojeISO),
     salvar() {
+      // Dados reais (da nuvem) nunca ficam no navegador: paraLocal tira tudo que é real.
       // false = não coube no navegador (ou armazenamento bloqueado): os dados seguem só em memória.
-      try { if (!armazenamento) return false; armazenamento.setItem(CHAVE, JSON.stringify(store.dados)); return true; } catch { return false; }
+      try { if (!armazenamento) return false; armazenamento.setItem(CHAVE, JSON.stringify(paraLocal(store.dados))); return true; } catch { return false; }
     },
     restaurar(hoje = hojeISO) {
       store.dados = gerarDados(hoje);

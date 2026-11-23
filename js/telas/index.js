@@ -5,7 +5,8 @@ import { hojeISO } from "../logica/datas.js";
 import { aplicarRegras } from "../logica/graduacao.js";
 import { modoInicial, emailAutorizado } from "../logica/validar-nuvem.js";
 import { USERS } from "../nuvem/config.js";
-import { perguntar, toast, esc } from "../ui/util.js";
+import { perguntar, toast, esc, haFolhaAberta } from "../ui/util.js";
+import { mesclar, paraLocal } from "../logica/mesclar.js";
 import { montarLogin } from "./login.js";
 import dashboard from "./dashboard.js";
 import alunos from "./alunos.js";
@@ -49,6 +50,7 @@ function abrirPainel(modo, fb, usuario) {
     });
     // Saiu em outra aba ou a sessão expirou: volta para o login.
     fb.aoMudarUsuario(u2 => { if (!u2) location.reload(); });
+    ouvirNuvem(store);
   } else {
     elDemo.hidden = false;
     elDemo.innerHTML = `<span>Demonstração: dados fictícios, nada vai para a nuvem.</span>${fb?.configurado ? '<button type="button" id="demo-entrar">Entrar com a conta</button>' : ""}`;
@@ -73,6 +75,21 @@ function abrirPainel(modo, fb, usuario) {
 
   desenhar();
   return store;
+}
+
+// Dados reais: a cada mudança na nuvem, remescla sobre o fictício atual e redesenha.
+// Se houver uma janela de edição aberta, espera ela fechar (não apaga o que a pessoa está digitando).
+async function ouvirNuvem(store) {
+  const { ouvirTudo } = await import("../nuvem/dados.js");
+  let espera = null;
+  const redesenhar = () => {
+    if (!haFolhaAberta()) { clearInterval(espera); espera = null; return desenhar(); }
+    espera ??= setInterval(redesenhar, 500);
+  };
+  ouvirTudo(reais => {
+    store.dados = mesclar(paraLocal(store.dados), reais);
+    redesenhar();
+  }, e => { console.error(e); toast("Não consegui ler os dados da nuvem. Confira a internet."); });
 }
 
 async function iniciar() {

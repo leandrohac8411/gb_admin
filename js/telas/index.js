@@ -31,7 +31,7 @@ const primeiroUsuario = fb => new Promise(ok => { const parar = fb.aoMudarUsuari
 function mostrarLogin(fb, aviso = "") {
   elAdmin.hidden = true; elDemo.hidden = true; elLogin.hidden = false;
   document.title = "Entrar · GB Admin";
-  montarLogin(elLogin, { aviso, voltarDemo: HOST_LOCAL ? () => location.reload() : null });
+  montarLogin(elLogin, { aviso });
   // Entrou: recarrega para abrir o painel já com os dados da nuvem.
   fb.aoMudarUsuario(u => { if (u) location.reload(); });
 }

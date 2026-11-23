@@ -23,8 +23,8 @@ const ic = {
   entrar: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M3 12h11M10 8l4 4-4 4"/></svg>'
 };
 
-// aviso: mensagem inicial (ex.: "Este e-mail não tem acesso"). voltarDemo: só no computador.
-export function montarLogin(el, { aviso = "", voltarDemo = null } = {}) {
+// aviso: mensagem inicial (ex.: "Este e-mail não tem acesso").
+export function montarLogin(el, { aviso = "" } = {}) {
   el.innerHTML = `
     <div class="lp">
       <div class="lp-poster">
@@ -61,14 +61,12 @@ export function montarLogin(el, { aviso = "", voltarDemo = null } = {}) {
           <button class="lp-entrar" type="submit" id="lg-entrar">${ic.entrar}<span>ENTRAR</span></button>
         </form>
         <p class="lp-aviso" id="lg-erro" role="status" aria-live="polite">${esc(aviso)}</p>
-        ${voltarDemo ? '<div class="lp-ou"><span>ou</span></div><button class="lp-bio" type="button" id="lg-demo">Ver a demonstração</button>' : ""}
       </div>
       </div>
     </div>`;
   const $ = id => el.querySelector("#lg-" + id);
   const erro = t => { $("erro").textContent = t; };
   const botao = (t, travado) => { $("entrar").querySelector("span").textContent = t; $("entrar").disabled = travado; };
-  if (voltarDemo) $("demo").onclick = voltarDemo;
   $("olho").onclick = () => {
     const ver = $("senha").type === "password";
     $("senha").type = ver ? "text" : "password";

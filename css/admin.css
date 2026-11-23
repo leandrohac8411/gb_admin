@@ -732,9 +732,6 @@ a.stat:hover{border-color:var(--red-borda)}
 .lp-entrar:disabled{opacity:.6}
 .lp-entrar svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .lp-aviso{text-align:center;color:#bd1b23;font-size:12px;font-weight:600;margin:10px 0 0;min-height:15px}
-.lp-ou{display:flex;align-items:center;gap:15px;color:#9298a1;font-size:12px;margin:10px 18px 12px}
-.lp-ou::before,.lp-ou::after{content:"";height:1px;flex:1;background:#e8e8eb}
-.lp-bio{width:100%;height:48px;display:flex;align-items:center;justify-content:center;border:1px solid #e2e3e7;border-radius:15px;background:#ffffffd9;color:#263044;font-size:12.5px;font-weight:650;box-shadow:0 5px 16px #1c28300a}
 @media(max-width:390px){.lp-conteudo{padding-left:17px;padding-right:17px}.lp-linha-marca{gap:10px}.lp-logo{width:74px;height:74px}.lp-separador{height:44px}.lp-app{font-size:20px}}
 @media(max-height:760px){.lp-conteudo{padding-top:26px}.lp-linha-marca{min-height:76px}.lp-logo{width:72px;height:72px}.lp-regua{margin:10px 0 13px}.lp-marca{margin-bottom:16px}.lp-form{gap:9px}.lp-campo{height:47px}.lp-entrar{height:48px}}
 .lp-lado,.lp-desk-cab{display:none}
@@ -786,8 +783,6 @@ a.stat:hover{border-color:var(--red-borda)}
   .lp-entrar{height:clamp(44px,3cqw,50px);border-radius:12px;font-size:clamp(13px,.95cqw,15px);letter-spacing:.03em;gap:10px;background:linear-gradient(100deg,#e3121d,#d10e18 60%,#b30a12)}
   .lp-entrar svg{width:19px;height:19px}
   .lp-aviso{font-size:12px;margin-top:10px}
-  .lp-ou{margin:2px 14px 10px}
-  .lp-bio{height:42px;border-radius:12px}
 }
 /* Telas ultralargas: o pôster não cobre a largura toda; as bordas somem num degradê */
 @media(min-width:900px) and (min-aspect-ratio:215/100){

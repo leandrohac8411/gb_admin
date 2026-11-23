@@ -6,18 +6,18 @@
 import http.server, os, sys, posixpath, urllib.parse
 
 # O que pode ser servido: só o app.
-PERMITIDO = ("index.html", "css/", "js/", "img/")
+PERMITIDO = ("index.html", "css/", "js/", "img/", "vendor/")
 
 CABECALHOS = {
     "Cache-Control": "no-store, must-revalidate",
     "Content-Security-Policy": "; ".join([
         "default-src 'self'",
-        # face-api (contagem de rostos na foto da aula) vem do jsDelivr, versão fixa.
-        "script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net",
+        # face-api (rostos na foto da aula) é servida pelo próprio site, em vendor/.
+        "script-src 'self' 'wasm-unsafe-eval'",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com",
         "img-src 'self' data: blob:",
-        "connect-src 'self' https://cdn.jsdelivr.net",
+        "connect-src 'self'",
         "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'",
     ]),
     "X-Content-Type-Options": "nosniff",

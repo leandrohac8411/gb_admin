@@ -1,11 +1,11 @@
 // Detecta ONDE há rostos numa foto (só caixas; não identifica ninguém e não guarda nada).
-// Roda no próprio navegador com face-api (modelo SSD MobileNet, ~5,6 MB, baixado só na primeira análise).
-const BASE = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13";
+// Roda no próprio navegador com face-api (modelo SSD MobileNet, ~5,6 MB, servido pelo próprio site e baixado só na primeira análise).
+const BASE = "/vendor/face-api";
 let carregando = null;
 
 function carregar() {
   if (!carregando) {
-    carregando = import(`${BASE}/dist/face-api.esm.js`).then(async faceapi => {
+    carregando = import(`${BASE}/face-api.esm.js`).then(async faceapi => {
       await faceapi.nets.ssdMobilenetv1.loadFromUri(`${BASE}/model`);
       return faceapi;
     }).catch(e => { carregando = null; throw e; });

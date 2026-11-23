@@ -46,8 +46,13 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
         <div class="field cheio"><label for="f-saude">Alergias e observações</label><input class="input" id="f-saude" name="saude" value="${esc(a.saude || "")}" placeholder="Ex.: alergia a amendoim"></div>
         <label class="check cheio"><input type="checkbox" name="autorizaImagem"${a.autorizaImagem ? " checked" : ""}> Autoriza uso de imagem em fotos e vídeos da academia</label>` : ""}
         ${novo && store.modo === "painel" ? `<label class="check cheio"><input type="checkbox" name="real" id="f-real" checked> Aluno real (salvar no banco, para o check-in por rosto)</label>
-        <div class="field cheio" id="f-foto-campo"><label for="f-foto">Foto do rosto (opcional)</label><input class="input" type="file" accept="image/*" id="f-foto">
-          <small class="muted">De frente, só a pessoa. Depois de salvar, pede a autorização do uso do rosto.</small></div>` : ""}
+        <div class="field cheio" id="f-foto-campo"><span class="rotulo">Foto do rosto (opcional)</span>
+          <div class="foto-escolha">
+            <span class="rosto-mini vazio-mini" id="f-foto-previa" aria-hidden="true">${icone("alunos")}</span>
+            <div class="cresce"><b id="f-foto-nome">Nenhuma foto escolhida</b><small class="muted">De frente, só a pessoa. Depois de salvar, pede a autorização.</small></div>
+            <label class="btn sec peq" for="f-foto" id="f-foto-btn">Escolher foto</label>
+            <input type="file" accept="image/*" id="f-foto" hidden>
+          </div></div>` : ""}
         <p class="aviso cheio" id="f-erro" hidden></p>
         <div class="acoes cheio"><button type="button" class="btn ghost" id="f-cancelar">Cancelar</button><button class="btn" type="submit">${novo ? "Cadastrar" : "Salvar"}</button></div>
       </form>`;
@@ -56,6 +61,17 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
     el.querySelector("#f-nome").focus();
     const real = el.querySelector("#f-real"), fotoCampo = el.querySelector("#f-foto-campo"), foto = el.querySelector("#f-foto");
     if (real) real.onchange = () => { fotoCampo.hidden = !real.checked; };
+    // Mostra a foto escolhida em miniatura (só na tela; quem grava é o cadastro do rosto).
+    let urlPrevia = null;
+    if (foto) foto.onchange = () => {
+      const arq = foto.files?.[0], previa = el.querySelector("#f-foto-previa");
+      if (urlPrevia) URL.revokeObjectURL(urlPrevia);
+      urlPrevia = arq && /^image\//.test(arq.type) ? URL.createObjectURL(arq) : null;
+      previa.innerHTML = urlPrevia ? `<img src="${urlPrevia}" alt="">` : icone("alunos");
+      previa.classList.toggle("vazio-mini", !urlPrevia);
+      el.querySelector("#f-foto-nome").textContent = arq ? "Foto escolhida" : "Nenhuma foto escolhida";
+      el.querySelector("#f-foto-btn").textContent = arq ? "Trocar foto" : "Escolher foto";
+    };
     form.onsubmit = e => {
       e.preventDefault();
       const f = Object.fromEntries(new FormData(form));

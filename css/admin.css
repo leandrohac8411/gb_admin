@@ -804,6 +804,14 @@ a.stat:hover{border-color:var(--red-borda)}
 .rosto-linha{display:flex;align-items:center;gap:14px;margin-bottom:12px}
 .rosto-mini{width:64px;height:64px;border-radius:14px;object-fit:cover;flex:none;background:var(--soft)}
 .vazio-mini{display:grid;place-items:center;color:var(--muted);font-weight:800;font-size:22px}
+.vazio-mini svg{width:26px;height:26px}
+.rosto-mini img{width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block}
+.foto-escolha{display:flex;align-items:center;gap:12px;padding:10px;border:1.5px dashed var(--line);border-radius:14px}
+.foto-escolha .cresce{min-width:0;display:flex;flex-direction:column;gap:2px}
+.foto-escolha .cresce b{font-size:14px}
+.foto-escolha .rosto-mini{width:52px;height:52px;border-radius:12px}
+.foto-escolha label.btn{flex:none;cursor:pointer;font-size:13px;color:inherit}
+.field .rotulo{font-size:11.5px;font-weight:700;color:var(--muted2)}
 .rec-lista>.rec-linha{display:grid;grid-template-columns:72px minmax(0,1fr) auto;grid-template-areas:"foto sel pill" "foto sel marca";gap:4px 12px;align-items:center}
 .rec-rosto{grid-area:foto;width:72px;height:72px;border-radius:12px;background:var(--soft)}
 .rec-linha .cresce{grid-area:sel;min-width:0}

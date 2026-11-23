@@ -75,7 +75,10 @@ Coleções e campos:
   - `consentimento`: `{ por, responsavel: bool, data }`.
   - `atualizadoEm`.
 - `turmas/{id}`: copiadas uma vez da grade real do Diário (decisão do Leandro). O caminho:
-  1. Um script local, `ferramentas/exportar-grade-diario.mjs`, lê a coleção `grade` do projeto do Diário com a `service-account.json` que já existe na máquina e gera `grade-diario.json`. Esse arquivo fica fora do Git.
+  1. A tela Perfil do Diário ganha o botão "Exportar grade para o GB Admin", que baixa `grade-diario.json` com as turmas atuais.
+     - Esse arquivo fica fora do Git.
+     - Não existe `service-account.json` na máquina, então o caminho é o próprio app logado.
+     - A grade do Diário tem só turmas adultas. As turmas kids continuam as da grade fictícia do painel.
   2. Na tela Admin do GB Admin, o botão "Importar grade do Diário" lê esse arquivo, valida cada turma (dia 0–6, horário HH:MM, programa e professor com tamanho limitado) e grava em `turmas`.
   3. Daí em diante as turmas são do GB Admin; os dois projetos não ficam ligados.
   4. Enquanto a grade não for importada, os check-ins reais usam a grade fictícia.
@@ -139,6 +142,7 @@ As instruções vão passo a passo no fim do plano.
 - Nome exato das telas e textos, seguindo o tom do painel.
 - Tamanho da miniatura (96 px) e qualidade do JPEG.
 - Limites 0,50 e 0,60: valores comuns da face-api, a ajustar no teste real.
-- Copiar a grade do Diário por arquivo exportado (script local mais importação), em vez de o painel acessar o projeto do Diário.
+- Copiar a grade do Diário por arquivo exportado (botão no Perfil do Diário mais importação no painel), em vez de o painel acessar o projeto do Diário.
+- As turmas kids continuam as da grade fictícia, porque o Diário não tem turmas kids.
 - Alunos reais misturados aos fictícios, com a etiqueta "Real", em vez de uma lista separada.
 - Modo demonstração sem login só no servidor local.

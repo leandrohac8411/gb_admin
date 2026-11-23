@@ -52,13 +52,12 @@ export function turmaNuvem(t) {
 
 // O que abrir ao carregar o painel:
 //  - "painel": logado com um dos e-mails autorizados (dados reais + fictícios);
-//  - "demo": sem login, só no computador (localhost) ou sem Firebase configurado — dados fictícios;
+//  - "demo": sem login, só quando o Firebase não está configurado — dados fictícios;
 //  - "login": qualquer outro caso (site publicado sem login, ou e-mail sem acesso).
 export const emailAutorizado = email => Object.hasOwn(USERS, String(email || "").toLowerCase());
-const HOSTS_LOCAIS = ["localhost", "127.0.0.1", "[::1]"];
 export function modoInicial({ configurado, host, usuario }) {
   if (configurado && usuario && emailAutorizado(usuario.email)) return "painel";
-  if (!configurado || (!usuario && HOSTS_LOCAIS.includes(host))) return "demo";
+  if (!configurado) return "demo";
   return "login";
 }
 

@@ -58,13 +58,13 @@ test("firestore.rules usa exatamente os e-mails de USERS", async () => {
 
 import { modoInicial } from "../js/logica/validar-nuvem.js";
 
-test("modoInicial: painel com usuário autorizado, demo só local ou sem config, login no resto", () => {
+test("modoInicial: painel com usuário autorizado, login no resto (também no localhost), demo só sem config", () => {
   const u = { email: "leandrohacarvalho@gmail.com" };
   assert.equal(modoInicial({ configurado: true, host: "gb-admin.vercel.app", usuario: u }), "painel");
   assert.equal(modoInicial({ configurado: true, host: "gb-admin.vercel.app", usuario: null }), "login");
   assert.equal(modoInicial({ configurado: true, host: "gb-admin.vercel.app", usuario: { email: "x@y.com" } }), "login");
-  assert.equal(modoInicial({ configurado: true, host: "localhost", usuario: null }), "demo");
-  assert.equal(modoInicial({ configurado: true, host: "127.0.0.1", usuario: null }), "demo");
+  assert.equal(modoInicial({ configurado: true, host: "localhost", usuario: null }), "login");
+  assert.equal(modoInicial({ configurado: true, host: "127.0.0.1", usuario: null }), "login");
   assert.equal(modoInicial({ configurado: false, host: "gb-admin.vercel.app", usuario: null }), "demo");
   assert.equal(modoInicial({ configurado: true, host: "localhost.evil.com", usuario: null }), "login");
 });

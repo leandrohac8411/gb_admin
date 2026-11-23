@@ -139,7 +139,7 @@ export default {
               <input type="file" accept="image/*" capture="environment" id="foto-arq" hidden></label>`}</div>`; })() : ""}
       ${turma ? (() => { const temas = temaDaAula(d, turma, data), modelo = (d.modelosAula || []).find(m => m.id === turma.modeloAulaId);
         return temas.length || modelo ? `<div class="card plano-aula">
-          ${temas.map(x => `<div class="pa-tema"><span class="k">${x.programa} · semana ${x.semana} · Aula ${x.aula}</span><b>${esc(x.tema)}</b>
+          ${temas.map(x => `<div class="pa-tema"><span class="k">${esc(x.programa)} · semana ${esc(x.semana)} · Aula ${esc(x.aula)}</span><b>${esc(x.tema)}</b>
             ${x.tecnicas.length ? `<ol class="pa-tecnicas">${x.tecnicas.map(t => `<li>${esc(t.nome)}${t.categoria ? ` <small class="muted">${esc(t.categoria)}</small>` : ""}</li>`).join("")}</ol>` : ""}</div>`).join("")}
           ${modelo ? `<div class="pa-roteiro"><span class="k">Roteiro: ${esc(modelo.nome)}</span><div class="chips">${modelo.blocos.map(b => `<span class="chip">${esc(b.nome)} · ${b.min} min</span>`).join("")}</div></div>` : ""}
         </div>` : ""; })() : ""}

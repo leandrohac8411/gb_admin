@@ -45,7 +45,7 @@ function formPlano(store, plano, pronto) {
       const d = store.dados, nome = el.querySelector("#pl-nome").value.trim(), valor = Number(el.querySelector("#pl-valor").value);
       if (!plano && nome.length < 3) return erroEm(el, "#pl-erro", "Dê um nome ao plano.");
       if (!plano && d.planos.some(x => x.id.toLowerCase() === nome.toLowerCase())) return erroEm(el, "#pl-erro", "Já existe um plano com esse nome.");
-      if (!(valor > 0)) return erroEm(el, "#pl-erro", "Informe um valor maior que zero.");
+      if (!(valor > 0 && valor <= 100000)) return erroEm(el, "#pl-erro", "Informe um valor entre R$ 0,01 e R$ 100.000.");
       const campos = { meses: Number(el.querySelector("#pl-meses").value), valor, descricao: el.querySelector("#pl-desc").value.trim() };
       if (plano) {
         Object.assign(plano, campos);
@@ -104,7 +104,7 @@ function formProduto(store, prod, pronto) {
       const estoque = Number(el.querySelector("#po-est").value), minimo = Number(el.querySelector("#po-min").value);
       if (nome.length < 2) return erroEm(el, "#po-erro", "Escreva o nome do produto.");
       if (["#po-preco", "#po-est", "#po-min"].some(id => el.querySelector(id).value.trim() === "")) return erroEm(el, "#po-erro", "Preencha preço, estoque e mínimo.");
-      if (!(preco >= 0) || !Number.isInteger(estoque) || estoque < 0 || !Number.isInteger(minimo) || minimo < 0) return erroEm(el, "#po-erro", "Preço, estoque e mínimo precisam ser números (estoque e mínimo inteiros).");
+      if (!(preco >= 0 && preco <= 100000) || !Number.isInteger(estoque) || estoque < 0 || estoque > 100000 || !Number.isInteger(minimo) || minimo < 0 || minimo > 100000) return erroEm(el, "#po-erro", "Preço, estoque e mínimo precisam ser números (estoque e mínimo inteiros).");
       const campos = { nome, categoria: el.querySelector("#po-cat").value, preco, estoque, minimo };
       if (prod) Object.assign(prod, campos); else store.dados.produtos.push({ id: store.novoId("p"), ...campos });
       store.salvar(); fechar(); toast("Produto salvo"); pronto();

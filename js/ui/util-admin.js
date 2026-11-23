@@ -30,7 +30,8 @@ export function anelClaroSVG(fracao, cor = "#e10b16") {
 export function csv(linhas) {
   const cel = v => {
     let s = String(v ?? "");
-    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    // Também com espaço antes (" =HYPERLINK(...)"): o Excel ainda pode tratar como fórmula.
+    if (/^\s*[=+\-@\t\r]/.test(s)) s = "'" + s;
     return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   return "﻿" + linhas.map(l => l.map(cel).join(";")).join("\n");

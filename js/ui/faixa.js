@@ -14,8 +14,11 @@ for (const f of FAIXAS_KIDS) if (!CORES_FAIXA[f]) CORES_FAIXA[f] = CORES_FAIXA[f
 export const faixasDe = categoria => (categoria === "kids" ? FAIXAS_KIDS : FAIXAS);
 export const corBase = f => String(f || "").split("-")[0];
 
+// Só cores que existem: um backup adulterado não consegue pôr texto/HTML no lugar da faixa.
+export const faixaValida = f => FAIXAS.includes(f) || FAIXAS_KIDS.includes(f);
 export function nomeFaixa(f) {
   if (!f) return "";
+  if (!faixaValida(f)) return "Faixa inválida";
   const [cor, listra] = f.split("-");
   const nome = cor[0].toUpperCase() + cor.slice(1);
   return listra ? `${nome} e ${listra}` : nome;

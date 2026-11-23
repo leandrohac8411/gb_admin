@@ -42,7 +42,7 @@ function formEvento(store, ev, pronto) {
       if (titulo.length < 3) return erro("Dê um nome ao evento.");
       if (!dataValida(data)) return erro("Escolha a data.");
       if (!/^\d{2}:\d{2}$/.test(hora)) return erro("Escolha a hora.");
-      if (!Number.isInteger(vagas) || vagas < 1) return erro("Informe o número de vagas.");
+      if (!Number.isInteger(vagas) || vagas < 1 || vagas > 10000) return erro("Informe o número de vagas (1 a 10.000).");
       const campos = { titulo, tipo: el.querySelector("#e-tipo").value, publico: el.querySelector("#e-pub").value, data, hora,
         local: el.querySelector("#e-local").value.trim(), vagas, descricao: el.querySelector("#e-desc").value.trim() };
       if (ev) {

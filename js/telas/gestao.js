@@ -284,7 +284,7 @@ export const habilidades = {
     const { store } = ctx, d = store.dados;
     const lista = d.habilidades.filter(h => !estadoHab.cat || h.categoria === estadoHab.cat)
       .sort((a, b) => FAIXAS.indexOf(a.faixaMin) - FAIXAS.indexOf(b.faixaMin) || a.nome.localeCompare(b.nome, "pt-BR"));
-    const pill = n => `<span class="pill ${n === "Iniciante" ? "ok" : n === "Intermediário" ? "info" : "alerta"}">${n}</span>`;
+    const pill = n => `<span class="pill ${n === "Iniciante" ? "ok" : n === "Intermediário" ? "info" : "alerta"}">${esc(n)}</span>`;
     el.innerHTML = cabecalho("Habilidades", "O que se espera em cada posição e a partir de qual faixa.", `<button class="btn" id="novo">${icone("habilidades")}Nova habilidade</button>`) +
       `<details class="card regras27"><summary><b>Regras CBJJ/IBJJF 2027 que mudam o treino</b> <span class="pill alerta">a partir de 01/01/2027</span></summary>
         <ul>

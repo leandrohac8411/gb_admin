@@ -158,7 +158,7 @@ export const config = {
         <div class="card"><div class="card-cab"><h3>Portal do aluno</h3></div><div class="campos">
           <p class="muted cheio" style="margin:0">O portal do aluno é o <b>Diário de Tatame</b>: o app no celular onde o aluno faz check-in, registra as aulas e acompanha a faixa.</p>
           <div class="field cheio"><label for="cf-diario">Endereço do Diário de Tatame</label><input class="input" id="cf-diario" inputmode="url" value="${esc(c.diarioUrl || "https://gracie-taupe.vercel.app")}"></div>
-          <a class="btn sec cheio" href="${esc(c.diarioUrl || "https://gracie-taupe.vercel.app")}" target="_blank" rel="noopener noreferrer">Abrir o Diário de Tatame ↗</a>
+          <a class="btn sec cheio" href="${esc(/^https:\/\//.test(c.diarioUrl || "") ? c.diarioUrl : "https://gracie-taupe.vercel.app")}" target="_blank" rel="noopener noreferrer">Abrir o Diário de Tatame ↗</a>
         </div></div>
         <div class="card"><div class="card-cab"><h3>Academia</h3></div><div class="campos">
           <div class="field cheio"><label for="cf-nome">Nome</label><input class="input" id="cf-nome" value="${esc(c.academia.nome)}"></div>
@@ -198,8 +198,12 @@ export const config = {
     el.querySelector("#cf-importar").onchange = async e => {
       const arq = e.target.files?.[0]; e.target.value = "";
       if (!arq) return;
+      // Arquivo gigante trava o navegador: backup real tem poucos MB.
+      if (arq.size > 20 * 1024 * 1024) { toast("Arquivo grande demais para ser um backup do painel"); return; }
       let novo = null;
-      try { novo = JSON.parse(await arq.text()); } catch { /* arquivo não é JSON */ }
+      // Chaves "__proto__"/"constructor"/"prototype" são descartadas (prototype pollution).
+      const semChavesPerigosas = (k, v) => (k === "__proto__" || k === "constructor" || k === "prototype" ? undefined : v);
+      try { novo = JSON.parse(await arq.text(), semChavesPerigosas); } catch { /* arquivo não é JSON */ }
       if (!validarDados(novo)) { toast("Arquivo inválido: não é um backup desta versão do painel"); return; }
       if (!await perguntar("Importar backup?", `Os dados atuais serão trocados pelos do arquivo "${arq.name}". Dados importados não são refeitos na virada do mês; use "Restaurar dados de exemplo" para voltar à vitrine.`, "Importar", "Cancelar")) return;
       novo.geradoEm = hojeISO();

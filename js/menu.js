@@ -69,7 +69,7 @@ export function desenharMenu(ativa, usuario = {}) {
     `${icone(i.rota)}<span>${i.nome}</span>${i.pronto ? "" : "<em>em breve</em>"}</a>`;
   const [principal, ...grupos] = MENU;
   const nome = textoSeguro((usuario.nome || "").trim() || "Visitante");
-  return `<a class="lat-marca" href="#dashboard" aria-label="GB Sobradinho — início"><img src="img/logo-sobradinho.png" alt="GB Sobradinho" onerror="this.onerror=null;this.src='img/gb-redondo.png'"></a>` +
+  return `<a class="lat-marca" href="#dashboard" aria-label="GB Sobradinho — início"><img src="img/logo-sobradinho.png" alt="GB Sobradinho"></a>` +
     `<nav class="lat-nav">${principal.itens.map(link).join("")}` +
     grupos.map(g => {
       const aberto = abertos.has(g.grupo);

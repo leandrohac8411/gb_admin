@@ -13,7 +13,7 @@ export const dataCurta = iso => { const { mes, dia } = deISO(iso); return `${DIA
 export const dataLonga = iso => { const { ano, mes, dia } = deISO(iso); return `${dois(dia)}/${dois(mes)}/${ano}`; };
 export const nomeMes = mes => MESES[mes - 1];
 export const mesAno = iso => { const { ano, mes } = deISO(iso); return `${MESES[mes - 1][0].toUpperCase()}${MESES[mes - 1].slice(1)} ${ano}`; };
-export const horaTexto = h => (h || "").replace(":", "h");
+export const horaTexto = h => esc(String(h || "").replace(":", "h"));
 export const numero = n => String(n).replace(".", ",");
 
 export function saudacao(d = new Date()) {
@@ -38,6 +38,13 @@ const abertas = new Set();
 export function fecharFolhas() { for (const dispensar of [...abertas]) dispensar(true); }
 globalThis.document?.addEventListener("keydown", e => { if (e.key === "Escape" && abertas.size) [...abertas].at(-1)(); });
 
+// Todo campo de texto ganha um tamanho máximo (texto gigante não estoura o armazenamento do navegador).
+export function limitarCampos(raiz) {
+  raiz.querySelectorAll("input:not([maxlength]):not([type=number]):not([type=date]):not([type=time]):not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color])")
+    .forEach(i => { i.maxLength = 200; });
+  raiz.querySelectorAll("textarea:not([maxlength])").forEach(t => { t.maxLength = 5000; });
+}
+
 export function abrirFolha(conteudo, aoDispensar) {
   const fundo = document.createElement("div");
   fundo.className = "folha-fundo";
@@ -50,6 +57,7 @@ export function abrirFolha(conteudo, aoDispensar) {
   fundo.addEventListener("click", e => { if (e.target === fundo) dispensar(); });
   document.body.appendChild(fundo);
   conteudo(folha, fechar);
+  limitarCampos(folha);
   return fechar;
 }
 

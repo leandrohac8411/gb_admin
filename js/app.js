@@ -2,7 +2,7 @@
 import { desenharMenu, itemDoMenu, alternarGrupo, icone } from "./menu.js";
 import { resumoDashboard } from "./logica/indicadores.js";
 import { hojeISO } from "./logica/datas.js";
-import { esc, fecharFolhas } from "./ui/util.js";
+import { esc, fecharFolhas, limitarCampos } from "./ui/util.js";
 import embreve from "./telas/embreve.js";
 import { lerRota } from "./rota.js";
 
@@ -94,6 +94,7 @@ export function desenhar() {
   tela.innerHTML = "";
   try {
     tela_.montar(tela, params, ctx, doMenu);
+    limitarCampos(tela);
   } catch (e) {
     console.error(e);
     tela.innerHTML = `<div class="vazio grande"><h2>Algo deu errado</h2><p>${esc(e.message)}</p></div>`;

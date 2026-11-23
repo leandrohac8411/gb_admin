@@ -82,3 +82,11 @@ test("escolhaInicial: reconhecido vem marcado, dúvida vem escolhido mas desmarc
   assert.deepEqual(escolhaInicial({ estado: "duvida", alunoId: "a" }), { alunoId: "a", marcado: false });
   assert.deepEqual(escolhaInicial({ estado: "desconhecido", alunoId: null }), { alunoId: "", marcado: false });
 });
+
+import { problemaNaFoto } from "../js/logica/cadastro-rosto.js";
+test("foto do rosto no cadastro: aceita imagem até 30 MB, recusa o resto", () => {
+  assert.equal(problemaNaFoto({ type: "image/jpeg", size: 2_000_000 }), "");
+  assert.match(problemaNaFoto({ type: "application/pdf", size: 1000 }), /foto/);
+  assert.match(problemaNaFoto({ type: "image/png", size: 31 * 1024 * 1024 }), /30 MB/);
+  assert.equal(problemaNaFoto(null), "");
+});

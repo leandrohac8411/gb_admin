@@ -29,3 +29,12 @@ export function recorte(r, largura, altura, margem = 0.25) {
   const x1 = Math.min(largura, Math.round(r.x + r.w * (1 + margem))), y1 = Math.min(altura, Math.round(r.y + r.h * (1 + margem)));
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
+
+// Arquivo escolhido para o rosto: "" se dá para analisar, senão o motivo (para mostrar na tela).
+export const MAX_ARQUIVO_ROSTO = 30 * 1024 * 1024;
+export function problemaNaFoto(arq) {
+  if (!arq) return "";
+  if (!/^image\//.test(arq.type || "")) return "Escolha uma foto (arquivo de imagem).";
+  if (arq.size > MAX_ARQUIVO_ROSTO) return "A foto passa de 30 MB: escolha uma menor.";
+  return "";
+}

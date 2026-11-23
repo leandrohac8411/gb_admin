@@ -1,5 +1,6 @@
 // Alunos: abas Adultos | Kids, busca, filtros, tabela (cartões no celular), cadastro e exportação CSV.
 import { salvarComAviso } from "../logica/mesclar.js";
+import { problemaNaFoto } from "../logica/cadastro-rosto.js";
 import { esc, abrirFolha, toast, dataLonga } from "../ui/util.js";
 import { normalizar, csv } from "../ui/util-admin.js";
 import { faixasDe, nomeFaixa, CORES_FAIXA } from "../ui/faixa.js";
@@ -44,13 +45,17 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
         <div class="secao">Saúde e autorizações</div>
         <div class="field cheio"><label for="f-saude">Alergias e observações</label><input class="input" id="f-saude" name="saude" value="${esc(a.saude || "")}" placeholder="Ex.: alergia a amendoim"></div>
         <label class="check cheio"><input type="checkbox" name="autorizaImagem"${a.autorizaImagem ? " checked" : ""}> Autoriza uso de imagem em fotos e vídeos da academia</label>` : ""}
-        ${novo && store.modo === "painel" ? `<label class="check cheio"><input type="checkbox" name="real" checked> Aluno real (salvar no banco, para o check-in por rosto)</label>` : ""}
+        ${novo && store.modo === "painel" ? `<label class="check cheio"><input type="checkbox" name="real" id="f-real" checked> Aluno real (salvar no banco, para o check-in por rosto)</label>
+        <div class="field cheio" id="f-foto-campo"><label for="f-foto">Foto do rosto (opcional)</label><input class="input" type="file" accept="image/*" id="f-foto">
+          <small class="muted">De frente, só a pessoa. Depois de salvar, pede a autorização do uso do rosto.</small></div>` : ""}
         <p class="aviso cheio" id="f-erro" hidden></p>
         <div class="acoes cheio"><button type="button" class="btn ghost" id="f-cancelar">Cancelar</button><button class="btn" type="submit">${novo ? "Cadastrar" : "Salvar"}</button></div>
       </form>`;
     const form = el.querySelector("form"), erro = el.querySelector("#f-erro");
     el.querySelector("#f-cancelar").onclick = fechar;
     el.querySelector("#f-nome").focus();
+    const real = el.querySelector("#f-real"), fotoCampo = el.querySelector("#f-foto-campo"), foto = el.querySelector("#f-foto");
+    if (real) real.onchange = () => { fotoCampo.hidden = !real.checked; };
     form.onsubmit = e => {
       e.preventDefault();
       const f = Object.fromEntries(new FormData(form));
@@ -62,7 +67,8 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
         : kids && novo && (idade < 3 || idade > 17) ? "Kids é para crianças de 3 a 17 anos."
         : f.peso && !(Number(f.peso) >= (kids ? 10 : 20) && Number(f.peso) <= 250) ? "Peso fora do esperado."
         : kids && (f.rnome || "").trim().length < 3 ? "Escreva o nome do responsável."
-        : kids && (f.rtelefone || "").replace(/\D/g, "").length < 8 ? "Informe o telefone do responsável." : "";
+        : kids && (f.rtelefone || "").replace(/\D/g, "").length < 8 ? "Informe o telefone do responsável."
+        : real?.checked ? problemaNaFoto(foto.files?.[0]) : "";
       if (falha) { erro.textContent = falha; erro.hidden = false; return; }
       const campos = { nome, sexo: f.sexo, nascimento: f.nascimento || "", peso: f.peso ? Number(f.peso) : null, plano: f.plano,
         valor: !novo && aluno.plano === f.plano ? aluno.valor : (planos.find(p => p.id === f.plano)?.valor ?? 0) };
@@ -78,8 +84,14 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
         alvo = novo ? { id: store.novoId(kids ? "k" : "a"), categoria, ...campos, faixa: f.faixa, graus: Number(f.graus) || 0, desde: hoje, desdeFaixa: hoje, ultimaGraduacao: hoje, status: "ativo", real: true }
           : Object.assign(aluno, campos);
         fechar();
+        const arqFoto = novo ? foto?.files?.[0] : null;
         import("../nuvem/dados.js").then(m => salvarComAviso(m.salvarAluno(alvo), novo ? `${nome.split(" ")[0]} cadastrado no banco` : "Dados salvos"))
-          .then(ok => { if (ok) aoSalvar?.(alvo); });
+          .then(async ok => {
+            if (!ok) return;
+            aoSalvar?.(alvo);
+            // Rosto só depois do aluno gravado: as regras do banco exigem que o aluno exista.
+            if (arqFoto) (await import("./rosto.js")).cadastrarFotoRosto(store, alvo, arqFoto);
+          });
         return;
       }
       if (novo) {

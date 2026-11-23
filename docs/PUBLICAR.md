@@ -43,7 +43,8 @@ Faça no celular, no site da Vercel:
 - [ ] 5 senhas erradas mostram "AGUARDE 60s" no botão.
 - [ ] Login certo abre o painel com "Bem-vindo, Leandro" e o botão **Sair** no menu.
 - [ ] **Configurações › Importar grade do Diário** (antes, no Diário, use **Perfil › Exportar grade para o GB Admin**): aparecem as 15 turmas.
-- [ ] **Alunos › Novo aluno**, com "Aluno real" marcado: o aluno aparece com a etiqueta **Real**.
+- [ ] **Alunos › Novo aluno**, com "Aluno real" marcado e uma **Foto do rosto** escolhida: o aluno aparece com a etiqueta **Real**, e em seguida abre a autorização do uso do rosto. Ao autorizar, aparece "Rosto salvo".
+- [ ] Se aparecer "o banco recusou (sem permissão)", as regras do passo 2.1 não estão publicadas (ou estão numa versão antiga): rode `firebase deploy --only firestore:rules` de novo.
 - [ ] Na ficha do aluno real, **Adicionar foto do rosto**: foto só da pessoa, de frente; autorize; aparece "1 de 3 fotos". Repita com mais 1 ou 2 fotos de ângulos diferentes.
 - [ ] Numa aula real de hoje, em **Check-ins**, tire uma foto da turma: cada rosto aparece recortado com o aluno sugerido. Confira e confirme.
 - [ ] Recarregue a página: os check-ins continuam lá.

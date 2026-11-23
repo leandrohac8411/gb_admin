@@ -66,7 +66,7 @@ export async function salvarComAviso(promessa, mensagemOk, avisar = toast, ms = 
   catch (e) {
     console.error(e);
     avisar(e?.code === "permission-denied" || e?.code === "unauthenticated"
-      ? "Não salvou: sem permissão. Saia e entre de novo na conta."
+      ? "Não salvou: o banco recusou (sem permissão). Confira se as regras do Firebase estão publicadas; se estão, saia e entre de novo."
       : e?.message === "dado inválido" ? "Não salvou: algum dado está fora do formato esperado."
       : "Não salvou na nuvem: verifique a internet e tente de novo.");
     return false;

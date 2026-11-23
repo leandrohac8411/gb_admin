@@ -2,11 +2,11 @@
 // (a foto em si não é guardada; só uma miniatura de 96 px do rosto, para o professor reconhecer).
 import { esc, toast, abrirFolha, perguntar } from "../ui/util.js";
 import { comprimirImagem } from "../foto.js";
-import { escolherRostoCadastro, consentimentoPadrao, recorte } from "../logica/cadastro-rosto.js";
+import { escolherRostoCadastro, consentimentoPadrao, recorte, problemaNaFoto } from "../logica/cadastro-rosto.js";
 import { salvarComAviso } from "../logica/mesclar.js";
 import { hojeISO } from "../logica/datas.js";
 
-const MAX_FOTOS = 3, MAX_ARQUIVO = 30 * 1024 * 1024;
+const MAX_FOTOS = 3;
 const nuvem = () => import("../nuvem/dados.js");
 
 // Recorta o rosto e reduz para 96 px (JPEG). Só para mostrar na tela de conferência.
@@ -58,32 +58,36 @@ function pedirConsentimento(a, usuarioNome, anterior) {
   });
 }
 
+// Analisa a foto, pede a autorização e grava os números do rosto. Usada na ficha e no cadastro do aluno.
+// O aluno precisa já estar no banco (as regras só aceitam rosto de aluno que existe).
+export async function cadastrarFotoRosto(store, a, arq) {
+  const problema = problemaNaFoto(arq);
+  if (!arq || problema) return problema && toast(problema);
+  toast("Analisando o rosto…");
+  try {
+    const { dados } = await comprimirImagem(arq, 1280, 1_500_000);
+    const { descreverRostos } = await import("../rostos.js");
+    const escolha = escolherRostoCadastro(await descreverRostos(dados));
+    if (!escolha.ok) return toast(escolha.motivo === "nenhum" ? "Não achei um rosto nessa foto. Use uma foto de frente e bem iluminada." : "Tem mais de um rosto: use uma foto só da pessoa.");
+    const r = store.dados.rostos?.get(a.id);
+    const consentimento = await pedirConsentimento(a, store.dados.config.usuario?.nome || "", r?.consentimento);
+    if (!consentimento) return;
+    const descritores = [...(r?.descritores || []), escolha.rosto.descritor].slice(-MAX_FOTOS);
+    const mini = r?.mini || await miniatura(dados, escolha.rosto);
+    const { salvarRosto } = await nuvem();
+    await salvarComAviso(salvarRosto(a.id, { descritores, mini, consentimento }), "Rosto salvo");
+  } catch (err) {
+    console.error(err);
+    toast(/fetch|network|Failed/i.test(String(err?.message)) ? "Sem internet para carregar o reconhecimento." : "Não consegui analisar essa foto.");
+  }
+}
+
 export function ligarCartaoRosto(el, store, a, ctx) {
   const cartao = el.querySelector("#cartao-rosto");
   if (!cartao) return;
-  const atual = () => store.dados.rostos?.get(a.id);
-
-  cartao.querySelector("#rosto-arq")?.addEventListener("change", async e => {
+  cartao.querySelector("#rosto-arq")?.addEventListener("change", e => {
     const arq = e.target.files?.[0]; e.target.value = "";
-    if (!arq) return;
-    if (!/^image\//.test(arq.type) || arq.size > MAX_ARQUIVO) return toast("Escolha uma foto (imagem de até 30 MB).");
-    toast("Analisando o rosto…");
-    try {
-      const { dados } = await comprimirImagem(arq, 1280, 1_500_000);
-      const { descreverRostos } = await import("../rostos.js");
-      const escolha = escolherRostoCadastro(await descreverRostos(dados));
-      if (!escolha.ok) return toast(escolha.motivo === "nenhum" ? "Não achei um rosto nessa foto. Use uma foto de frente e bem iluminada." : "Tem mais de um rosto: use uma foto só da pessoa.");
-      const r = atual();
-      const consentimento = await pedirConsentimento(a, store.dados.config.usuario?.nome || "", r?.consentimento);
-      if (!consentimento) return;
-      const descritores = [...(r?.descritores || []), escolha.rosto.descritor].slice(-MAX_FOTOS);
-      const mini = r?.mini || await miniatura(dados, escolha.rosto);
-      const { salvarRosto } = await nuvem();
-      await salvarComAviso(salvarRosto(a.id, { descritores, mini, consentimento }), "Rosto salvo");
-    } catch (err) {
-      console.error(err);
-      toast(/fetch|network|Failed/i.test(String(err?.message)) ? "Sem internet para carregar o reconhecimento." : "Não consegui analisar essa foto.");
-    }
+    if (arq) cadastrarFotoRosto(store, a, arq);
   });
 
   cartao.querySelector("#rosto-apagar")?.addEventListener("click", async () => {

@@ -15,7 +15,7 @@ O objetivo desta etapa é provar o reconhecimento de rostos em condições reais
 
 - Publicar o código no repositório `github.com/leandrohac8411/gb_admin` (o push é feito pelo Leandro) e o site na Vercel.
 - Criar um projeto Firebase novo, só do GB Admin, no plano grátis (Spark): login por e-mail e senha mais Firestore.
-- Login obrigatório no site publicado. Só os e-mails de uma lista autorizada entram, como no Diário.
+- Login obrigatório no site publicado. Só os e-mails de uma lista autorizada entram, como no Diário: Leandro e Stephany, os mesmos dois e-mails do Diário.
 - Cadastrar alunos reais e, para cada um, de 1 a 3 fotos do rosto, com consentimento registrado.
 - Na foto da aula, reconhecer cada rosto, sugerir o aluno correspondente e lançar os check-ins depois da confirmação.
 
@@ -74,7 +74,11 @@ Coleções e campos:
   - `mini?`: miniatura JPEG de 96 px em base64, até cerca de 12 KB, só para o professor reconhecer na tela.
   - `consentimento`: `{ por, responsavel: bool, data }`.
   - `atualizadoEm`.
-- `turmas/{id}`: copiadas uma vez da grade atual do painel no primeiro acesso, depois editáveis.
+- `turmas/{id}`: copiadas uma vez da grade real do Diário (decisão do Leandro). O caminho:
+  1. Um script local, `ferramentas/exportar-grade-diario.mjs`, lê a coleção `grade` do projeto do Diário com a `service-account.json` que já existe na máquina e gera `grade-diario.json`. Esse arquivo fica fora do Git.
+  2. Na tela Admin do GB Admin, o botão "Importar grade do Diário" lê esse arquivo, valida cada turma (dia 0–6, horário HH:MM, programa e professor com tamanho limitado) e grava em `turmas`.
+  3. Daí em diante as turmas são do GB Admin; os dois projetos não ficam ligados.
+  4. Enquanto a grade não for importada, os check-ins reais usam a grade fictícia.
 - `checkins/{id}`: `alunoId`, `turmaId`, `data`, `hora`, `origem` (manual/foto/rosto).
 
 Regras do Firestore:
@@ -135,6 +139,6 @@ As instruções vão passo a passo no fim do plano.
 - Nome exato das telas e textos, seguindo o tom do painel.
 - Tamanho da miniatura (96 px) e qualidade do JPEG.
 - Limites 0,50 e 0,60: valores comuns da face-api, a ajustar no teste real.
-- Copiar as turmas da grade fictícia no primeiro acesso, em vez de criar uma tela nova de turmas.
+- Copiar a grade do Diário por arquivo exportado (script local mais importação), em vez de o painel acessar o projeto do Diário.
 - Alunos reais misturados aos fictícios, com a etiqueta "Real", em vez de uma lista separada.
 - Modo demonstração sem login só no servidor local.

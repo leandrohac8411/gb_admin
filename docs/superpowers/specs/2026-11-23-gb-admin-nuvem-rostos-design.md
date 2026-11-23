@@ -55,9 +55,9 @@ Não se comparam fotos, e sim números:
 - **Cadastro:** o navegador encontra o rosto na foto e calcula um descritor de 128 números (modelos `faceLandmark68Net` e `faceRecognitionNet` da face-api, além do detector que já usamos). Só o descritor vai para o banco.
 - **Foto da aula:** o navegador calcula o descritor de cada rosto e mede a distância euclidiana até cada descritor cadastrado. A distância de um aluno é a menor entre as fotos dele.
 - **Classificação de cada rosto:**
-  - distância ≤ 0,50: **reconhecido**, marcado na lista;
-  - de 0,50 a 0,60: **dúvida**, mostra o aluno provável desmarcado;
-  - acima de 0,60: **desconhecido**.
+  - distância ≤ 0,45: **reconhecido**, marcado na lista (era 0,50; baixado em 23/11 porque pessoas diferentes chegaram a 0,49 no teste com fotos);
+  - de 0,45 a 0,55: **dúvida**, mostra o aluno provável desmarcado;
+  - acima de 0,55: **desconhecido**.
   - Os limites ficam numa constante, para ajustar com os testes reais.
 - **Atribuição:** a mesma pessoa não é atribuída a dois rostos. A atribuição é gulosa, começando pela menor distância.
 - **Conferência:** a tela mostra o recorte de cada rosto ao lado do aluno sugerido. O professor confirma, troca o aluno ou desmarca. Só então os check-ins são gravados, com `origem: "rosto"`.

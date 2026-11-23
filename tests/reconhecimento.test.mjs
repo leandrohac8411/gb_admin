@@ -11,11 +11,13 @@ test("compactar arredonda a 4 casas e descritorValido confere formato", () => {
   assert.ok(!descritorValido(c.slice(1)) && !descritorValido([...c.slice(1), 2]) && !descritorValido([...c.slice(1), NaN]) && !descritorValido("x"));
 });
 
-test("reconhece abaixo de 0,50, dúvida até 0,60, desconhecido acima", () => {
+test("reconhece até 0,45, dúvida até 0,55, desconhecido acima", () => {
+  // Calibrado com fotos reais: pessoas diferentes chegaram a 0,49 (ver ledger da etapa 1).
   const cad = [{ alunoId: "a", descritores: [v(0)] }];
   assert.equal(reconhecer([v(0.4)], cad)[0].estado, "reconhecido");
-  assert.equal(reconhecer([v(0.55)], cad)[0].estado, "duvida");
-  const r = reconhecer([v(0.7)], cad)[0];
+  assert.equal(reconhecer([v(0.49)], cad)[0].estado, "duvida");
+  assert.equal(reconhecer([v(0.54)], cad)[0].estado, "duvida");
+  const r = reconhecer([v(0.58)], cad)[0];
   assert.equal(r.estado, "desconhecido"); assert.equal(r.alunoId, null);
 });
 
@@ -39,4 +41,14 @@ test("sem rostos ou sem cadastrados não quebra", () => {
 test("descritoresDoRosto ignora campos inválidos", () => {
   assert.equal(descritoresDoRosto({ d0: v(0), d1: [1, 2], d2: v(0.1) }).length, 2);
   assert.deepEqual(descritoresDoRosto(null), []);
+});
+
+import { escolherRostoCadastro } from "../js/logica/cadastro-rosto.js";
+
+test("cadastro: exige um rosto claro", () => {
+  const r = (w, c = 0.9) => ({ x: 0, y: 0, w, h: w, confianca: c, descritor: [] });
+  assert.deepEqual(escolherRostoCadastro({ rostos: [] }), { ok: false, motivo: "nenhum" });
+  assert.equal(escolherRostoCadastro({ rostos: [r(100, 0.3)] }).motivo, "nenhum");
+  assert.equal(escolherRostoCadastro({ rostos: [r(100), r(90)] }).motivo, "varios");
+  assert.equal(escolherRostoCadastro({ rostos: [r(100), r(40)] }).rosto.w, 100);
 });

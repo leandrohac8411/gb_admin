@@ -1,7 +1,8 @@
 // Reconhecimento de rostos: compara "descritores" (128 números que a face-api tira de cada rosto).
 // Não guarda nem compara fotos: só números. Quanto menor a distância, mais parecidos os rostos.
-export const LIMITE_RECONHECIDO = 0.5;
-export const LIMITE_DUVIDA = 0.6;
+// Limites calibrados com fotos reais: pessoas diferentes chegaram a 0,49, então 0,45 é o teto do "reconhecido".
+export const LIMITE_RECONHECIDO = 0.45;
+export const LIMITE_DUVIDA = 0.55;
 const TAMANHO = 128;
 
 // 4 casas decimais bastam para comparar e deixam o documento no banco bem menor.

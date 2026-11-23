@@ -214,7 +214,7 @@ export const config = {
       if (!validarDados(novo)) { toast("Arquivo inválido: não é um backup desta versão do painel"); return; }
       if (!await perguntar("Importar backup?", `Os dados atuais serão trocados pelos do arquivo "${arq.name}". Dados importados não são refeitos na virada do mês; use "Restaurar dados de exemplo" para voltar à vitrine.`, "Importar", "Cancelar")) return;
       novo.geradoEm = hojeISO();
-      store.dados = limparImportado(novo); store.salvar();
+      store.dados = limparImportado(novo); store.aposTrocarDados?.(); store.salvar();
       aplicarRegras(novo.config.regras, novo.config.regrasKids);
       toast("Backup importado"); ctx.redesenhar();
     };

@@ -37,14 +37,32 @@ export function mesclar(ficticios, reais) {
 export function paraLocal(dados) {
   const { rostos, [GUARDADAS]: guardadas, ...resto } = dados;
   const l = copia(resto);
-  for (const [k, v] of Object.entries(l)) if (Array.isArray(v)) l[k] = v.filter(x => !(x && typeof x === "object" && x.real === true));
+  // Tudo que fala de um aluno real (graduação, anotação, mensalidade, inscrição...) também sai.
+  const reaisIds = new Set((l.alunos || []).filter(a => a?.real === true).map(a => a.id));
+  const ligadoAReal = x => x && typeof x === "object" && (x.real === true || reaisIds.has(x.alunoId));
+  for (const [k, v] of Object.entries(l)) {
+    if (!Array.isArray(v)) continue;
+    l[k] = v.filter(x => !ligadoAReal(x));
+    for (const x of l[k]) if (x && Array.isArray(x.inscritos)) x.inscritos = x.inscritos.filter(id => !reaisIds.has(id));
+  }
   if (guardadas) l.turmas = [...l.turmas, ...copia(guardadas)];
   return l;
 }
 
 // Grava na nuvem com aviso: nunca diz "salvo" se não salvou.
-export async function salvarComAviso(promessa, mensagemOk, avisar = toast) {
-  try { await promessa; if (mensagemOk) avisar(mensagemOk); return true; }
+// Sem internet, o Firestore guarda a gravação no aparelho e só responde quando a conexão volta.
+// Não dá para esperar isso com a tela travada: depois do prazo, a gravação segue "na fila".
+export function comPrazo(promessa, ms = 8000) {
+  let timer;
+  const prazo = new Promise(ok => { timer = setTimeout(() => ok("fila"), ms); });
+  return Promise.race([Promise.resolve(promessa).then(() => "ok"), prazo]).finally(() => clearTimeout(timer));
+}
+
+export async function salvarComAviso(promessa, mensagemOk, avisar = toast, ms = 8000) {
+  try {
+    if (await comPrazo(promessa, ms) === "fila") { avisar("Salvo no aparelho: vai para a nuvem quando a internet voltar."); return true; }
+    if (mensagemOk) avisar(mensagemOk); return true;
+  }
   catch (e) {
     console.error(e);
     avisar(e?.code === "permission-denied" || e?.code === "unauthenticated"

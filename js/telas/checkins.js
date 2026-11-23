@@ -8,6 +8,7 @@ import { detectarRostos, descreverRostos } from "../rostos.js";
 import { reconhecer, cadastradosDe, escolhaInicial } from "../logica/reconhecimento.js";
 import { recorte } from "../logica/cadastro-rosto.js";
 import { salvarComAviso } from "../logica/mesclar.js";
+import { guardarFotoDaAula } from "../logica/validar-nuvem.js";
 import { sugerirPresenca } from "../logica/presenca-foto.js";
 import { temaDaAula } from "../logica/tema.js";
 import { cabecalho, etiquetaPrograma, nomeProfessor, pessoa, faixaCelula, porId, DIAS_LONGOS, aba, daAba, abasCategoria, ligarAbas, definirAba } from "./comum.js";
@@ -15,7 +16,7 @@ import { cabecalho, etiquetaPrograma, nomeProfessor, pessoa, faixaCelula, porId,
 const estado = { data: null, turmaId: null };
 
 function abrirRegistro(store, turma, data, aoFechar) {
-  const d = store.dados;
+  const enviados = new Set(); // presenças reais já enviadas nesta janela (antes de a nuvem responder)
   abrirFolha((el, fechar) => {
     el.innerHTML = `<h3>Registrar presença</h3><p class="muted" style="margin:0">${DIAS_LONGOS[turma.diaSemana]}, ${dataLonga(data)} · ${horaTexto(turma.horario)}</p>
       <label class="busca" style="max-width:none">${icone("alunos")}<input id="r-busca" type="search" placeholder="Buscar aluno" aria-label="Buscar aluno" autocomplete="off"></label>
@@ -23,16 +24,19 @@ function abrirRegistro(store, turma, data, aoFechar) {
       <button class="btn ghost bloco" id="r-fechar">Fechar</button>`;
     const lista = el.querySelector("#r-lista");
     const desenhar = () => {
-      const presentes = new Set(d.checkins.filter(c => c.turmaId === turma.id && c.data === data).map(c => c.alunoId));
+      const d = store.dados; // sempre o atual (a nuvem pode ter trocado o objeto)
+      const presentes = new Set([...enviados, ...d.checkins.filter(c => c.turmaId === turma.id && c.data === data).map(c => c.alunoId)]);
       const q = normalizar(el.querySelector("#r-busca").value);
       const opcoes = d.alunos.filter(a => a.status === "ativo" && (a.categoria || "adulto") === (turma.categoria || "adulto") && !presentes.has(a.id) && (!q || normalizar(a.nome).includes(q)))
         .sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR")).slice(0, 40);
       lista.innerHTML = opcoes.length ? opcoes.map(a => `<button data-id="${esc(a.id)}" style="text-align:left;width:100%">${pessoa(a)}<span class="link" style="margin-left:auto">Marcar</span></button>`).join("")
         : `<div class="vazio">Ninguém para marcar com essa busca.</div>`;
       lista.querySelectorAll("[data-id]").forEach(b => b.onclick = () => {
-        const a = d.alunos.find(x => x.id === b.dataset.id);
+        const d = store.dados, a = d.alunos.find(x => x.id === b.dataset.id);
+        if (!a || enviados.has(a.id)) return;
         if (d.checkins.some(c => c.alunoId === a.id && c.turmaId === turma.id && c.data === data)) { toast(`${a.nome.split(" ")[0]} já está presente`); return; }
         if (a.real) {
+          enviados.add(a.id); desenhar();
           import("../nuvem/dados.js").then(m => salvarComAviso(m.salvarCheckin({ alunoId: a.id, turmaId: turma.id, data, hora: turma.horario, origem: "manual" }), `Presença de ${a.nome.split(" ")[0]} registrada`));
           return;
         }
@@ -187,7 +191,7 @@ export default {
         return vis.length ? `<div class="card" style="border-color:#bfe3cf;background:#f4fbf7"><div class="card-cab"><h3>Aula experimental</h3><a class="link" href="#prospects">Prospects</a></div>
           <div class="lista">${vis.map(p => `<div><div class="cresce"><b>${esc(p.nome)}</b><small>${esc(p.interesse)} · ${esc(p.telefone)}</small></div><span class="pill ok">Visitante</span></div>`).join("")}</div></div>` : ""; })() : ""}
       ${turma ? (() => { const f = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
-        return `<div class="card foto-aula"><div class="card-cab"><div><h3>Foto da aula das ${horaTexto(turma.horario)} ${etiquetaPrograma(turma.programa)}</h3><small>${DIAS_LONGOS[diaSemana(data)]}, ${dataLonga(data)} · ${turma.real ? "a foto é analisada no aparelho e não é guardada" : f ? `salva por Prof. ${esc(nomeProfessor(d, turma.professorId))}` : "o professor registra como foi a aula"}</small></div>
+        return `<div class="card foto-aula"><div class="card-cab"><div><h3>Foto da aula das ${horaTexto(turma.horario)} ${etiquetaPrograma(turma.programa)}</h3><small>${DIAS_LONGOS[diaSemana(data)]}, ${dataLonga(data)} · ${!guardarFotoDaAula(store.modo, turma) ? "a foto é analisada no aparelho e não é guardada" : f ? `salva por Prof. ${esc(nomeProfessor(d, turma.professorId))}` : "o professor registra como foi a aula"}</small></div>
           ${f ? `<div style="display:flex;gap:8px"><label class="btn sec peq" style="cursor:pointer">Trocar<input type="file" accept="image/*" capture="environment" id="foto-arq" hidden></label><button class="btn sec peq" id="foto-del">Remover</button></div>` : ""}</div>
           ${f ? `<div class="foto-corpo"><button class="foto-grande" id="foto-ver" aria-label="Ver foto da aula em tela cheia"><img src="${esc(f.foto)}" alt="Foto da aula de ${esc(dataLonga(data))}"><span>Ver em tela cheia</span></button>
             <div class="foto-lado"><label for="foto-leg" class="k">Legenda</label>
@@ -230,8 +234,8 @@ export default {
       let foto;
       try { foto = (await comprimirImagem(arq, 1280, 220 * 1024)).dados; }
       catch { toast("Não deu para ler essa imagem"); return; }
-      // Aula com grade real: a foto só é analisada no aparelho e nunca é guardada.
-      if (turma.real) { abrirAnalise(store, turma, data, foto, ctx.redesenhar); return; }
+      // Modo logado (alunos reais): a foto só é analisada no aparelho e nunca é guardada.
+      if (!guardarFotoDaAula(store.modo, turma)) { abrirAnalise(store, turma, data, foto, ctx.redesenhar); return; }
       const antiga = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
       const nova = { id: store.novoId("fa"), turmaId: turma.id, data, foto, legenda: antiga?.legenda || "", professorId: turma.professorId };
       d.fotosAula = d.fotosAula.filter(x => x !== antiga).concat(nova);

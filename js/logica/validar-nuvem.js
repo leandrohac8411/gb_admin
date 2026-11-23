@@ -61,3 +61,7 @@ export function modoInicial({ configurado, host, usuario }) {
   if (!configurado || (!usuario && HOSTS_LOCAIS.includes(host))) return "demo";
   return "login";
 }
+
+// Foto da aula: no modo logado (com alunos reais) ela só é analisada no aparelho e nunca é guardada,
+// nem em turma de exemplo (crianças reais treinam nas turmas kids de exemplo).
+export const guardarFotoDaAula = (modo, turma) => modo !== "painel" && !turma?.real;

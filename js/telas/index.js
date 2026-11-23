@@ -6,7 +6,7 @@ import { aplicarRegras } from "../logica/graduacao.js";
 import { modoInicial, emailAutorizado } from "../logica/validar-nuvem.js";
 import { USERS } from "../nuvem/config.js";
 import { perguntar, toast, esc, haFolhaAberta } from "../ui/util.js";
-import { mesclar, paraLocal } from "../logica/mesclar.js";
+import { criarSincronia } from "../logica/sincronia.js";
 import { montarLogin } from "./login.js";
 import dashboard from "./dashboard.js";
 import alunos from "./alunos.js";
@@ -61,6 +61,7 @@ function abrirPainel(modo, fb, usuario) {
   quandoRestaurar(async () => {
     if (!await perguntar("Restaurar dados de exemplo?", "Tudo o que foi cadastrado ou alterado aqui volta para a academia de exemplo.", "Restaurar", "Cancelar")) return;
     store.restaurar(hojeISO());
+    store.aposTrocarDados?.();
     aplicarRegras(store.dados.config.regras, store.dados.config.regrasKids);
     desenhar();
     toast("Dados de exemplo restaurados");
@@ -77,19 +78,14 @@ function abrirPainel(modo, fb, usuario) {
   return store;
 }
 
-// Dados reais: a cada mudança na nuvem, remescla sobre o fictício atual e redesenha.
-// Se houver uma janela de edição aberta, espera ela fechar (não apaga o que a pessoa está digitando).
+// Dados reais: a cada mudança na nuvem, remescla sobre o fictício atual e redesenha
+// (sem trocar os dados enquanto houver uma janela de edição aberta; ver logica/sincronia.js).
 async function ouvirNuvem(store) {
   const { ouvirTudo } = await import("../nuvem/dados.js");
-  let espera = null;
-  const redesenhar = () => {
-    if (!haFolhaAberta()) { clearInterval(espera); espera = null; return desenhar(); }
-    espera ??= setInterval(redesenhar, 500);
-  };
-  ouvirTudo(reais => {
-    store.dados = mesclar(paraLocal(store.dados), reais);
-    redesenhar();
-  }, e => { console.error(e); toast("Não consegui ler os dados da nuvem. Confira a internet."); });
+  const sincronia = criarSincronia(store, { haFolhaAberta, desenhar });
+  store.aposTrocarDados = () => sincronia.reaplicar();
+  ouvirTudo(reais => sincronia.receber(reais),
+    e => { console.error(e); toast("Não consegui ler os dados da nuvem. Confira a internet."); });
 }
 
 async function iniciar() {

@@ -26,6 +26,14 @@ const ic = {
 export function montarLogin(el, { aviso = "", voltarDemo = null } = {}) {
   el.innerHTML = `
     <div class="lp">
+      <aside class="lp-lado">
+        <div class="lp-lado-marca"><img src="img/logo-sobradinho.png" alt="GB Sobradinho"><div><strong>GB Sobradinho</strong><span>Admin</span></div></div>
+        <div class="lp-lado-texto">
+          <h2>Gestão da academia, do <em>tatame</em> ao caixa</h2>
+          <p>Alunos, presenças, mensalidades e graduações da GB Sobradinho num só lugar.</p>
+        </div>
+        <img class="lp-lado-foto" src="img/login-desktop.jpg" alt="" aria-hidden="true">
+      </aside>
       <div class="lp-fundo" aria-hidden="true"></div>
       <div class="lp-conteudo">
         <header class="lp-marca">
@@ -37,6 +45,7 @@ export function montarLogin(el, { aviso = "", voltarDemo = null } = {}) {
           <div class="lp-regua" aria-hidden="true"></div>
           <p class="lp-frase">Gestão da academia, do <em>tatame</em> ao caixa</p>
         </header>
+        <div class="lp-desk-cab"><h2>Entrar no painel</h2><p>Acesso restrito à equipe da academia.</p></div>
         <form id="lg-f" class="lp-form" novalidate>
           <div class="lp-grupo"><label for="lg-email">E-mail</label>
             <div class="lp-campo">${ic.email}<input id="lg-email" type="email" placeholder="seu@email.com" autocomplete="username" inputmode="email" maxlength="254" autocapitalize="none" spellcheck="false" required></div></div>

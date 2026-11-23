@@ -767,24 +767,27 @@ a.stat:hover{border-color:var(--red-borda)}
   .lp-lado-itens li{display:flex;flex-direction:column;align-items:center;text-align:center;font-size:1.1cqw;font-weight:700;line-height:1.2;color:#22252c}
   .lp-lado-itens li>span{width:4.2cqw;height:4.2cqw;border-radius:1.1cqw;background:#fff;display:grid;place-items:center;box-shadow:0 .5cqw 1.4cqw #1b26301a;margin-bottom:.8cqw;color:#e0101b}
   .lp-lado-itens .ic{width:2.1cqw;height:2.1cqw;stroke-width:2.2}
-  .lp-conteudo{position:absolute;left:60.3%;top:15.45%;width:35.6%;min-height:36.7cqw;padding:3.6cqw 2.85cqw 2.4cqw 3.05cqw;background:#fff;border-radius:1.7cqw;box-shadow:0 1.4cqw 4cqw #1b263020}
-  .lp-desk-cab{display:block;margin-bottom:1.9cqw}
-  .lp-desk-cab .lp-lado-regua{width:4.65cqw}
-  .lp-desk-cab h2{margin:.9cqw 0 0;font-size:2.75cqw;font-weight:900;letter-spacing:-.045em;color:#0d0f14;line-height:1.1}
-  .lp-desk-cab p{margin:.5cqw 0 0;color:#6b6f78;font-size:max(1.25cqw,13px)}
-  .lp-form{gap:1.4cqw}
-  .lp-grupo label{font-size:max(1.13cqw,12px);margin:0 0 .6cqw 0;color:#0d0f14}
-  .lp-campo{height:3.85cqw;min-height:42px;border-radius:.96cqw;padding:0 1.55cqw;gap:1.3cqw;box-shadow:0 .3cqw 1cqw #1b26300a}
-  .lp-campo>svg{width:1.35cqw;height:1.35cqw;min-width:16px;min-height:16px}
-  .lp-campo input{font-size:max(1.2cqw,14px)}
-  .lp-olho svg{width:1.35cqw;height:1.35cqw;min-width:17px;min-height:17px}
-  .lp-esqueci{margin:-.6cqw 0 .3cqw}
-  .lp-esqueci button{font-size:max(1.08cqw,12px);font-weight:500}
-  .lp-entrar{height:4.3cqw;min-height:44px;border-radius:.96cqw;font-size:max(1.38cqw,14px);letter-spacing:.02em;gap:1.4cqw;background:linear-gradient(100deg,#e3121d,#d10e18 60%,#b30a12)}
-  .lp-entrar svg{width:1.6cqw;height:1.6cqw;min-width:18px;min-height:18px}
-  .lp-aviso{font-size:max(.85cqw,12px);margin-top:1cqw}
-  .lp-ou{margin:.4cqw 1cqw .8cqw}
-  .lp-bio{height:3.2cqw;min-height:40px;border-radius:.96cqw}
+  /* O cartão cobre o cartão do desenho; o conteúdo tem tamanho de formulário comum (com teto em px) */
+  .lp-conteudo{position:absolute;left:60.3%;top:15.45%;width:35.6%;min-height:36.7cqw;padding:2.4cqw 3cqw;background:#fff;border-radius:1.7cqw;box-shadow:0 1.4cqw 4cqw #1b263020;
+    display:flex;flex-direction:column;justify-content:center}
+  .lp-conteudo>*{width:100%;max-width:380px;margin-left:auto;margin-right:auto}
+  .lp-desk-cab{display:block;margin-bottom:clamp(18px,1.6cqw,26px)}
+  .lp-desk-cab .lp-lado-regua{width:clamp(40px,3.2cqw,56px);height:clamp(3px,.22cqw,4px)}
+  .lp-desk-cab h2{margin:clamp(8px,.7cqw,12px) 0 0;font-size:clamp(24px,1.95cqw,31px);font-weight:900;letter-spacing:-.04em;color:#0d0f14;line-height:1.1}
+  .lp-desk-cab p{margin:4px 0 0;color:#6b6f78;font-size:clamp(13px,.95cqw,15px)}
+  .lp-form{gap:clamp(12px,1cqw,16px)}
+  .lp-grupo label{font-size:clamp(12px,.85cqw,13px);margin:0 0 6px 0;color:#0d0f14}
+  .lp-campo{height:clamp(42px,2.9cqw,48px);border-radius:12px;padding:0 14px;gap:10px;box-shadow:0 3px 10px #1b26300a}
+  .lp-campo>svg{width:18px;height:18px}
+  .lp-campo input{font-size:clamp(14px,.95cqw,15px)}
+  .lp-olho svg{width:18px;height:18px}
+  .lp-esqueci{margin:-4px 0 2px}
+  .lp-esqueci button{font-size:clamp(12px,.82cqw,13px);font-weight:500}
+  .lp-entrar{height:clamp(44px,3cqw,50px);border-radius:12px;font-size:clamp(13px,.95cqw,15px);letter-spacing:.03em;gap:10px;background:linear-gradient(100deg,#e3121d,#d10e18 60%,#b30a12)}
+  .lp-entrar svg{width:19px;height:19px}
+  .lp-aviso{font-size:12px;margin-top:10px}
+  .lp-ou{margin:2px 14px 10px}
+  .lp-bio{height:42px;border-radius:12px}
 }
 /* Telas ultralargas: o pôster não cobre a largura toda; as bordas somem num degradê */
 @media(min-width:900px) and (min-aspect-ratio:215/100){

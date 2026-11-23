@@ -3,6 +3,7 @@
 // Firestore repetem estas checagens do lado do servidor.
 import { faixaValida } from "../ui/faixa.js";
 import { descritorValido } from "./reconhecimento.js";
+import { USERS } from "../nuvem/config.js";
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/, HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
 const MINI = /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/;
@@ -47,4 +48,16 @@ export function turmaNuvem(t) {
   if (!objeto(t) || !Number.isInteger(t.diaSemana) || t.diaSemana < 0 || t.diaSemana > 6 || !HORA.test(t.horario || "")) return null;
   if (!["adulto", "kids"].includes(t.categoria) || !(Number.isInteger(t.duracaoMin) && t.duracaoMin >= 1 && t.duracaoMin <= 600)) return null;
   return { diaSemana: t.diaSemana, horario: t.horario, programa: corta(t.programa, 20), professor: corta(t.professor, 80), duracaoMin: t.duracaoMin, categoria: t.categoria };
+}
+
+// O que abrir ao carregar o painel:
+//  - "painel": logado com um dos e-mails autorizados (dados reais + fictícios);
+//  - "demo": sem login, só no computador (localhost) ou sem Firebase configurado — dados fictícios;
+//  - "login": qualquer outro caso (site publicado sem login, ou e-mail sem acesso).
+export const emailAutorizado = email => Object.hasOwn(USERS, String(email || "").toLowerCase());
+const HOSTS_LOCAIS = ["localhost", "127.0.0.1", "[::1]"];
+export function modoInicial({ configurado, host, usuario }) {
+  if (configurado && usuario && emailAutorizado(usuario.email)) return "painel";
+  if (!configurado || (!usuario && HOSTS_LOCAIS.includes(host))) return "demo";
+  return "login";
 }

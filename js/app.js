@@ -79,7 +79,7 @@ export function desenhar() {
   const tela_ = (Object.hasOwn(TELAS, rota) && TELAS[rota]) || (doMenu ? embreve : naoEncontrada);
   const ativa = rota === "aluno" ? "alunos" : rota;
   const u = ctx.store?.dados.config?.usuario || {};
-  lateral.innerHTML = desenharMenu(ativa, u);
+  lateral.innerHTML = desenharMenu(ativa, u, { sair: !!aoSair });
   lateral.querySelectorAll("[data-grupo]").forEach(b => b.onclick = () => {
     alternarGrupo(b.dataset.grupo);
     const g = b.parentElement, aberto = g.classList.toggle("aberto");
@@ -89,6 +89,7 @@ export function desenhar() {
   fecharAvisos();
   document.getElementById("sino-ponto").hidden = !pendencias().length;
   lateral.querySelector("#restaurar").onclick = () => aoRestaurar?.();
+  lateral.querySelector("#sair")?.addEventListener("click", () => aoSair?.());
   lateral.querySelectorAll("a").forEach(a => a.addEventListener("click", () => abrirMenu(false)));
   fecharFolhas();
   tela.innerHTML = "";
@@ -105,8 +106,9 @@ export function desenhar() {
   window.scrollTo(0, 0);
 }
 
-let aoRestaurar = null;
+let aoRestaurar = null, aoSair = null;
 export function quandoRestaurar(fn) { aoRestaurar = fn; }
+export function definirSair(fn) { aoSair = fn; }
 
 window.addEventListener("hashchange", desenhar);
 // As telas se registram em js/telas/index.js, que chama desenhar() no fim.

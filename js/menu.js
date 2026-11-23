@@ -29,7 +29,8 @@ export const ICONES = {
   eventos: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/>',
   camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
   kimono: '<path d="M8 3h8l4 4-3 3v11H7V10L4 7z"/><path d="m8 3 4 6 4-6M12 9v12"/>',
-  restaurar: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>'
+  restaurar: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>',
+  sair: '<path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M21 12H10M17 8l4 4-4 4"/>'
 };
 
 const item = (rota, nome, pronto = true) => ({ rota, nome, pronto });
@@ -60,7 +61,7 @@ const textoSeguro = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;
 
 export function alternarGrupo(nome) { abertos.has(nome) ? abertos.delete(nome) : abertos.add(nome); }
 
-export function desenharMenu(ativa, usuario = {}) {
+export function desenharMenu(ativa, usuario = {}, { sair = false } = {}) {
   const grupoAtivo = MENU.find(g => g.itens.some(i => i.rota === ativa))?.grupo;
   // Ao trocar de tela, fica aberto só o grupo dela (sanfona); clicar num grupo abre/fecha à mão.
   if (ativa !== ultimaAtiva) { abertos.clear(); ultimaAtiva = ativa; }
@@ -77,5 +78,6 @@ export function desenharMenu(ativa, usuario = {}) {
         `<div class="lat-sub">${g.itens.map(link).join("")}</div></div>`;
     }).join("") +
     `</nav><a class="lat-perfil" href="#config"><span class="av-foto">🥋</span><span class="quem"><b>${nome}</b><small>Administrador</small></span>${SETA}</a>` +
-    `<button class="lat-restaurar" id="restaurar">${icone("restaurar")}Restaurar dados de exemplo</button>`;
+    `<button class="lat-restaurar" id="restaurar">${icone("restaurar")}Restaurar dados de exemplo</button>` +
+    (sair ? `<button class="lat-sair" id="sair">${icone("sair")}Sair</button>` : "");
 }

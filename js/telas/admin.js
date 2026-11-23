@@ -1,4 +1,6 @@
 // Administração (segunda leva): Modelos de documentos, Modelos de mensagens, Permissões, Portal do aluno e Configurações.
+import { lerGradeDiario } from "../logica/importar-grade.js";
+import { paraLocal, salvarComAviso } from "../logica/mesclar.js";
 import { esc, abrirFolha, perguntar, toast, dataLonga, horaTexto, iniciais, saudacao } from "../ui/util.js";
 import { reais, competenciaTexto } from "../ui/util-admin.js";
 import { faixaSVG, nomeFaixa, faixasDe } from "../ui/faixa.js";
@@ -179,6 +181,10 @@ export const config = {
         <div class="card"><div class="card-cab"><h3>Ciclo do currículo</h3><a class="link" href="#cronogramas">Cronogramas</a></div>
           <div class="lista">${["GB1", "GB2"].map(p => { const an = c.ancoras.filter(a => a.programa === p).sort((x, y) => y.data.localeCompare(x.data))[0];
             return `<div><div class="cresce"><b>${p}</b><small>${an ? `semana ${an.semana} a partir de ${dataLonga(an.data)}` : "sem referência"}</small></div></div>`; }).join("")}</div></div>
+        ${store.modo === "painel" ? `<div class="card" style="display:flex;flex-direction:column;gap:10px"><div class="card-cab"><h3>Grade real (do Diário)</h3></div>
+          <p class="muted" style="margin:0">No Diário de Tatame, abra <b>Perfil › Exportar grade para o GB Admin</b> e escolha aqui o arquivo <b>grade-diario.json</b>. As turmas adultas passam a ser as reais; as kids continuam as de exemplo.</p>
+          <p class="muted" style="margin:0">${d.turmas.filter(t => t.real).length ? `Hoje: ${d.turmas.filter(t => t.real).length} turmas reais no banco.` : "Ainda sem grade real: os check-ins usam a grade de exemplo."}</p>
+          <label class="btn sec" style="cursor:pointer">${icone("agenda")}Importar grade do Diário<input type="file" id="cf-grade" accept="application/json,.json" hidden></label></div>` : ""}
         <div class="card" style="display:flex;flex-direction:column;gap:10px"><div class="card-cab"><h3>Dados de exemplo</h3></div>
           <p class="muted" style="margin:0">Tudo aqui é fictício e fica salvo só neste navegador. Restaurar volta a academia de exemplo do zero.</p>
           <button type="button" class="btn sec" id="cf-restaurar">${icone("restaurar")}Restaurar dados de exemplo</button>
@@ -191,7 +197,8 @@ export const config = {
     el.querySelector("#cf-restaurar").onclick = () => document.getElementById("restaurar")?.click();
     el.querySelector("#cf-exportar").onclick = () => {
       const link = document.createElement("a");
-      link.href = URL.createObjectURL(new Blob([JSON.stringify(d, null, 2)], { type: "application/json" }));
+      // Só os dados de exemplo: alunos reais e rostos nunca vão para um arquivo.
+      link.href = URL.createObjectURL(new Blob([JSON.stringify(paraLocal(d), null, 2)], { type: "application/json" }));
       link.download = `gb-admin-backup-${hojeISO()}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
       toast("Backup exportado");
     };
@@ -211,6 +218,17 @@ export const config = {
       aplicarRegras(novo.config.regras, novo.config.regrasKids);
       toast("Backup importado"); ctx.redesenhar();
     };
+    el.querySelector("#cf-grade")?.addEventListener("change", async e => {
+      const arq = e.target.files?.[0]; e.target.value = "";
+      if (!arq) return;
+      let lida;
+      try { lida = lerGradeDiario(arq.size > 300 * 1024 ? "" : await arq.text()); }
+      catch { toast("Esse arquivo não é uma grade exportada pelo Diário."); return; }
+      if (!lida.turmas.length) { toast("Nenhuma turma válida no arquivo."); return; }
+      if (!await perguntar("Importar grade do Diário?", `${lida.turmas.length} turma${lida.turmas.length === 1 ? "" : "s"}${lida.descartadas ? ` (${lida.descartadas} descartada${lida.descartadas === 1 ? "" : "s"} por estar fora do formato)` : ""} ${lida.turmas.length === 1 ? "vai" : "vão"} para o banco. Turmas com o mesmo dia e horário são atualizadas.`, "Importar", "Cancelar")) return;
+      const { salvarTurmas } = await import("../nuvem/dados.js");
+      await salvarComAviso(salvarTurmas(lida.turmas), `${lida.turmas.length} turmas importadas, ${lida.descartadas} descartadas`);
+    });
     el.querySelector("#cfg").onsubmit = e => {
       e.preventDefault();
       const v = id => el.querySelector(id).value.trim(), n = id => Number(v(id));

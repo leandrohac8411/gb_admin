@@ -116,3 +116,15 @@ test("alunosSemRosto: rostos que sobram, sem o professor (reconhecido ou avisado
   assert.equal(alunosSemRosto(comProf, profs, true), 2, "professor reconhecido já saiu da conta");
   assert.equal(alunosSemRosto([], profs, true), 0);
 });
+
+// Aprender com a foto da aula: o rosto confirmado pelo professor vira mais uma referência
+// (a 1ª, do cadastro, fica; entram as 2 mais recentes da aula).
+import { aprenderDescritor } from "../js/logica/reconhecimento.js";
+test("aprenderDescritor mantém a foto do cadastro e as 2 mais recentes da aula", () => {
+  const [c, a1, a2, a3] = [v(0), v(0.1), v(0.2), v(0.3)];
+  assert.deepEqual(aprenderDescritor([c], a1), [c, a1]);
+  assert.deepEqual(aprenderDescritor([c, a1], a2), [c, a1, a2]);
+  assert.deepEqual(aprenderDescritor([c, a1, a2], a3), [c, a2, a3]);
+  assert.deepEqual(aprenderDescritor([], a1), [a1]);
+  assert.deepEqual(aprenderDescritor([c], [1, 2]), [c], "descritor inválido não entra");
+});

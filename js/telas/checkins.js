@@ -5,7 +5,7 @@ import { hojeISO, diaSemana, dataValida, somarDias } from "../logica/datas.js";
 import { icone } from "../menu.js";
 import { comprimirImagem } from "../foto.js";
 import { detectarRostos, descreverRostos } from "../rostos.js";
-import { reconhecer, cadastradosDe, escolhaInicial, alunosSemRosto } from "../logica/reconhecimento.js";
+import { reconhecer, cadastradosDe, escolhaInicial, alunosSemRosto, aprenderDescritor } from "../logica/reconhecimento.js";
 import { recorte } from "../logica/cadastro-rosto.js";
 import { guardarFotoDaAula } from "../logica/validar-nuvem.js";
 import { sugerirPresenca } from "../logica/presenca-foto.js";
@@ -42,6 +42,23 @@ function abrirRegistro(store, turma, data, aoFechar) {
     desenhar();
     el.querySelector("#r-busca").focus();
   }, aoFechar);
+}
+
+// Rosto que você confirmou na foto (aluno presente ou professor) e que não tinha sido reconhecido de cara:
+// vira mais uma referência da pessoa, para a próxima foto da aula reconhecer sozinha.
+// Só para quem já autorizou o uso do rosto; o consentimento e a miniatura continuam os mesmos.
+function aprenderDaFoto(store, escolhas, rostos) {
+  if (store.modo !== "painel" || !escolhas?.length || !rostos) return;
+  const profs = new Set(store.dados.professores.map(p => p.id));
+  const aprender = escolhas.map((e, i) => ({ e, novo: rostos.rostos[i]?.descritor }))
+    .filter(({ e, novo }) => e.alunoId && novo && (e.estado !== "reconhecido" || e.alunoId !== e.sugerido) && (e.marcado || profs.has(e.alunoId)))
+    .map(({ e, novo }) => ({ id: e.alunoId, r: store.dados.rostos?.get(e.alunoId), novo }))
+    .filter(x => x.r?.consentimento && x.r.descritores?.length);
+  if (!aprender.length) return;
+  import("../nuvem/dados.js").then(({ salvarRosto }) => Promise.all(aprender.map(({ id, r, novo }) =>
+    salvarRosto(id, { descritores: aprenderDescritor(r.descritores, novo), mini: r.mini, consentimento: r.consentimento }))))
+    .then(() => toast(`Aprendi ${aprender.length === 1 ? "1 rosto" : `${aprender.length} rostos`} com esta foto`))
+    .catch(e => console.error(e));
 }
 
 // Presença pela foto. Com alunos reais com rosto cadastrado, reconhece quem é quem (cada rosto
@@ -128,6 +145,7 @@ function abrirAnalise(store, turma, data, foto, pronto) {
         const ok = store.salvar() !== false;
         fechar();
         if (ok) toast(`${lancar.length} presença${lancar.length === 1 ? "" : "s"} confirmada${lancar.length === 1 ? "" : "s"} pela foto`);
+        if (ok) aprenderDaFoto(store, escolhas, rostos);
         pronto();
       };
     };
@@ -135,7 +153,7 @@ function abrirAnalise(store, turma, data, foto, pronto) {
     (reconhecendo ? descreverRostos(foto) : detectarRostos(foto)).then(r => {
       rostos = r;
       if (reconhecendo && r.rostos.length) {
-        escolhas = reconhecer(r.rostos.map(x => x.descritor), cadastrados).map(x => ({ ...escolhaInicial(x), estado: x.estado }));
+        escolhas = reconhecer(r.rostos.map(x => x.descritor), cadastrados).map(x => ({ ...escolhaInicial(x), estado: x.estado, sugerido: x.alunoId || "" }));
         pessoas = alunosSemRosto(escolhas, idsProf, professorNaFoto);
       } else pessoas = Math.max(0, r.rostos.length - 1);
       marcas = null;
@@ -223,11 +241,14 @@ export default {
       if (!arq || !turma) return;
       if (!arq.type.startsWith("image/")) { toast("Escolha um arquivo de imagem"); return; }
       toast("Preparando a foto…");
-      let foto;
-      try { foto = (await comprimirImagem(arq, 1280, 220 * 1024)).dados; }
-      catch { toast("Não deu para ler essa imagem"); return; }
+      let foto, analise;
+      try {
+        // Para reconhecer, a foto vai em resolução alta (rostos de longe ficam pequenos); só a cópia guardada é reduzida.
+        analise = (await comprimirImagem(arq, 2560, 3_000_000)).dados;
+        foto = guardarFotoDaAula(store.modo, turma) ? (await comprimirImagem(arq, 1280, 220 * 1024)).dados : null;
+      } catch { toast("Não deu para ler essa imagem"); return; }
       // Modo logado (alunos reais): a foto só é analisada no aparelho e nunca é guardada.
-      if (!guardarFotoDaAula(store.modo, turma)) { abrirAnalise(store, turma, data, foto, ctx.redesenhar); return; }
+      if (!foto) { abrirAnalise(store, turma, data, analise, ctx.redesenhar); return; }
       const antiga = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
       const nova = { id: store.novoId("fa"), turmaId: turma.id, data, foto, legenda: antiga?.legenda || "", professorId: turma.professorId };
       d.fotosAula = d.fotosAula.filter(x => x !== antiga).concat(nova);
@@ -235,7 +256,7 @@ export default {
         d.fotosAula = d.fotosAula.filter(x => x !== nova).concat(antiga ? [antiga] : []);
         toast("Sem espaço no navegador para mais fotos. Remova fotos antigas.");
         ctx.redesenhar();
-      } else { ctx.redesenhar(); abrirAnalise(store, turma, data, foto, ctx.redesenhar); }
+      } else { ctx.redesenhar(); abrirAnalise(store, turma, data, analise, ctx.redesenhar); }
     });
     el.querySelector("#foto-analisar")?.addEventListener("click", () => {
       const f = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);

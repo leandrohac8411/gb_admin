@@ -65,3 +65,11 @@ export function alunosSemRosto(escolhas, idsProfessores, professorNaFoto) {
 // Como cada rosto começa na tela de conferência.
 // O professor aparece com o nome, mas não vira presença.
 export const escolhaInicial = r => ({ alunoId: r.alunoId || "", marcado: r.estado === "reconhecido" && !r.professor });
+
+// Rosto confirmado na foto da aula vira referência: a do cadastro fica e entram as 2 mais recentes da aula.
+// Assim o reconhecimento passa a comparar com rostos de longe, na mesma luz do tatame.
+export function aprenderDescritor(descritores, novo) {
+  if (!descritorValido(novo)) return descritores;
+  if (!descritores.length) return [novo];
+  return [descritores[0], ...descritores.slice(1), novo].filter((_, i, l) => i === 0 || i >= l.length - 2);
+}

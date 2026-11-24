@@ -80,7 +80,7 @@ export function desenhar() {
   const tela_ = (Object.hasOwn(TELAS, rota) && TELAS[rota]) || (doMenu ? embreve : naoEncontrada);
   const ativa = rota === "aluno" ? "alunos" : rota;
   const u = ctx.store?.dados.config?.usuario || {};
-  lateral.innerHTML = desenharMenu(ativa, u, { sair: !!aoSair });
+  lateral.innerHTML = desenharMenu(ativa, u, { sair: !!aoSair, restaurar: rotuloRestaurar });
   lateral.querySelectorAll("[data-grupo]").forEach(b => b.onclick = () => {
     alternarGrupo(b.dataset.grupo);
     const g = b.parentElement, aberto = g.classList.toggle("aberto");
@@ -107,8 +107,8 @@ export function desenhar() {
   window.scrollTo(0, 0);
 }
 
-let aoRestaurar = null, aoSair = null;
-export function quandoRestaurar(fn) { aoRestaurar = fn; }
+let aoRestaurar = null, aoSair = null, rotuloRestaurar = "Restaurar dados de exemplo";
+export function quandoRestaurar(fn, rotulo = "Restaurar dados de exemplo") { aoRestaurar = fn; rotuloRestaurar = rotulo; }
 export function definirSair(fn) { aoSair = fn; }
 
 window.addEventListener("hashchange", desenhar);

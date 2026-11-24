@@ -11,7 +11,6 @@ import { icone } from "../menu.js";
 import { etiquetaPrograma, porId, PILL_STATUS, DIAS_CURTOS, estrelas } from "./comum.js";
 import { aulas30, abrirFormAluno } from "./alunos.js";
 import { cartaoRosto, ligarCartaoRosto } from "./rosto.js";
-import { salvarComAviso } from "../logica/mesclar.js";
 
 
 const MOTIVOS = ["Mudança", "Financeiro", "Lesão", "Horário", "Falta de tempo", "Insatisfação", "Outro"];
@@ -59,7 +58,7 @@ export default {
         <div class="acoes-cab" style="display:flex;gap:8px"><button class="btn sec" id="editar">Editar</button>
           <button class="btn ${a.status === "ativo" ? "sec" : ""}" id="status">${a.status === "ativo" ? "Trancar matrícula" : "Reativar matrícula"}</button></div>
       </div>
-      ${a.real && store.modo === "painel" ? cartaoRosto(a, d) : ""}
+      ${store.modo === "painel" ? cartaoRosto(a, d) : ""}
       <div class="card dados">
         ${kids ? `<div><small>Idade · turma</small><b>${anos != null ? `${anos} anos` : "Sem data de nascimento"}${turmaKids ? ` · ${esc(turmaKids.publico)}` : ""}</b></div>
         <div><small>Peso</small><b>${a.peso ? `${String(a.peso).replace(".", ",")} kg` : "—"}</b></div>`
@@ -107,9 +106,8 @@ export default {
       </div>`;
 
     el.querySelector("#editar").onclick = () => abrirFormAluno(store, a, () => ctx.redesenhar());
-    if (a.real) ligarCartaoRosto(el, store, a, ctx);
-    // Aluno real: o status também vai para a nuvem (senão o próximo aviso da nuvem desfaria a mudança).
-    const salvarStatus = msg => a.real ? import("../nuvem/dados.js").then(m => salvarComAviso(m.salvarAluno(a), msg)) : (store.salvar(), toast(msg));
+    if (store.modo === "painel") ligarCartaoRosto(el, store, a, ctx);
+    const salvarStatus = msg => { store.salvar(); toast(msg); };
     el.querySelector("#status").onclick = async () => {
       if (a.status !== "ativo") {
         if (!await perguntar("Reativar matrícula?", `${a.nome} volta a contar como ativo.`, "Reativar", "Cancelar")) return;

@@ -7,7 +7,6 @@ import { comprimirImagem } from "../foto.js";
 import { detectarRostos, descreverRostos } from "../rostos.js";
 import { reconhecer, cadastradosDe, escolhaInicial } from "../logica/reconhecimento.js";
 import { recorte } from "../logica/cadastro-rosto.js";
-import { salvarComAviso } from "../logica/mesclar.js";
 import { guardarFotoDaAula } from "../logica/validar-nuvem.js";
 import { sugerirPresenca } from "../logica/presenca-foto.js";
 import { temaDaAula } from "../logica/tema.js";
@@ -16,7 +15,6 @@ import { cabecalho, etiquetaPrograma, nomeProfessor, pessoa, faixaCelula, porId,
 const estado = { data: null, turmaId: null };
 
 function abrirRegistro(store, turma, data, aoFechar) {
-  const enviados = new Set(); // presenças reais já enviadas nesta janela (antes de a nuvem responder)
   abrirFolha((el, fechar) => {
     el.innerHTML = `<h3>Registrar presença</h3><p class="muted" style="margin:0">${DIAS_LONGOS[turma.diaSemana]}, ${dataLonga(data)} · ${horaTexto(turma.horario)}</p>
       <label class="busca" style="max-width:none">${icone("alunos")}<input id="r-busca" type="search" placeholder="Buscar aluno" aria-label="Buscar aluno" autocomplete="off"></label>
@@ -25,7 +23,7 @@ function abrirRegistro(store, turma, data, aoFechar) {
     const lista = el.querySelector("#r-lista");
     const desenhar = () => {
       const d = store.dados; // sempre o atual (a nuvem pode ter trocado o objeto)
-      const presentes = new Set([...enviados, ...d.checkins.filter(c => c.turmaId === turma.id && c.data === data).map(c => c.alunoId)]);
+      const presentes = new Set([...d.checkins.filter(c => c.turmaId === turma.id && c.data === data).map(c => c.alunoId)]);
       const q = normalizar(el.querySelector("#r-busca").value);
       const opcoes = d.alunos.filter(a => a.status === "ativo" && (a.categoria || "adulto") === (turma.categoria || "adulto") && !presentes.has(a.id) && (!q || normalizar(a.nome).includes(q)))
         .sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR")).slice(0, 40);
@@ -33,14 +31,9 @@ function abrirRegistro(store, turma, data, aoFechar) {
         : `<div class="vazio">Ninguém para marcar com essa busca.</div>`;
       lista.querySelectorAll("[data-id]").forEach(b => b.onclick = () => {
         const d = store.dados, a = d.alunos.find(x => x.id === b.dataset.id);
-        if (!a || enviados.has(a.id)) return;
+        if (!a) return;
         if (d.checkins.some(c => c.alunoId === a.id && c.turmaId === turma.id && c.data === data)) { toast(`${a.nome.split(" ")[0]} já está presente`); return; }
-        if (a.real) {
-          enviados.add(a.id); desenhar();
-          import("../nuvem/dados.js").then(m => salvarComAviso(m.salvarCheckin({ alunoId: a.id, turmaId: turma.id, data, hora: turma.horario, origem: "manual" }), `Presença de ${a.nome.split(" ")[0]} registrada`));
-          return;
-        }
-        d.checkins.push({ id: store.novoId("c"), alunoId: a.id, turmaId: turma.id, data, hora: turma.horario });
+        d.checkins.push({ id: store.novoId("c"), alunoId: a.id, turmaId: turma.id, data, hora: turma.horario, origem: "manual" });
         store.salvar(); toast(`Presença de ${a.nome.split(" ")[0]} registrada`); desenhar();
       });
     };
@@ -59,7 +52,7 @@ function abrirAnalise(store, turma, data, foto, pronto) {
   const cadastrados = cadastradosDe(d);
   const reconhecendo = cadastrados.length > 0;
   let rostos = null, erro = null, pessoas = 0, professorNaFoto = true, marcas = null, escolhas = null;
-  const reaisAtivos = d.alunos.filter(a => a.real && a.status === "ativo").sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
+  const reaisAtivos = d.alunos.filter(a => a.status === "ativo").sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
   abrirFolha((el, fechar) => {
     const jaPresente = id => d.checkins.some(c => c.alunoId === id && c.turmaId === turma.id && c.data === data);
     const desenhar = () => {
@@ -125,15 +118,8 @@ function abrirAnalise(store, turma, data, foto, pronto) {
       el.querySelector("#af-ok").onclick = async () => {
         el.querySelector("#af-ok").disabled = true;
         const lancar = [...novosRosto.map(e => ({ alunoId: e.alunoId, origem: "rosto" })), ...novos.map(x => ({ alunoId: x.aluno.id, origem: "foto" }))];
-        const reais = [], locais = [];
-        for (const l of lancar) (d.alunos.find(a => a.id === l.alunoId)?.real ? reais : locais).push(l);
-        for (const l of locais) if (!jaPresente(l.alunoId)) d.checkins.push({ id: store.novoId("c"), alunoId: l.alunoId, turmaId: turma.id, data, hora: turma.horario, origem: l.origem });
-        if (locais.length) store.salvar();
-        let ok = true;
-        if (reais.length) {
-          const { salvarCheckin } = await import("../nuvem/dados.js");
-          ok = await salvarComAviso(Promise.all(reais.map(l => salvarCheckin({ alunoId: l.alunoId, turmaId: turma.id, data, hora: turma.horario, origem: l.origem }))), null);
-        }
+        for (const l of lancar) if (!jaPresente(l.alunoId)) d.checkins.push({ id: store.novoId("c"), alunoId: l.alunoId, turmaId: turma.id, data, hora: turma.horario, origem: l.origem });
+        const ok = store.salvar() !== false;
         fechar();
         if (ok) toast(`${lancar.length} presença${lancar.length === 1 ? "" : "s"} confirmada${lancar.length === 1 ? "" : "s"} pela foto`);
         pronto();
@@ -271,7 +257,6 @@ export default {
     el.querySelectorAll("[data-remover]").forEach(b => b.onclick = async () => {
       const c = d.checkins.find(x => x.id === b.dataset.remover), a = alunos[c?.alunoId];
       if (!c || !await perguntar("Remover presença?", `${a?.nome || "Aluno"} sai da lista desta aula.`, "Remover", "Cancelar")) return;
-      if (c.real) { const m = await import("../nuvem/dados.js"); await salvarComAviso(m.apagarCheckin(c.id), "Presença removida"); return; }
       d.checkins = d.checkins.filter(x => x.id !== c.id);
       store.salvar(); toast("Presença removida"); ctx.redesenhar();
     });

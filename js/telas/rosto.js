@@ -5,6 +5,7 @@ import { comprimirImagem } from "../foto.js";
 import { escolherRostoCadastro, consentimentoPadrao, recorte, problemaNaFoto } from "../logica/cadastro-rosto.js";
 import { salvarComAviso } from "../logica/mesclar.js";
 import { hojeISO } from "../logica/datas.js";
+import { semAlunos } from "../logica/baldes.js";
 
 const MAX_FOTOS = 3;
 const nuvem = () => import("../nuvem/dados.js");
@@ -31,7 +32,7 @@ export function cartaoRosto(a, d) {
     <div class="acoes" style="justify-content:flex-start;flex-wrap:wrap">
       ${n < MAX_FOTOS ? `<label class="btn sec peq" style="cursor:pointer">Adicionar foto do rosto<input type="file" accept="image/*" id="rosto-arq" hidden></label>` : ""}
       ${n ? '<button class="btn sec peq" id="rosto-apagar">Apagar dados do rosto</button>' : ""}
-      <button class="btn sec peq" id="aluno-excluir">Excluir aluno do banco</button>
+      <button class="btn sec peq" id="aluno-excluir">Excluir aluno</button>
     </div></div>`;
 }
 
@@ -85,6 +86,7 @@ export async function cadastrarFotoRosto(store, a, arq) {
 export function ligarCartaoRosto(el, store, a, ctx) {
   const cartao = el.querySelector("#cartao-rosto");
   if (!cartao) return;
+  const atual = () => store.dados.rostos?.get(a.id);
   cartao.querySelector("#rosto-arq")?.addEventListener("change", e => {
     const arq = e.target.files?.[0]; e.target.value = "";
     if (arq) cadastrarFotoRosto(store, a, arq);
@@ -97,8 +99,11 @@ export function ligarCartaoRosto(el, store, a, ctx) {
   });
 
   cartao.querySelector("#aluno-excluir")?.addEventListener("click", async () => {
-    if (!await perguntar("Excluir aluno do banco?", `${a.nome} e os dados do rosto saem da nuvem. Os check-ins já lançados continuam.`, "Excluir", "Cancelar")) return;
-    const { apagarAluno } = await nuvem();
-    if (await salvarComAviso(apagarAluno(a.id), "Aluno excluído")) ctx.ir("alunos");
+    if (!await perguntar("Excluir aluno?", `${a.nome} sai do banco junto com o rosto, as presenças, as mensalidades, as graduações e as anotações dele. Não dá para desfazer.`, "Excluir", "Cancelar")) return;
+    store.dados = semAlunos(store.dados, [a.id]);
+    if (!store.salvar()) return;
+    if (atual()) { const { apagarRosto } = await nuvem(); apagarRosto(a.id).catch(e => console.error(e)); }
+    toast("Aluno excluído");
+    ctx.ir("alunos");
   });
 }

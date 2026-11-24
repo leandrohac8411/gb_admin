@@ -61,7 +61,7 @@ const textoSeguro = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;
 
 export function alternarGrupo(nome) { abertos.has(nome) ? abertos.delete(nome) : abertos.add(nome); }
 
-export function desenharMenu(ativa, usuario = {}, { sair = false } = {}) {
+export function desenharMenu(ativa, usuario = {}, { sair = false, restaurar = "Restaurar dados de exemplo" } = {}) {
   const grupoAtivo = MENU.find(g => g.itens.some(i => i.rota === ativa))?.grupo;
   // Ao trocar de tela, fica aberto só o grupo dela (sanfona); clicar num grupo abre/fecha à mão.
   if (ativa !== ultimaAtiva) { abertos.clear(); ultimaAtiva = ativa; }
@@ -78,6 +78,6 @@ export function desenharMenu(ativa, usuario = {}, { sair = false } = {}) {
         `<div class="lat-sub">${g.itens.map(link).join("")}</div></div>`;
     }).join("") +
     `</nav><a class="lat-perfil" href="#config"><span class="av-foto">🥋</span><span class="quem"><b>${nome}</b><small>Administrador</small></span>${SETA}</a>` +
-    `<button class="lat-restaurar" id="restaurar">${icone("restaurar")}Restaurar dados de exemplo</button>` +
+    `<button class="lat-restaurar" id="restaurar">${icone("restaurar")}${textoSeguro(restaurar)}</button>` +
     (sair ? `<button class="lat-sair" id="sair">${icone("sair")}Sair</button>` : "");
 }

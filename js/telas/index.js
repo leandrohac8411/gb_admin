@@ -7,6 +7,9 @@ import { modoInicial, emailAutorizado } from "../logica/validar-nuvem.js";
 import { USERS } from "../nuvem/config.js";
 import { perguntar, toast, esc, haFolhaAberta } from "../ui/util.js";
 import { criarSincronia } from "../logica/sincronia.js";
+import { ligarStoreAoBanco } from "../logica/painel-store.js";
+import { semExemplos, temExemplos } from "../logica/baldes.js";
+import { salvarComAviso } from "../logica/mesclar.js";
 import { montarLogin } from "./login.js";
 import dashboard from "./dashboard.js";
 import alunos from "./alunos.js";
@@ -36,56 +39,91 @@ function mostrarLogin(fb, aviso = "") {
   fb.aoMudarUsuario(u => { if (u) location.reload(); });
 }
 
-function abrirPainel(modo, fb, usuario) {
+// Painel logado (etapa 2): tudo vem do banco e tudo volta para ele. Nada fica no localStorage;
+// quem guarda a cópia offline é o próprio Firestore.
+async function abrirPainelLogado(fb, usuario) {
+  elLogin.hidden = false; elAdmin.hidden = true;
+  elLogin.innerHTML = `<div class="login-caixa"><h1>Carregando…</h1><p class="muted">Buscando os dados da academia no banco.</p></div>`;
+  const u = USERS[usuario.email.toLowerCase()];
+  const store = criarStore(hojeISO(), null);
+  store.modo = "painel";
+  const [{ ouvirPainel, gravarEscritas, semearSeVazio }, { gerarDados }] = await Promise.all([import("../nuvem/painel.js"), import("../dados-ficticios.js")]);
+  try { await semearSeVazio(() => gerarDados(hojeISO())); }
+  catch (e) { return falhaBanco(e); }
+  const ctl = ligarStoreAoBanco(store, {
+    usuario: { nome: u.nome, sexo: u.sexo }, avisar: toast,
+    gravar: (escritas, existentes) => salvarComAviso(gravarEscritas(escritas, existentes), null)
+  });
+  // Redesenho vindo do banco (outra pessoa mudou algo): mantém a rolagem onde estava.
+  const redesenhar = () => { const y = window.scrollY; desenhar(); window.scrollTo(0, y); };
+  const sincronia = criarSincronia(store, { haFolhaAberta, desenhar: () => store.pronto && redesenhar(), mudou: ctl.mudou,
+    // A configuração pode mudar em outro aparelho: as regras de graduação acompanham.
+    aplicar: leitura => { ctl.aplicar(leitura); aplicarRegras(store.dados.config.regras, store.dados.config.regrasKids); } });
+  let primeira;
+  const pronta = new Promise(ok => { primeira = ok; });
+  // Leitura sem o painel/meta é do cache ainda vazio: espera a do servidor.
+  ouvirPainel(leitura => { if (!leitura.docs.meta) return; sincronia.receber(leitura); if (store.base) primeira(); }, falhaBanco);
+  await pronta;
+  store.pronto = true;
+  elLogin.hidden = true; elAdmin.hidden = false;
+  definirSair(async () => {
+    if (await perguntar("Sair do painel?", "A cópia dos dados guardada neste aparelho será apagada; tudo continua salvo no banco.", "Sair", "Cancelar")) fb.sairELimpar();
+  });
+  // Saiu em outra aba ou a sessão expirou: volta para o login.
+  fb.aoMudarUsuario(u2 => { if (!u2) location.reload(); });
+  definirStore(store);
+  quandoRestaurar(async () => {
+    if (!temExemplos(store.dados)) { toast("Não há mais dados de exemplo."); return; }
+    if (!await perguntar("Apagar dados de exemplo?", "Saem os alunos de exemplo e tudo ligado a eles (presenças, mensalidades, graduações...), além de prospects, despesas, eventos e recados de exemplo. Planos, modelos, grade e professores ficam. Os dados reais não são tocados.", "Apagar", "Cancelar")) return;
+    store.dados = semExemplos(store.dados);
+    store.salvar();
+    desenhar();
+    toast("Dados de exemplo apagados");
+  }, "Apagar dados de exemplo");
+  registrarTelas();
+  desenhar();
+  return store;
+}
+
+function falhaBanco(e) {
+  console.error(e);
+  const semPermissao = e?.code === "permission-denied";
+  elAdmin.hidden = true; elLogin.hidden = false;
+  elLogin.innerHTML = `<div class="login-caixa"><h1>Não consegui abrir os dados</h1><p class="muted">${semPermissao
+    ? "O banco recusou o acesso. As regras do Firebase precisam ser publicadas (firebase deploy --only firestore:rules)."
+    : "Confira a internet e recarregue a página."}</p></div>`;
+}
+
+// Demonstração (Firebase não configurado): dados fictícios só neste navegador.
+function abrirDemo(fb) {
   elLogin.hidden = true; elAdmin.hidden = false;
   const store = criarStore(hojeISO());
   store.salvar();
   aplicarRegras(store.dados.config.regras, store.dados.config.regrasKids);
-  store.modo = modo;
-  if (modo === "painel") {
-    const u = USERS[usuario.email.toLowerCase()];
-    store.dados.config.usuario = { ...(store.dados.config.usuario || {}), nome: u.nome, sexo: u.sexo };
-    definirSair(async () => {
-      if (await perguntar("Sair do painel?", "Os dados guardados neste aparelho serão apagados; continuam salvos na nuvem.", "Sair", "Cancelar")) fb.sairELimpar();
-    });
-    // Saiu em outra aba ou a sessão expirou: volta para o login.
-    fb.aoMudarUsuario(u2 => { if (!u2) location.reload(); });
-    ouvirNuvem(store);
-  } else {
-    elDemo.hidden = false;
-    elDemo.innerHTML = `<span>Demonstração: dados fictícios, nada vai para a nuvem.</span>${fb?.configurado ? '<button type="button" id="demo-entrar">Entrar com a conta</button>' : ""}`;
-    elDemo.querySelector("#demo-entrar")?.addEventListener("click", () => mostrarLogin(fb));
-  }
+  store.modo = "demo";
+  elDemo.hidden = false;
+  elDemo.innerHTML = `<span>Demonstração: dados fictícios, nada vai para a nuvem.</span>${fb?.configurado ? '<button type="button" id="demo-entrar">Entrar com a conta</button>' : ""}`;
+  elDemo.querySelector("#demo-entrar")?.addEventListener("click", () => mostrarLogin(fb));
   definirStore(store);
-
   quandoRestaurar(async () => {
     if (!await perguntar("Restaurar dados de exemplo?", "Tudo o que foi cadastrado ou alterado aqui volta para a academia de exemplo.", "Restaurar", "Cancelar")) return;
     store.restaurar(hojeISO());
-    store.aposTrocarDados?.();
     aplicarRegras(store.dados.config.regras, store.dados.config.regrasKids);
     desenhar();
     toast("Dados de exemplo restaurados");
   });
+  registrarTelas();
+  desenhar();
+  return store;
+}
 
+function registrarTelas() {
   Object.entries({ dashboard, alunos, aluno, agenda, checkins, graduacoes, financeiro, eventos,
     professores: gestao.professores, acompanhamentos: gestao.acompanhamentos, cronogramas: gestao.cronogramas,
     "modelos-aula": gestao.modelosAula, habilidades: gestao.habilidades,
     planos: operacao.planos, contratos: operacao.contratos, prospects: operacao.prospects,
     comunicacao: operacao.comunicacao, relatorios: operacao.relatorios,
     documentos: admin.documentos, mensagens: admin.mensagens, permissoes: admin.permissoes, config: admin.config }).forEach(([rota, tela]) => registrar(rota, tela));
-
-  desenhar();
-  return store;
-}
-
-// Dados reais: a cada mudança na nuvem, remescla sobre o fictício atual e redesenha
-// (sem trocar os dados enquanto houver uma janela de edição aberta; ver logica/sincronia.js).
-async function ouvirNuvem(store) {
-  const { ouvirTudo } = await import("../nuvem/dados.js");
-  const sincronia = criarSincronia(store, { haFolhaAberta, desenhar });
-  store.aposTrocarDados = () => sincronia.reaplicar();
-  ouvirTudo(reais => sincronia.receber(reais),
-    e => { console.error(e); toast("Não consegui ler os dados da nuvem. Confira a internet."); });
 }
 
 async function iniciar() {
@@ -105,7 +143,8 @@ async function iniciar() {
     if (usuario && !emailAutorizado(usuario.email)) { aviso = `O e-mail ${usuario.email} não tem acesso ao painel.`; await fb.sair(); }
     return mostrarLogin(fb, aviso);
   }
-  abrirPainel(modo, fb, usuario);
+  if (modo === "painel") return abrirPainelLogado(fb, usuario);
+  abrirDemo(fb);
 }
 
 iniciar().catch(e => {

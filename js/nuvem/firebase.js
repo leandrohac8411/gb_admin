@@ -13,7 +13,8 @@ export const configurado = Boolean(firebaseConfig.apiKey && firebaseConfig.proje
 const app = configurado ? initializeApp(firebaseConfig) : null;
 export const auth = app ? getAuth(app) : null;
 export const db = app ? initializeFirestore(app, {
-  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  ignoreUndefinedProperties: true
 }) : null;
 
 export const entrar = (email, senha) => signInWithEmailAndPassword(auth, email.trim().toLowerCase(), senha);

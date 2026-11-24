@@ -1,6 +1,6 @@
 // Administração (segunda leva): Modelos de documentos, Modelos de mensagens, Permissões, Portal do aluno e Configurações.
 import { lerGradeDiario } from "../logica/importar-grade.js";
-import { paraLocal, salvarComAviso } from "../logica/mesclar.js";
+import { paraLocal } from "../logica/mesclar.js";
 import { esc, abrirFolha, perguntar, toast, dataLonga, horaTexto, iniciais, saudacao } from "../ui/util.js";
 import { reais, competenciaTexto } from "../ui/util-admin.js";
 import { faixaSVG, nomeFaixa, faixasDe } from "../ui/faixa.js";
@@ -11,6 +11,7 @@ import { statusMensalidade } from "../logica/financeiro.js";
 import { aulasNosUltimos } from "../logica/relatorios.js";
 import { MODULOS } from "../dados-extras.js";
 import { validarDados, limparImportado } from "../store.js";
+import { aplicarGrade, temExemplos } from "../logica/baldes.js";
 import { irmaos, mediaComportamento } from "../logica/familia.js";
 import { icone } from "../menu.js";
 import { cabecalho, etiquetaPrograma, nomeProfessor, PILL_STATUS, DIAS_LONGOS, estrelas } from "./comum.js";
@@ -185,24 +186,31 @@ export const config = {
           <p class="muted" style="margin:0">No Diário de Tatame, abra <b>Perfil › Exportar grade para o GB Admin</b> e escolha aqui o arquivo <b>grade-diario.json</b>. As turmas adultas passam a ser as reais; as kids continuam as de exemplo.</p>
           <p class="muted" style="margin:0">${d.turmas.filter(t => t.real).length ? `Hoje: ${d.turmas.filter(t => t.real).length} turmas reais no banco.` : "Ainda sem grade real: os check-ins usam a grade de exemplo."}</p>
           <label class="btn sec" style="cursor:pointer">${icone("agenda")}Importar grade do Diário<input type="file" id="cf-grade" accept="application/json,.json" hidden></label></div>` : ""}
-        <div class="card" style="display:flex;flex-direction:column;gap:10px"><div class="card-cab"><h3>Dados de exemplo</h3></div>
+        ${store.modo === "painel" ? `<div class="card" style="display:flex;flex-direction:column;gap:10px"><div class="card-cab"><h3>Dados de exemplo</h3></div>
+          <p class="muted" style="margin:0">Tudo fica salvo no banco. ${temExemplos(d) ? "Os alunos, presenças, mensalidades e demais registros de exemplo podem ser apagados quando a academia real estiver cadastrada; os dados reais não são tocados." : "Não há mais dados de exemplo."}</p>
+          ${temExemplos(d) ? `<button type="button" class="btn sec" id="cf-restaurar">${icone("restaurar")}Apagar dados de exemplo</button>` : ""}
+          <button type="button" class="btn sec" id="cf-exportar">${icone("documentos")}Exportar backup (JSON)</button>
+          <small class="muted">O backup guarda tudo (menos os rostos) num arquivo neste aparelho. Ele tem dados pessoais dos alunos: guarde com cuidado.</small></div>`
+        : `<div class="card" style="display:flex;flex-direction:column;gap:10px"><div class="card-cab"><h3>Dados de exemplo</h3></div>
           <p class="muted" style="margin:0">Tudo aqui é fictício e fica salvo só neste navegador. Restaurar volta a academia de exemplo do zero.</p>
           <button type="button" class="btn sec" id="cf-restaurar">${icone("restaurar")}Restaurar dados de exemplo</button>
           <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn sec" id="cf-exportar">${icone("documentos")}Exportar backup (JSON)</button>
             <label class="btn sec" style="cursor:pointer">${icone("restaurar")}Importar backup<input type="file" id="cf-importar" accept="application/json,.json" hidden></label></div>
-          <small class="muted">O backup guarda alunos, turmas, check-ins, financeiro e todo o resto num arquivo.</small></div>
+          <small class="muted">O backup guarda alunos, turmas, check-ins, financeiro e todo o resto num arquivo.</small></div>`}
         <p class="aviso" id="cf-erro" hidden style="grid-column:1/-1"></p>
         <div style="grid-column:1/-1;display:flex;justify-content:flex-end"><button class="btn">Salvar configurações</button></div>
       </form>`;
-    el.querySelector("#cf-restaurar").onclick = () => document.getElementById("restaurar")?.click();
+    el.querySelector("#cf-restaurar")?.addEventListener("click", () => document.getElementById("restaurar")?.click());
     el.querySelector("#cf-exportar").onclick = () => {
       const link = document.createElement("a");
-      // Só os dados de exemplo: alunos reais e rostos nunca vão para um arquivo.
-      link.href = URL.createObjectURL(new Blob([JSON.stringify(paraLocal(d), null, 2)], { type: "application/json" }));
+      // Rostos nunca vão para um arquivo. Na demonstração, só os dados de exemplo.
+      const { rostos, ...semRostos } = d;
+      link.href = URL.createObjectURL(new Blob([JSON.stringify(store.modo === "painel" ? semRostos : paraLocal(d), null, 2)], { type: "application/json" }));
       link.download = `gb-admin-backup-${hojeISO()}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
       toast("Backup exportado");
     };
-    el.querySelector("#cf-importar").onchange = async e => {
+    const importar = el.querySelector("#cf-importar");
+    if (importar) importar.onchange = async e => {
       const arq = e.target.files?.[0]; e.target.value = "";
       if (!arq) return;
       // Arquivo gigante trava o navegador: backup real tem poucos MB.
@@ -226,8 +234,9 @@ export const config = {
       catch { toast("Esse arquivo não é uma grade exportada pelo Diário."); return; }
       if (!lida.turmas.length) { toast("Nenhuma turma válida no arquivo."); return; }
       if (!await perguntar("Importar grade do Diário?", `${lida.turmas.length} turma${lida.turmas.length === 1 ? "" : "s"}${lida.descartadas ? ` (${lida.descartadas} descartada${lida.descartadas === 1 ? "" : "s"} por estar fora do formato)` : ""} ${lida.turmas.length === 1 ? "vai" : "vão"} para o banco. Turmas com o mesmo dia e horário são atualizadas.`, "Importar", "Cancelar")) return;
-      const { salvarTurmas } = await import("../nuvem/dados.js");
-      await salvarComAviso(salvarTurmas(lida.turmas), `${lida.turmas.length} turmas importadas, ${lida.descartadas} descartadas`);
+      aplicarGrade(store.dados, lida.turmas);
+      if (store.salvar() !== false) toast(`${lida.turmas.length} turmas importadas${lida.descartadas ? `, ${lida.descartadas} descartadas` : ""}`);
+      ctx.redesenhar();
     });
     el.querySelector("#cfg").onsubmit = e => {
       e.preventDefault();

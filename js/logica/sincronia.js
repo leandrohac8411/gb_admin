@@ -3,11 +3,17 @@
 // no mesmo objeto e, quando fecha, os dados da nuvem são mesclados por cima (nada se perde).
 import { mesclar, paraLocal } from "./mesclar.js";
 
-export function criarSincronia(store, { haFolhaAberta, desenhar, agendar = fn => setTimeout(fn, 500) }) {
+// aplicar/mudou: no modo "tudo no banco" (etapa 2) vêm de logica/painel-store.js; sem eles, mescla o real no fictício.
+export function criarSincronia(store, { haFolhaAberta, desenhar, agendar = fn => setTimeout(fn, 500), aplicar: aplicarLeitura, mudou }) {
   let ultimo = null, pendente = false, esperando = false;
-  const aplicar = () => { store.dados = mesclar(paraLocal(store.dados), ultimo); };
+  const aplicar = () => { if (aplicarLeitura) aplicarLeitura(ultimo); else store.dados = mesclar(paraLocal(store.dados), ultimo); };
   const s = {
-    receber(reais) { ultimo = reais; pendente = true; s.tentar(); },
+    receber(reais) {
+      ultimo = reais;
+      // Leitura igual ao que já está na tela (eco da própria gravação): nada a fazer.
+      if (mudou && !mudou(reais)) { pendente = false; return; }
+      pendente = true; s.tentar();
+    },
     tentar() {
       if (!pendente || !ultimo) return;
       if (haFolhaAberta()) {

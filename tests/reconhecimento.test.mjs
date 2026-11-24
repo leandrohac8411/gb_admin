@@ -90,3 +90,29 @@ test("foto do rosto no cadastro: aceita imagem até 30 MB, recusa o resto", () =
   assert.match(problemaNaFoto({ type: "image/png", size: 31 * 1024 * 1024 }), /30 MB/);
   assert.equal(problemaNaFoto(null), "");
 });
+
+// Professores com rosto: a foto da aula sabe quem é o professor e não lança presença para ele.
+import { alunosSemRosto } from "../js/logica/reconhecimento.js";
+test("cadastradosDe inclui professores com rosto, marcados como professor", () => {
+  const rostos = new Map([["a", { descritores: [v(0)] }], ["p1", { descritores: [v(0.3, 1)] }], ["p2", { descritores: [] }]]);
+  const r = cadastradosDe({ alunos: [{ id: "a", status: "ativo" }], professores: [{ id: "p1" }, { id: "p2" }], rostos });
+  assert.deepEqual(r.map(x => [x.alunoId, !!x.professor]), [["a", false], ["p1", true]]);
+});
+
+test("reconhecer diz quando o rosto é do professor; escolhaInicial não marca presença para ele", () => {
+  const cad = [{ alunoId: "a", descritores: [v(0)] }, { alunoId: "p1", descritores: [v(0.9, 1)], professor: true }];
+  const [aluno, prof] = reconhecer([v(0.05), v(0.9, 1)], cad);
+  assert.equal(aluno.professor, false);
+  assert.equal(prof.alunoId, "p1"); assert.equal(prof.professor, true); assert.equal(prof.estado, "reconhecido");
+  assert.deepEqual(escolhaInicial(prof), { alunoId: "p1", marcado: false });
+});
+
+test("alunosSemRosto: rostos que sobram, sem o professor (reconhecido ou avisado)", () => {
+  const profs = new Set(["p1"]);
+  const escolhas = [{ alunoId: "a", marcado: true }, { alunoId: "", marcado: false }, { alunoId: "", marcado: false }];
+  assert.equal(alunosSemRosto(escolhas, profs, true), 1, "professor na foto, não reconhecido: desconta 1");
+  assert.equal(alunosSemRosto(escolhas, profs, false), 2);
+  const comProf = [...escolhas, { alunoId: "p1", marcado: false }];
+  assert.equal(alunosSemRosto(comProf, profs, true), 2, "professor reconhecido já saiu da conta");
+  assert.equal(alunosSemRosto([], profs, true), 0);
+});

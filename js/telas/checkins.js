@@ -5,7 +5,7 @@ import { hojeISO, diaSemana, dataValida, somarDias } from "../logica/datas.js";
 import { icone } from "../menu.js";
 import { comprimirImagem } from "../foto.js";
 import { detectarRostos, descreverRostos } from "../rostos.js";
-import { reconhecer, cadastradosDe, escolhaInicial } from "../logica/reconhecimento.js";
+import { reconhecer, cadastradosDe, escolhaInicial, alunosSemRosto } from "../logica/reconhecimento.js";
 import { recorte } from "../logica/cadastro-rosto.js";
 import { guardarFotoDaAula } from "../logica/validar-nuvem.js";
 import { sugerirPresenca } from "../logica/presenca-foto.js";
@@ -53,14 +53,17 @@ function abrirAnalise(store, turma, data, foto, pronto) {
   const reconhecendo = cadastrados.length > 0;
   let rostos = null, erro = null, pessoas = 0, professorNaFoto = true, marcas = null, escolhas = null;
   const reaisAtivos = d.alunos.filter(a => a.status === "ativo").sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
+  // Professor reconhecido aparece com o nome, mas não vira presença nem conta como aluno.
+  const idsProf = new Set(d.professores.map(p => p.id)), ehProf = id => !!id && idsProf.has(id);
+  const profReconhecido = () => (escolhas || []).some(e => ehProf(e.alunoId));
   abrirFolha((el, fechar) => {
     const jaPresente = id => d.checkins.some(c => c.alunoId === id && c.turmaId === turma.id && c.data === data);
     const desenhar = () => {
-      const porRosto = new Set((escolhas || []).filter(e => e.marcado && e.alunoId).map(e => e.alunoId));
+      const porRosto = new Set((escolhas || []).filter(e => e.marcado && e.alunoId && !ehProf(e.alunoId)).map(e => e.alunoId));
       const sugestao = sugerirPresenca(d, turma, data, pessoas).filter(x => !porRosto.has(x.aluno.id));
       if (!marcas) marcas = new Map(sugestao.map(x => [x.aluno.id, x.marcado]));
       const novos = sugestao.filter(x => !x.presente && marcas.get(x.aluno.id));
-      const novosRosto = (escolhas || []).filter(e => e.marcado && e.alunoId && !jaPresente(e.alunoId));
+      const novosRosto = (escolhas || []).filter(e => e.marcado && e.alunoId && !ehProf(e.alunoId) && !jaPresente(e.alunoId));
       const total = novos.length + novosRosto.length;
       el.innerHTML = `<h3>Presença pela foto</h3>
         <p class="muted" style="margin:0">${horaTexto(turma.horario)} · ${dataLonga(data)} · ${reconhecendo ? "os rostos cadastrados são reconhecidos" : "a foto mostra quantos; a lista sugere quem"}. Confira antes de confirmar.</p>
@@ -75,14 +78,16 @@ function abrirAnalise(store, turma, data, foto, pronto) {
             <canvas class="rec-rosto" width="72" height="72" data-i="${i}" aria-hidden="true"></canvas>
             <div class="cresce"><select class="input" data-sel="${i}" aria-label="Quem é o rosto ${i + 1}">
               <option value="">Ninguém / não é aluno</option>
-              ${reaisAtivos.map(a => `<option value="${esc(a.id)}"${a.id === e.alunoId ? " selected" : ""}>${esc(a.nome)}</option>`).join("")}</select>
-              ${e.alunoId && jaPresente(e.alunoId) ? '<small class="muted">já estava na lista de presença</small>' : ""}</div>
-            <span class="pill ${e.estado === "reconhecido" ? "ok" : e.estado === "duvida" ? "alerta" : ""}">${e.estado === "reconhecido" ? "Reconhecido" : e.estado === "duvida" ? "Confira" : "Desconhecido"}</span>
-            <label class="check"><input type="checkbox" data-mar="${i}"${e.marcado ? " checked" : ""}${e.alunoId ? "" : " disabled"}> Presente</label></div>`).join("")}</div>
+              ${d.professores.length ? `<optgroup label="Professores">${d.professores.map(p => `<option value="${esc(p.id)}"${p.id === e.alunoId ? " selected" : ""}>Prof. ${esc(p.nome)}</option>`).join("")}</optgroup>` : ""}
+              <optgroup label="Alunos">${reaisAtivos.map(a => `<option value="${esc(a.id)}"${a.id === e.alunoId ? " selected" : ""}>${esc(a.nome)}</option>`).join("")}</optgroup></select>
+              ${e.alunoId && !ehProf(e.alunoId) && jaPresente(e.alunoId) ? '<small class="muted">já estava na lista de presença</small>' : ""}</div>
+            <span class="pill ${ehProf(e.alunoId) ? "info" : e.estado === "reconhecido" ? "ok" : e.estado === "duvida" ? "alerta" : ""}">${ehProf(e.alunoId) ? "Professor" : e.estado === "reconhecido" ? "Reconhecido" : e.estado === "duvida" ? "Confira" : "Desconhecido"}</span>
+            ${ehProf(e.alunoId) ? '<small class="check muted">não conta presença</small>' : `<label class="check"><input type="checkbox" data-mar="${i}"${e.marcado ? " checked" : ""}${e.alunoId ? "" : " disabled"}> Presente</label>`}</div>`).join("")}</div>
           <div class="secao">Outros alunos (sugestão pela frequência)</div>` : ""}
         <div class="campos">
           <div class="field"><label for="af-n">Alunos na foto${escolhas?.length ? " (sem contar os reconhecidos)" : ""}</label><input class="input" type="number" min="0" max="80" id="af-n" value="${pessoas}"></div>
-          <label class="check" style="align-self:end"><input type="checkbox" id="af-prof"${professorNaFoto ? " checked" : ""}${rostos ? "" : " disabled"}> O professor está na foto</label>
+          ${profReconhecido() ? '<p class="muted" style="align-self:end;margin:0">O professor foi reconhecido na foto e não conta como aluno.</p>'
+            : `<label class="check" style="align-self:end"><input type="checkbox" id="af-prof"${professorNaFoto ? " checked" : ""}${rostos ? "" : " disabled"}> O professor está na foto</label>`}
         </div>
         <div class="lista" style="max-height:34vh;overflow:auto">${sugestao.map(x => `<label class="sug${x.presente ? " ja" : ""}">
           <input type="checkbox" data-a="${esc(x.aluno.id)}"${marcas.get(x.aluno.id) ? " checked" : ""}${x.presente ? " disabled" : ""}>
@@ -99,20 +104,21 @@ function abrirAnalise(store, turma, data, foto, pronto) {
         if (img.complete) pintar(); else img.addEventListener("load", pintar, { once: true });
       }
       const recalcular = () => {
-        const restantes = escolhas ? escolhas.filter(e => !(e.marcado && e.alunoId)).length : rostos?.rostos.length || 0;
-        pessoas = Math.max(0, restantes - (professorNaFoto ? 1 : 0)); marcas = null;
+        pessoas = escolhas ? alunosSemRosto(escolhas, idsProf, professorNaFoto) : Math.max(0, (rostos?.rostos.length || 0) - (professorNaFoto ? 1 : 0));
+        marcas = null;
       };
       el.querySelectorAll("[data-sel]").forEach(sel => sel.onchange = () => {
         const i = Number(sel.dataset.sel), id = sel.value;
         // Um aluno só pode estar em um rosto: escolher aqui tira dos outros.
         escolhas.forEach((e, j) => { if (j !== i && id && e.alunoId === id) { e.alunoId = ""; e.marcado = false; } });
-        Object.assign(escolhas[i], { alunoId: id, marcado: !!id });
+        Object.assign(escolhas[i], { alunoId: id, marcado: !!id && !ehProf(id) });
         recalcular(); desenhar();
       });
       el.querySelectorAll("[data-mar]").forEach(c => c.onchange = () => { escolhas[Number(c.dataset.mar)].marcado = c.checked; recalcular(); desenhar(); });
       const n = el.querySelector("#af-n");
       n.onchange = () => { pessoas = Math.max(0, Math.min(80, Math.floor(Number(n.value) || 0))); marcas = null; desenhar(); };
-      el.querySelector("#af-prof").onchange = e => { professorNaFoto = e.target.checked; recalcular(); desenhar(); };
+      const prof = el.querySelector("#af-prof");
+      if (prof) prof.onchange = e => { professorNaFoto = e.target.checked; recalcular(); desenhar(); };
       el.querySelectorAll("[data-a]").forEach(c => c.onchange = () => { marcas.set(c.dataset.a, c.checked); desenhar(); });
       el.querySelector("#af-x").onclick = () => { fechar(); pronto(); };
       el.querySelector("#af-ok").onclick = async () => {
@@ -130,7 +136,7 @@ function abrirAnalise(store, turma, data, foto, pronto) {
       rostos = r;
       if (reconhecendo && r.rostos.length) {
         escolhas = reconhecer(r.rostos.map(x => x.descritor), cadastrados).map(x => ({ ...escolhaInicial(x), estado: x.estado }));
-        pessoas = Math.max(0, escolhas.filter(e => !e.marcado).length - 1);
+        pessoas = alunosSemRosto(escolhas, idsProf, professorNaFoto);
       } else pessoas = Math.max(0, r.rostos.length - 1);
       marcas = null;
       if (el.isConnected) desenhar();

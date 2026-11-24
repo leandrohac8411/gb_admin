@@ -36,13 +36,13 @@ export function cartaoRosto(a, d) {
     </div></div>`;
 }
 
-function pedirConsentimento(a, usuarioNome, anterior) {
+function pedirConsentimento(a, usuarioNome, anterior, finalidade) {
   const padrao = anterior || consentimentoPadrao(a, usuarioNome, hojeISO());
   return new Promise(ok => {
     abrirFolha((f, fechar) => {
       const nome = esc(a.nome);
       f.innerHTML = `<h3>Autorização do uso do rosto</h3>
-        <p style="margin:0">${padrao.responsavel ? `Sou o responsável por <b>${nome}</b> e autorizo` : `Eu, <b>${nome}</b>, autorizo`} o uso da foto do rosto apenas para registrar presença nas aulas da GB Sobradinho.
+        <p style="margin:0">${padrao.responsavel ? `Sou o responsável por <b>${nome}</b> e autorizo` : `Eu, <b>${nome}</b>, autorizo`} o uso da foto do rosto apenas para ${finalidade} da GB Sobradinho.
         Só são guardados números que descrevem o rosto e uma miniatura; os dados podem ser apagados a qualquer momento.</p>
         <div class="field"><label for="cs-por">Quem autoriza</label><input class="input" id="cs-por" maxlength="80" value="${esc(padrao.por)}"></div>
         <label class="check"><input type="checkbox" id="cs-ok"> Li e autorizo</label>
@@ -60,7 +60,7 @@ function pedirConsentimento(a, usuarioNome, anterior) {
 }
 
 // Analisa a foto, pede a autorização e grava os números do rosto. Usada na ficha e no cadastro do aluno.
-// O aluno precisa já estar no banco (as regras só aceitam rosto de aluno que existe).
+// Também serve para o professor. A pessoa precisa já estar no banco (as regras só aceitam rosto de aluno ou professor que existe).
 export async function cadastrarFotoRosto(store, a, arq) {
   const problema = problemaNaFoto(arq);
   if (!arq || problema) return problema && toast(problema);
@@ -71,7 +71,9 @@ export async function cadastrarFotoRosto(store, a, arq) {
     const escolha = escolherRostoCadastro(await descreverRostos(dados));
     if (!escolha.ok) return toast(escolha.motivo === "nenhum" ? "Não achei um rosto nessa foto. Use uma foto de frente e bem iluminada." : "Tem mais de um rosto: use uma foto só da pessoa.");
     const r = store.dados.rostos?.get(a.id);
-    const consentimento = await pedirConsentimento(a, store.dados.config.usuario?.nome || "", r?.consentimento);
+    const professor = store.dados.professores?.some(p => p.id === a.id);
+    const consentimento = await pedirConsentimento(a, store.dados.config.usuario?.nome || "", r?.consentimento,
+      professor ? "reconhecer o professor nas fotos das aulas" : "registrar presença nas aulas");
     if (!consentimento) return;
     const descritores = [...(r?.descritores || []), escolha.rosto.descritor].slice(-MAX_FOTOS);
     const mini = r?.mini || await miniatura(dados, escolha.rosto);

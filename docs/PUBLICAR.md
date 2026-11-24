@@ -48,6 +48,7 @@ Faça no celular, no site da Vercel:
 - [ ] Edite qualquer coisa (uma mensalidade paga, um evento, a configuração), recarregue a página e confira que continua lá. Abra no celular: a mudança aparece lá também.
 - [ ] Se aparecer "o banco recusou" ou "Não consegui abrir os dados", as regras do passo 2.1 não estão publicadas (ou estão na versão antiga): rode `firebase deploy --only firestore:rules` de novo.
 - [ ] Na ficha do aluno real, **Adicionar foto do rosto**: foto só da pessoa, de frente; autorize; aparece "1 de 3 fotos". Repita com mais 1 ou 2 fotos de ângulos diferentes.
+- [ ] **Professores › Editar e foto**: escolha uma foto do rosto do professor e salve; autorize; o cartão passa a mostrar "rosto cadastrado". Na foto da aula, o rosto dele aparece como **Professor** e não vira presença.
 - [ ] Numa aula real de hoje, em **Check-ins**, tire uma foto da turma: cada rosto aparece recortado com o aluno sugerido. Confira e confirme.
 - [ ] Recarregue a página: os check-ins continuam lá.
 - [ ] **Apagar dados do rosto**: o cartão volta para "0 de 3 fotos".

@@ -35,10 +35,12 @@ service cloud.firestore {
     match /checkins/{id} { allow read: if permitido(); }
 
     // ---------- Rosto: só números (descritores), miniatura pequena e consentimento ----------
-    match /rostos/{alunoId} {
+    // O id do documento é o do aluno ou o do professor (a foto da aula reconhece os dois).
+    match /rostos/{pessoaId} {
       allow read, delete: if permitido();
       allow create, update: if permitido() && rostoOk(request.resource.data)
-        && alunoId in get(/databases/$(database)/documents/painel/alunos).data.itens;
+        && (pessoaId in get(/databases/$(database)/documents/painel/alunos).data.itens
+          || pessoaId in get(/databases/$(database)/documents/painel/professores).data.itens);
     }
     function rostoOk(d) {
       return d.keys().hasOnly(['d0', 'd1', 'd2', 'mini', 'consentimento', 'atualizadoEm'])

@@ -9,28 +9,69 @@ import { lerCurriculo, diaDeReferencia } from "../logica/tema.js";
 import { icone } from "../menu.js";
 import { cabecalho, pessoa, faixaCelula, etiquetaPrograma, porId, DIAS_CURTOS, daAba, abasCategoria, ligarAbas } from "./comum.js";
 import { aulas30 } from "./alunos.js";
+import { problemaNaFoto } from "../logica/cadastro-rosto.js";
+import { salvarComAviso } from "../logica/mesclar.js";
 
 const erroEm = (el, sel, msg) => { const e = el.querySelector(sel); e.textContent = msg; e.hidden = false; };
 const opcoes = (lista, atual) => lista.map(v => Array.isArray(v) ? v : [v, v]).map(([v, t]) => `<option value="${esc(v)}"${v === atual ? " selected" : ""}>${esc(t)}</option>`).join("");
 
 // ---------- Professores ----------
+// No modo logado, o professor também tem "Rosto para check-in": a foto da aula reconhece quem é
+// o professor e não lança presença para ele. O rosto fica na coleção "rostos" com o id do professor.
+const rostoDe = (store, id) => store.modo === "painel" ? store.dados.rostos?.get(id) : null;
+
+function campoRostoProfessor(r) {
+  const n = r?.descritores?.length || 0;
+  return `<div class="field cheio"><span class="rotulo">Foto do rosto para o check-in${n ? ` · ${n} de 3 fotos` : ""}</span>
+    <div class="foto-escolha">
+      <span class="rosto-mini${r?.mini ? "" : " vazio-mini"}" id="pr-foto-previa" aria-hidden="true">${r?.mini ? `<img src="${esc(r.mini)}" alt="">` : icone("professores")}</span>
+      <div class="cresce"><b id="pr-foto-nome">${n ? "Rosto cadastrado" : "Nenhuma foto escolhida"}</b><small class="muted">${n < 3 ? "De frente, só a pessoa. A foto da aula passa a saber quem é o professor." : "Já tem as 3 fotos."}</small></div>
+      ${n < 3 ? `<label class="btn sec peq" for="pr-foto" id="pr-foto-btn">${n ? "Adicionar foto" : "Escolher foto"}</label><input type="file" accept="image/*" id="pr-foto" hidden>` : ""}
+    </div>
+    ${n ? '<button type="button" class="btn ghost peq" id="pr-rosto-apagar" style="align-self:flex-start">Apagar dados do rosto</button>' : ""}</div>`;
+}
+
 function formProfessor(store, prof, pronto) {
   const p = prof || { nome: "", faixa: "preta", graus: 0 };
+  const r = prof && rostoDe(store, prof.id), n = r?.descritores?.length || 0;
   abrirFolha((el, fechar) => {
     el.innerHTML = `<h3>${prof ? "Editar professor" : "Novo professor"}</h3><form class="campos" novalidate>
       <div class="field cheio"><label for="pr-nome">Nome</label><input class="input" id="pr-nome" value="${esc(p.nome)}" autocomplete="off"></div>
       <div class="field"><label for="pr-faixa">Faixa</label><select class="input" id="pr-faixa">${opcoes(FAIXAS.map(f => [f, nomeFaixa(f)]), p.faixa)}</select></div>
       <div class="field"><label for="pr-graus">Graus</label><select class="input" id="pr-graus">${opcoes(["0", "1", "2", "3", "4", "5", "6"], String(p.graus))}</select></div>
+      ${store.modo === "painel" ? campoRostoProfessor(r) : ""}
       <p class="aviso cheio" id="pr-erro" hidden></p>
       <div class="acoes cheio"><button type="button" class="btn ghost" id="pr-x">Cancelar</button><button class="btn">${prof ? "Salvar" : "Cadastrar"}</button></div></form>`;
     el.querySelector("#pr-x").onclick = fechar;
+    const foto = el.querySelector("#pr-foto");
+    let urlPrevia = null;
+    if (foto) foto.onchange = () => {
+      const arq = foto.files?.[0], previa = el.querySelector("#pr-foto-previa");
+      if (urlPrevia) URL.revokeObjectURL(urlPrevia);
+      urlPrevia = arq && /^image\//.test(arq.type) ? URL.createObjectURL(arq) : null;
+      if (urlPrevia) { previa.innerHTML = `<img src="${urlPrevia}" alt="">`; previa.classList.remove("vazio-mini"); }
+      el.querySelector("#pr-foto-nome").textContent = arq ? "Foto escolhida (salva ao confirmar)" : n ? "Rosto cadastrado" : "Nenhuma foto escolhida";
+      el.querySelector("#pr-foto-btn").textContent = arq ? "Trocar foto" : n ? "Adicionar foto" : "Escolher foto";
+    };
+    el.querySelector("#pr-rosto-apagar")?.addEventListener("click", async () => {
+      if (!await perguntar("Apagar dados do rosto?", `Os números e a miniatura do Prof. ${prof.nome} saem do banco. A foto da aula deixa de reconhecer o professor.`, "Apagar", "Cancelar")) return;
+      fechar();
+      const { apagarRosto } = await import("../nuvem/dados.js");
+      await salvarComAviso(apagarRosto(prof.id), "Dados do rosto apagados");
+      pronto();
+    });
     el.querySelector("form").onsubmit = e => {
       e.preventDefault();
       const nome = el.querySelector("#pr-nome").value.trim().replace(/\s+/g, " ");
       if (nome.length < 3) return erroEm(el, "#pr-erro", "Escreva o nome do professor.");
+      const arq = foto?.files?.[0], problema = problemaNaFoto(arq);
+      if (problema) return erroEm(el, "#pr-erro", problema);
       const campos = { nome, faixa: el.querySelector("#pr-faixa").value, graus: Number(el.querySelector("#pr-graus").value) };
-      if (prof) Object.assign(prof, campos); else store.dados.professores.push({ id: store.novoId("p"), ...campos });
-      store.salvar(); fechar(); toast(prof ? "Professor salvo" : "Professor cadastrado"); pronto();
+      let alvo = prof;
+      if (prof) Object.assign(prof, campos); else { alvo = { id: store.novoId("p"), ...campos }; store.dados.professores.push(alvo); }
+      const gravou = store.salvar(); fechar(); toast(prof ? "Professor salvo" : "Professor cadastrado"); pronto();
+      // O rosto só é aceito pelo banco depois que o professor já está gravado.
+      if (arq && gravou !== false) Promise.resolve(store.gravando).then(ok => ok !== false && import("./rosto.js").then(m => m.cadastrarFotoRosto(store, alvo, arq)));
     };
   });
 }
@@ -45,19 +86,24 @@ export const professores = {
         const ids = new Set(turmas.map(t => t.id));
         const cks = d.checkins.filter(c => ids.has(c.turmaId) && c.data > desde);
         const alunosUnicos = new Set(cks.map(c => c.alunoId)).size;
+        const r = rostoDe(store, p.id);
         return `<div class="card" style="display:flex;flex-direction:column;gap:12px">
-          <div class="pessoa"><span class="av">${esc(iniciais(p.nome))}</span><div><b>Prof. ${esc(p.nome)}</b><small>${nomeFaixa(p.faixa)}${p.graus ? ` · ${p.graus}º grau` : ""}</small></div></div>
+          <div class="pessoa">${r?.mini ? `<img class="av" src="${esc(r.mini)}" alt="" style="object-fit:cover">` : `<span class="av">${esc(iniciais(p.nome))}</span>`}<div><b>Prof. ${esc(p.nome)}</b><small>${nomeFaixa(p.faixa)}${p.graus ? ` · ${p.graus}º grau` : ""}${store.modo === "painel" ? ` · ${r?.descritores?.length ? "rosto cadastrado" : "sem foto do rosto"}` : ""}</small></div></div>
           ${faixaSVG(p.faixa === "preta" ? "preta" : p.faixa, Math.min(4, p.graus))}
           <div class="dados" style="grid-template-columns:repeat(3,1fr)"><div><small>Turmas</small><b>${turmas.length}</b></div><div><small>Alunos 30d</small><b>${alunosUnicos}</b></div><div><small>Presenças 30d</small><b>${cks.length}</b></div></div>
           <div class="chips">${turmas.length ? turmas.map(t => `<span class="chip">${DIAS_CURTOS[t.diaSemana]} ${horaTexto(t.horario)}</span>`).join("") : '<span class="muted" style="font-size:12px">Sem turmas</span>'}</div>
-          <div style="display:flex;gap:8px"><button class="btn sec peq" data-editar="${esc(p.id)}">Editar</button>${turmas.length ? "" : `<button class="btn sec peq" data-excluir="${esc(p.id)}">Excluir</button>`}</div>
+          <div style="display:flex;gap:8px"><button class="btn sec peq" data-editar="${esc(p.id)}">${store.modo === "painel" ? "Editar e foto" : "Editar"}</button>${turmas.length ? "" : `<button class="btn sec peq" data-excluir="${esc(p.id)}">Excluir</button>`}</div>
         </div>`;
       }).join("")}</div>`;
     el.querySelector("#novo").onclick = () => formProfessor(store, null, ctx.redesenhar);
     el.querySelectorAll("[data-editar]").forEach(b => b.onclick = () => formProfessor(store, d.professores.find(p => p.id === b.dataset.editar), ctx.redesenhar));
     el.querySelectorAll("[data-excluir]").forEach(b => b.onclick = async () => {
-      if (!await perguntar("Excluir professor?", "Ele não tem turmas, então pode sair da equipe.", "Excluir", "Cancelar")) return;
-      d.professores = d.professores.filter(p => p.id !== b.dataset.excluir); store.salvar(); toast("Professor excluído"); ctx.redesenhar();
+      if (!await perguntar("Excluir professor?", "Ele não tem turmas, então pode sair da equipe. O rosto dele, se tiver, também sai do banco.", "Excluir", "Cancelar")) return;
+      const id = b.dataset.excluir, tinhaRosto = !!rostoDe(store, id);
+      d.professores = d.professores.filter(p => p.id !== id);
+      if (store.salvar() === false) return;
+      if (tinhaRosto) import("../nuvem/dados.js").then(m => m.apagarRosto(id)).catch(e => console.error(e));
+      toast("Professor excluído"); ctx.redesenhar();
     });
   }
 };

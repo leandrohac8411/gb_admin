@@ -29,27 +29,39 @@ export function reconhecer(rostos, cadastrados) {
     for (const c of cadastrados) {
       if (!c.descritores?.length) continue;
       const dist = Math.min(...c.descritores.map(d => distancia(r, d)));
-      if (dist <= LIMITE_DUVIDA) pares.push({ indice, alunoId: c.alunoId, dist });
+      if (dist <= LIMITE_DUVIDA) pares.push({ indice, alunoId: c.alunoId, professor: !!c.professor, dist });
     }
   });
   pares.sort((a, b) => a.dist - b.dist);
-  const resultado = rostos.map((_, indice) => ({ indice, alunoId: null, distancia: null, estado: "desconhecido" }));
+  const resultado = rostos.map((_, indice) => ({ indice, alunoId: null, professor: false, distancia: null, estado: "desconhecido" }));
   const usados = new Set();
   for (const p of pares) {
     const r = resultado[p.indice];
     if (r.alunoId || usados.has(p.alunoId)) continue;
     usados.add(p.alunoId);
-    Object.assign(r, { alunoId: p.alunoId, distancia: p.dist, estado: p.dist <= LIMITE_RECONHECIDO ? "reconhecido" : "duvida" });
+    Object.assign(r, { alunoId: p.alunoId, professor: p.professor, distancia: p.dist, estado: p.dist <= LIMITE_RECONHECIDO ? "reconhecido" : "duvida" });
   }
   return resultado;
 }
 
-// Quem pode ser reconhecido: aluno ativo que ainda existe e tem pelo menos um descritor.
-export function cadastradosDe({ alunos, rostos }) {
+// Quem pode ser reconhecido: aluno ativo que ainda existe e professor da equipe, com pelo menos um descritor.
+// O rosto do professor fica na mesma coleção, com o id do professor (alunoId aqui é "id da pessoa").
+export function cadastradosDe({ alunos, professores = [], rostos }) {
   if (!(rostos instanceof Map)) return [];
   const ativos = new Set(alunos.filter(a => a.status === "ativo").map(a => a.id));
-  return [...rostos].filter(([id, r]) => ativos.has(id) && r.descritores?.length).map(([alunoId, r]) => ({ alunoId, descritores: r.descritores }));
+  const profs = new Set(professores.map(p => p.id));
+  return [...rostos].filter(([id, r]) => (ativos.has(id) || profs.has(id)) && r.descritores?.length)
+    .map(([alunoId, r]) => profs.has(alunoId) ? { alunoId, descritores: r.descritores, professor: true } : { alunoId, descritores: r.descritores });
+}
+
+// Quantos alunos da foto ainda não têm nome: rostos sem aluno marcado e que não são professor.
+// Se nenhum professor foi reconhecido mas ele está na foto, desconta 1.
+export function alunosSemRosto(escolhas, idsProfessores, professorNaFoto) {
+  const prof = e => e.alunoId && idsProfessores.has(e.alunoId);
+  const restantes = escolhas.filter(e => !prof(e) && !(e.marcado && e.alunoId)).length;
+  return Math.max(0, restantes - (professorNaFoto && !escolhas.some(prof) ? 1 : 0));
 }
 
 // Como cada rosto começa na tela de conferência.
-export const escolhaInicial = r => ({ alunoId: r.alunoId || "", marcado: r.estado === "reconhecido" });
+// O professor aparece com o nome, mas não vira presença.
+export const escolhaInicial = r => ({ alunoId: r.alunoId || "", marcado: r.estado === "reconhecido" && !r.professor });

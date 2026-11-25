@@ -8,7 +8,7 @@ import { categoriaIdade, categoriaPeso } from "../logica/categorias.js";
 import { aptidao, regrasDe, mesesEntre, idadeEm, passaParaAdulto, ehKids } from "../logica/graduacao.js";
 import { statusMensalidade, inadimplentes } from "../logica/financeiro.js";
 import { icone } from "../menu.js";
-import { etiquetaPrograma, porId, PILL_STATUS, DIAS_CURTOS, estrelas } from "./comum.js";
+import { etiquetaPrograma, porId, PILL_STATUS, DIAS_CURTOS, estrelas, marcaAluno } from "./comum.js";
 import { aulas30, abrirFormAluno } from "./alunos.js";
 import { cartaoRosto, ligarCartaoRosto } from "./rosto.js";
 
@@ -52,7 +52,7 @@ export default {
     el.innerHTML = `<a class="voltar" href="#alunos">‹ Alunos</a>
       <div class="card ficha-topo">
         <span class="av g">${esc(iniciais(a.nome))}</span>
-        <div class="quem"><h1>${esc(a.nome)}${a.real ? '<span class="etq-real">Real</span>' : ""}</h1><p class="muted" style="margin:4px 0 8px">${nomeFaixa(a.faixa)}${a.graus ? ` · ${a.graus}º grau` : ""}${kids ? ` · ${anos ?? "idade não informada"}${anos != null ? " anos" : ""}` : ""} · desde ${dataLonga(a.desde)}</p>
+        <div class="quem"><h1>${esc(a.nome)}${marcaAluno(a)}</h1><p class="muted" style="margin:4px 0 8px">${nomeFaixa(a.faixa)}${a.graus ? ` · ${a.graus}º grau` : ""}${kids ? ` · ${anos ?? "idade não informada"}${anos != null ? " anos" : ""}` : ""} · desde ${dataLonga(a.desde)}</p>
           ${kids ? '<span class="pill kids">Kids</span> ' : ""}${devendo ? PILL_STATUS.inadimplente : PILL_STATUS[a.status]}${passaParaAdulto(a, hoje) ? ' <span class="pill alerta">Passa para Adultos</span>' : ""}</div>
         <div class="faixa-grande">${faixaSVG(a.faixa, a.graus)}</div>
         <div class="acoes-cab" style="display:flex;gap:8px"><button class="btn sec" id="editar">Editar</button>

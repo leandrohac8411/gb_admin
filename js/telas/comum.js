@@ -24,8 +24,12 @@ export function etiquetaPrograma(p) {
   return p === "GB1" || p === "GB2" ? tag(p) : `<span class="tag">${esc(p || "—")}</span>`;
 }
 
+// Aluno real é o normal e não leva etiqueta; só o de exemplo leva uma marca discreta
+// (some de vez depois de "Apagar dados de exemplo").
+export const marcaAluno = aluno => (aluno?.exemplo ? '<span class="etq-exemplo" title="Dado de exemplo">exemplo</span>' : "");
+
 export function pessoa(aluno, sub = "") {
-  return `<div class="pessoa"><span class="av">${esc(iniciais(aluno.nome))}</span><div style="min-width:0"><b>${esc(aluno.nome)}</b>${aluno.real ? '<span class="etq-real">Real</span>' : ""}` +
+  return `<div class="pessoa"><span class="av">${esc(iniciais(aluno.nome))}</span><div style="min-width:0"><b>${esc(aluno.nome)}</b>${marcaAluno(aluno)}` +
     `${sub ? `<small>${sub}</small>` : ""}</div></div>`;
 }
 

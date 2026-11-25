@@ -67,7 +67,7 @@ Essa cópia é feita de uma vez só: ou entra tudo, ou nada.
 
 Os dados fictícios servem para ver o painel funcionando antes da academia real estar cadastrada.
 
-- Todo aluno cadastrado no painel logado é **real** (aparece com a etiqueta "Real").
+- Todo aluno cadastrado no painel logado é **real** e aparece sem etiqueta. Os alunos de exemplo levam uma marca cinza discreta, "EXEMPLO", que some junto com eles.
 - O botão **Apagar dados de exemplo** (menu lateral e Configurações) aparece só enquanto houver dados de exemplo. Depois de usado, ele some.
 - O que esse botão apaga: alunos de exemplo e tudo ligado a eles (presenças, mensalidades, graduações, contratos...), além de prospects, despesas, eventos, recados, avaliações e comunicações de exemplo.
 - O que ele mantém: o "catálogo" que o painel usa para funcionar (planos, produtos, modelos de aula, habilidades, modelos de documento e de mensagem, perfis, usuários, cronograma, professores e turmas).

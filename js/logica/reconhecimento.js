@@ -73,3 +73,30 @@ export function aprenderDescritor(descritores, novo) {
   if (!descritores.length) return [novo];
   return [descritores[0], ...descritores.slice(1), novo].filter((_, i, l) => i === 0 || i >= l.length - 2);
 }
+
+// Presença pela foto: para quem vai cada rosto. Professor só ganha presença se marcou "Treinou"
+// e está ligado a uma ficha de aluno (é lá que contam frequência e graduação).
+function destinosDosRostos(escolhas, { ehProf, alunoDoProf, jaPresente }) {
+  const vistos = new Set();
+  return escolhas.map(e => {
+    const prof = ehProf(e.alunoId);
+    const alvo = prof ? (e.marcado ? alunoDoProf(e.alunoId) : "") : (e.marcado ? e.alunoId : "");
+    if (!e.alunoId) return "semAluno";
+    if (!alvo) return prof ? "professores" : "desmarcados";
+    if (jaPresente(alvo) || vistos.has(alvo)) return "jaEstavam";
+    vistos.add(alvo);
+    return alvo;
+  });
+}
+const CATEGORIAS_ROSTO = ["professores", "jaEstavam", "semAluno", "desmarcados"];
+
+export function presencasDosRostos(escolhas, ctx) {
+  return destinosDosRostos(escolhas, ctx).filter(x => !CATEGORIAS_ROSTO.includes(x));
+}
+
+// Cada rosto cai em uma categoria só: a soma sempre bate com o número de rostos.
+export function resumoDosRostos(escolhas, ctx) {
+  const r = { rostos: escolhas.length, professores: 0, novos: 0, jaEstavam: 0, semAluno: 0, desmarcados: 0 };
+  for (const x of destinosDosRostos(escolhas, ctx)) r[CATEGORIAS_ROSTO.includes(x) ? x : "novos"]++;
+  return r;
+}

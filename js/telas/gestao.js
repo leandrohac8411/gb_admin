@@ -39,6 +39,9 @@ function formProfessor(store, prof, pronto) {
       <div class="field cheio"><label for="pr-nome">Nome</label><input class="input" id="pr-nome" value="${esc(p.nome)}" autocomplete="off"></div>
       <div class="field"><label for="pr-faixa">Faixa</label><select class="input" id="pr-faixa">${opcoes(FAIXAS.map(f => [f, nomeFaixa(f)]), p.faixa)}</select></div>
       <div class="field"><label for="pr-graus">Graus</label><select class="input" id="pr-graus">${opcoes(["0", "1", "2", "3", "4", "5", "6"], String(p.graus))}</select></div>
+      <div class="field cheio"><label for="pr-aluno">Também treina como aluno</label>
+        <select class="input" id="pr-aluno"><option value="">Não treina (ou ainda não tem ficha)</option>${opcoes(store.dados.alunos.filter(a => a.status === "ativo").sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR")).map(a => [a.id, a.nome]), p.alunoId || "")}</select>
+        <small class="muted">Quando ele treinar, a foto da aula mostra "Treinou" e a presença vai para essa ficha (frequência e graduação).</small></div>
       ${store.modo === "painel" ? campoRostoProfessor(r) : ""}
       <p class="aviso cheio" id="pr-erro" hidden></p>
       <div class="acoes cheio"><button type="button" class="btn ghost" id="pr-x">Cancelar</button><button class="btn">${prof ? "Salvar" : "Cadastrar"}</button></div></form>`;
@@ -66,7 +69,9 @@ function formProfessor(store, prof, pronto) {
       if (nome.length < 3) return erroEm(el, "#pr-erro", "Escreva o nome do professor.");
       const arq = foto?.files?.[0], problema = problemaNaFoto(arq);
       if (problema) return erroEm(el, "#pr-erro", problema);
-      const campos = { nome, faixa: el.querySelector("#pr-faixa").value, graus: Number(el.querySelector("#pr-graus").value) };
+      const alunoId = el.querySelector("#pr-aluno").value;
+      if (alunoId && store.dados.professores.some(x => x !== prof && x.alunoId === alunoId)) return erroEm(el, "#pr-erro", "Essa ficha de aluno já está ligada a outro professor.");
+      const campos = { nome, faixa: el.querySelector("#pr-faixa").value, graus: Number(el.querySelector("#pr-graus").value), alunoId };
       let alvo = prof;
       if (prof) Object.assign(prof, campos); else { alvo = { id: store.novoId("p"), ...campos }; store.dados.professores.push(alvo); }
       const gravou = store.salvar(); fechar(); toast(prof ? "Professor salvo" : "Professor cadastrado"); pronto();

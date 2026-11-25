@@ -440,7 +440,21 @@ button.kpi{font:inherit;color:inherit;cursor:pointer}
 .af-quadro img{display:block;max-width:100%;max-height:46vh;width:auto;height:auto}
 .af-marcas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .af-marcas rect{fill:none;stroke:#3ddc84;stroke-width:2.5;vector-effect:non-scaling-stroke}
-.analise-carregando{position:absolute;inset:auto 0 0 0;background:rgba(0,0,0,.6);color:#fff;font-size:13px;font-weight:700;padding:10px;text-align:center}
+.analise-carregando{position:absolute;inset:auto 0 0 0;z-index:2;background:rgba(0,0,0,.6);color:#fff;font-size:13px;font-weight:700;padding:10px;text-align:center}
+/* Reconhecendo: a foto escurece e uma faixa verde varre de cima a baixo, como um scanner. */
+.af-quadro.lendo::before{content:"";position:absolute;inset:0;z-index:1;background:rgba(0,0,0,.25);pointer-events:none}
+.af-quadro.lendo::after{content:"";position:absolute;left:0;right:0;top:0;height:18%;z-index:1;pointer-events:none;
+  background:linear-gradient(to bottom,rgba(61,220,132,0),rgba(61,220,132,.35) 80%,#3ddc84);box-shadow:0 3px 14px rgba(61,220,132,.8);
+  animation:af-varrer 1.8s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes af-varrer{from{transform:translateY(-100%)}to{transform:translateY(560%)}}
+.analise-carregando::after{content:"";display:inline-block;width:8px;height:8px;margin-left:8px;border-radius:50%;background:#3ddc84;vertical-align:middle;animation:af-piscar 1s ease-in-out infinite}
+@keyframes af-piscar{50%{opacity:.2;transform:scale(.6)}}
+/* Rostos achados aparecem um a um (só na primeira vez). */
+.af-marcas.surgindo rect{transform-box:fill-box;transform-origin:center;animation:af-surgir .45s cubic-bezier(.2,.9,.3,1.3) both}
+@keyframes af-surgir{from{opacity:0;transform:scale(1.8)}}
+.af-resumo{margin:0;font-size:13px;color:var(--muted)}
+.af-resumo b{color:var(--fg)}
+@media (prefers-reduced-motion:reduce){.af-quadro.lendo::after,.analise-carregando::after,.af-marcas.surgindo rect{animation:none}}
 .sug{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
 .sug input{width:18px;height:18px;accent-color:var(--red);flex:none}
 .sug.ja{opacity:.75}

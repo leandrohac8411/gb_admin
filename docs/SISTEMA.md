@@ -155,7 +155,7 @@ Várias telas têm as abas **Adultos | Kids**, e a escolha fica lembrada ao troc
 
 **Professores**
 - Equipe, com faixa, graus, turmas e alunos atendidos.
-- **Editar e foto** (painel logado): cadastra o rosto do professor. Na foto da aula, ele aparece como **Professor** e não vira presença.
+- **Editar e foto** (painel logado): cadastra o rosto do professor. Na foto da aula, ele aparece como **Professor**. O campo **Também treina como aluno** liga o professor a uma ficha de aluno (uma ficha só por professor): aí a foto mostra **Treinou**, e marcando, a presença vai para essa ficha, contando frequência e graduação.
 - Só é possível excluir um professor sem turmas.
 
 **Acompanhamentos**
@@ -310,8 +310,10 @@ Várias telas têm as abas **Adultos | Kids**, e a escolha fica lembrada ao troc
 
    Cada pessoa fica com no máximo um rosto da foto, e os pares mais parecidos são decididos primeiro.
 5. Cada rosto aparece recortado ao lado do aluno sugerido. Quem não é reconhecido segue pela sugestão por frequência: os alunos que mais treinam naquela turma e naquele dia da semana.
-6. O **professor**, se tiver rosto cadastrado, aparece como "Professor" e não conta presença.
-7. **Sempre é você quem confirma** antes de gravar.
+6. O **professor**, se tiver rosto cadastrado, aparece como "Professor". Só ganha presença se estiver ligado a uma ficha de aluno e você marcar **Treinou** (vem desmarcado).
+7. Embaixo, um resumo explica a conta do botão: "10 rostos: 7 presenças novas · 1 já estava na lista · 1 professor sem presença · 1 rosto sem aluno escolhido". Cada rosto cai em uma categoria só.
+8. Enquanto analisa, uma faixa verde varre a foto; os rostos achados aparecem um a um.
+9. **Sempre é você quem confirma** antes de gravar.
 
 ### O sistema aprende com a confirmação
 

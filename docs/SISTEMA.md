@@ -53,6 +53,7 @@ O sistema decide sozinho o que abrir (`modoInicial` em `js/logica/validar-nuvem.
 - **Bloqueio:** depois de 5 senhas erradas em 10 minutos, espera de 1 minuto; cada erro a mais bloqueia mais 1 minuto. O próprio Firebase também barra excesso de tentativas no servidor.
 - **Sair** (no menu) volta para a tela de login. Nada é apagado do banco. Por segurança, ele só limpa a cópia temporária que o navegador guarda para funcionar sem internet; ao entrar de novo, os dados voltam.
 - **Sair** e **Apagar dados de exemplo** são botões diferentes: sair nunca apaga dados.
+- **Inatividade:** 15 minutos sem clique, tecla ou toque no painel e a sessão cai sozinha (igual ao Sair). A tela de login avisa "Sua sessão foi encerrada depois de 15 minutos sem uso". O último uso fica no navegador, então vale também para aba fechada e reaberta depois, computador que dormiu e várias abas abertas (mexer em qualquer uma renova o prazo).
 
 ### Primeiro acesso
 

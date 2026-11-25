@@ -2,6 +2,7 @@
 import { entrar, redefinirSenha } from "../nuvem/firebase.js";
 import { toast, esc } from "../ui/util.js";
 import { icone } from "../menu.js";
+import { vigiarInatividade } from "../logica/inatividade.js";
 import { registrarFalha, registrarSucesso, esperaRestante, tentativasRestantes, normalizar } from "../logica/tentativas.js";
 
 const CHAVE = "gb-admin:login";
@@ -99,6 +100,7 @@ export function montarLogin(el, { aviso = "" } = {}) {
     try {
       await entrar(email, senha);
       salvarTentativas(registrarSucesso());
+      vigiarInatividade({}).marcar(); // o prazo de 15 minutos começa agora, não no último uso antigo
       // Quem abre o painel é o aviso de "usuário mudou" (ver telas/index.js).
     } catch (err) {
       botao("ENTRAR", false);

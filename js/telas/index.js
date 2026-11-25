@@ -10,6 +10,7 @@ import { criarSincronia } from "../logica/sincronia.js";
 import { ligarStoreAoBanco } from "../logica/painel-store.js";
 import { semExemplos, temExemplos } from "../logica/baldes.js";
 import { salvarComAviso } from "../logica/mesclar.js";
+import { vigiarInatividade } from "../logica/inatividade.js";
 import { montarLogin } from "./login.js";
 import dashboard from "./dashboard.js";
 import alunos from "./alunos.js";
@@ -31,6 +32,8 @@ const HOST_LOCAL = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostnam
 // Primeiro estado do login (o Firebase demora um instante para lembrar quem estava logado).
 const primeiroUsuario = fb => new Promise(ok => { const parar = fb.aoMudarUsuario(u => { parar(); ok(u); }); });
 
+const CHAVE_INATIVO = "gb-admin:saiu-inativo";
+
 function mostrarLogin(fb, aviso = "") {
   elAdmin.hidden = true; elDemo.hidden = true; elLogin.hidden = false;
   document.title = "Entrar · GB Admin";
@@ -42,6 +45,15 @@ function mostrarLogin(fb, aviso = "") {
 // Painel logado (etapa 2): tudo vem do banco e tudo volta para ele. Nada fica no localStorage;
 // quem guarda a cópia offline é o próprio Firestore.
 async function abrirPainelLogado(fb, usuario) {
+  // 15 minutos sem uso: a sessão cai (ninguém mexe num painel esquecido aberto).
+  const vigia = vigiarInatividade({ aoExpirar: () => {
+    try { sessionStorage.setItem(CHAVE_INATIVO, "1"); } catch { /* segue */ }
+    fb.sairELimpar();
+  } });
+  if (vigia.verificar()) return;
+  for (const ev of ["pointerdown", "keydown", "touchstart", "wheel"]) addEventListener(ev, vigia.marcar, { capture: true, passive: true });
+  setInterval(vigia.verificar, 30_000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) vigia.verificar(); });
   elLogin.hidden = false; elAdmin.hidden = true;
   elLogin.innerHTML = `<div class="login-caixa"><h1>Carregando…</h1><p class="muted">Buscando os dados da academia no banco.</p></div>`;
   const u = USERS[usuario.email.toLowerCase()];
@@ -140,6 +152,7 @@ async function iniciar() {
   const modo = modoInicial({ configurado, host: location.hostname, usuario });
   if (modo === "login") {
     let aviso = "";
+    try { if (sessionStorage.getItem(CHAVE_INATIVO)) { aviso = "Sua sessão foi encerrada depois de 15 minutos sem uso. Entre de novo."; sessionStorage.removeItem(CHAVE_INATIVO); } } catch { /* segue */ }
     if (usuario && !emailAutorizado(usuario.email)) { aviso = `O e-mail ${usuario.email} não tem acesso ao painel.`; await fb.sair(); }
     return mostrarLogin(fb, aviso);
   }

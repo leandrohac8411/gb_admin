@@ -224,9 +224,18 @@ export default {
               <input type="file" accept="image/*" id="foto-arq" hidden></label>`}</div>`; })() : ""}
       ${turma ? (() => { const temas = temaDaAula(d, turma, data), modelo = (d.modelosAula || []).find(m => m.id === turma.modeloAulaId);
         return temas.length || modelo ? `<div class="card plano-aula">
-          ${temas.map(x => `<div class="pa-tema"><span class="k">${esc(x.programa)} · semana ${esc(x.semana)} · Aula ${esc(x.aula)}</span><b>${esc(x.tema)}</b>
-            ${x.tecnicas.length ? `<ol class="pa-tecnicas">${x.tecnicas.map(t => `<li>${esc(t.nome)}${t.categoria ? ` <small class="muted">${esc(t.categoria)}</small>` : ""}</li>`).join("")}</ol>` : ""}</div>`).join("")}
-          ${modelo ? `<div class="pa-roteiro"><span class="k">Roteiro: ${esc(modelo.nome)}</span><div class="chips">${modelo.blocos.map(b => `<span class="chip">${esc(b.nome)} · ${b.min} min</span>`).join("")}</div></div>` : ""}
+          ${temas.map(x => `<div class="pa-tema"><div class="pa-etiquetas">${etiquetaPrograma(x.programa)}<span class="pa-meta">Semana ${esc(x.semana)} · Aula ${esc(x.aula)}</span></div><b class="pa-titulo">${esc(x.tema)}</b>
+            ${x.tecnicas.length ? `<span class="k">Técnicas</span><ol class="pa-tecnicas">${x.tecnicas.map((t, i) => `<li><span class="pa-n">${i + 1}</span><span>${esc(t.nome)}${t.categoria ? `<small class="pa-cat">${esc(t.categoria)}</small>` : ""}</span></li>`).join("")}</ol>` : ""}</div>`).join("")}
+          ${modelo ? (() => {
+            // Roteiro como linha do tempo: cada bloco com a hora em que começa e o tamanho dele na aula.
+            const totalMin = modelo.blocos.reduce((s, b) => s + (Number(b.min) || 0), 0) || 1;
+            const [h0, m0] = turma.horario.split(":").map(Number);
+            let acum = 0;
+            const hora = min => { const t = h0 * 60 + m0 + min; return horaTexto(`${String(Math.floor(t / 60) % 24).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`); };
+            return `<div class="pa-roteiro"><div class="pa-rot-cab"><span class="k">Roteiro · ${esc(modelo.nome)}</span><span class="pa-total">${totalMin} min</span></div>
+              <ol class="pa-blocos">${modelo.blocos.map(b => { const ini = acum; acum += Number(b.min) || 0;
+                return `<li><span class="pa-hora">${hora(ini)}</span><span class="pa-bloco"><b>${esc(b.nome)}</b><span class="pa-barra"><i style="width:${Math.max(4, Math.round((Number(b.min) || 0) / totalMin * 100))}%"></i></span></span><span class="pa-min">${b.min} min</span></li>`; }).join("")}</ol></div>`;
+          })() : ""}
         </div>` : ""; })() : ""}
       ${turma ? `<div class="card"><div class="card-cab cab-presenca"><div><h3>${horaTexto(turma.horario)} · ${etiquetaPrograma(turma.programa)}</h3><small>Prof. ${esc(nomeProfessor(d, turma.professorId))} · ${presentes.length} presente${presentes.length === 1 ? "" : "s"}</small></div>
           <button class="btn" id="registrar">${icone("checkins")}Registrar presença</button></div>

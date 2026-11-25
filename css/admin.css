@@ -466,11 +466,29 @@ button.kpi{font:inherit;color:inherit;cursor:pointer}
 
 /* Tema da semana e roteiro da aula */
 .turma .tema-aula{color:var(--fg);font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.plano-aula{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
-.pa-tema{display:flex;flex-direction:column;gap:4px;min-width:220px}
-.pa-tema b{font-size:16px}
-.pa-roteiro{display:flex;flex-direction:column;gap:6px;flex:1;min-width:260px}
-.pa-tecnicas{margin:6px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:3px;font-size:13px}
+/* Plano da aula: técnicas numeradas de um lado, roteiro em linha do tempo do outro. */
+.plano-aula{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px 32px;align-items:start}
+.pa-tema{display:flex;flex-direction:column;gap:10px;min-width:0}
+.pa-etiquetas{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pa-meta{font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+.pa-titulo{font-size:18px;line-height:1.25;font-weight:800;letter-spacing:-.3px}
+.pa-tecnicas{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.pa-tecnicas li{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.35}
+.pa-n{flex:none;width:24px;height:24px;border-radius:50%;background:var(--red-soft);color:var(--red);font-weight:800;font-size:12px;display:grid;place-items:center}
+.pa-cat{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.pa-roteiro{display:flex;flex-direction:column;gap:6px;min-width:0}
+.pa-rot-cab{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pa-total{font-size:12px;font-weight:800;color:var(--fg);background:var(--soft);border-radius:99px;padding:3px 10px}
+.pa-blocos{list-style:none;margin:0;padding:0}
+.pa-blocos li{display:grid;grid-template-columns:48px 1fr auto;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.pa-blocos li:first-child{border-top:0}
+.pa-hora{font-size:12.5px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+.pa-bloco{display:flex;flex-direction:column;gap:5px;min-width:0}
+.pa-bloco b{font-size:14px;font-weight:700}
+.pa-barra{display:block;height:4px;border-radius:99px;background:var(--soft);overflow:hidden}
+.pa-barra i{display:block;height:100%;border-radius:inherit;background:var(--red)}
+.pa-min{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+@media (max-width:899px){.pa-roteiro{border-top:1px solid var(--line);padding-top:16px}}
 .tabela.cronograma td b{display:block}
 .tabela.cronograma td small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
 .tabela.cronograma tr.atual td{background:var(--red-soft)}

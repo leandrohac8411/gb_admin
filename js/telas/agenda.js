@@ -3,9 +3,10 @@ import { esc, abrirFolha, perguntar, toast, horaTexto } from "../ui/util.js";
 import { hojeISO, segundaDaSemana, somarDias } from "../logica/datas.js";
 import { semanaDoCiclo, aulaPadrao } from "../logica/ciclo.js";
 import { icone } from "../menu.js";
-import { cabecalho, etiquetaPrograma, nomeProfessor, DIAS_CURTOS, DIAS_LONGOS } from "./comum.js";
+import { cabecalho, nomeProfessor, DIAS_CURTOS, DIAS_LONGOS } from "./comum.js";
 import { publicoKids } from "../dados-ficticios.js";
 import { temaDaAula, diaDeReferencia } from "../logica/tema.js";
+import { pontaPrograma } from "../ui/faixa.js";
 
 const estado = { semana: 0, filtro: "Todas" };
 
@@ -85,11 +86,11 @@ export default {
     const horarios = [...new Set(visiveis.map(t => t.horario))].sort();
     const experimentais = (t, data) => d.prospects.filter(p => p.etapa === "experimental" && p.experimental?.turmaId === t.id && p.experimental?.data === data).length;
     const cartao = (t, data, comHora) => `<button class="turma${t.categoria === "kids" ? " kids" : ""}" data-id="${esc(t.id)}" data-data="${data}">
-        <div class="linha">${comHora ? `<span class="hora">${horaTexto(t.horario)}</span>` : ""}${etiquetaPrograma(t.programa)}${t.publico ? `<small>${esc(t.publico)}</small>` : ""}</div>
-        <small>${esc(nomeProfessor(d, t.professorId))}</small>
+        <div class="turma-cab"><span>${comHora ? `<b class="hora">${horaTexto(t.horario)}</b> · ` : ""}${esc(nomeProfessor(d, t.professorId))}</span>${pontaPrograma(t.programa)}</div>
+        <div class="turma-corpo">${t.publico ? `<small>${esc(t.publico)}</small>` : ""}
         ${(() => { const ts = temaDaAula(d, t, data), varias = ts.length > 1; return ts.map(x => `<small class="tema-aula" title="${esc(x.programa)} · semana ${esc(x.semana)} · Aula ${esc(x.aula)}: ${esc(x.tema)}">${varias ? `${t.programa === "GB1+GB2" ? esc(x.programa) + " " : ""}${esc(x.aula)}: ` : ""}${esc(x.tema)}</small>`).join(""); })()}
         <small>${data <= hoje ? `${contagem[t.id + data] || 0} check-ins` : "—"}${(d.fotosAula || []).some(f => f.turmaId === t.id && f.data === data) ? " · 📸 foto" : ""}</small>
-        ${experimentais(t, data) ? `<span class="pill ok" style="align-self:flex-start">+${experimentais(t, data)} experimental</span>` : ""}</button>`;
+        ${experimentais(t, data) ? `<span class="pill ok" style="align-self:flex-start">+${experimentais(t, data)} experimental</span>` : ""}</div></button>`;
     el.innerHTML = cabecalho("Agenda & turmas", `${d.turmas.filter(t => t.categoria !== "kids").length} turmas adultas e ${d.turmas.filter(t => t.categoria === "kids").length} kids na semana`,
       `<button class="btn" id="nova">${icone("agenda")}Nova turma</button>`) +
       `<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
@@ -99,8 +100,7 @@ export default {
           <button class="btn sec peq" id="prox" aria-label="Próxima semana">›</button>
           ${estado.semana ? `<button class="link" id="hoje">Voltar para esta semana</button>` : ""}
         </div>
-        <div class="ciclo"><span class="pill gb1-p" style="background:var(--red-soft);color:var(--red)">GB1 · semana ${semanaDoCiclo(segunda, d.config.ancoras, "GB1")} de 16</span>
-          <span class="pill info">GB2 · semana ${semanaDoCiclo(segunda, d.config.ancoras, "GB2")} de 16</span></div>
+        <div class="ciclo">${["GB1", "GB2"].map(p => `<span class="ciclo-item">${pontaPrograma(p)}<span>semana <b>${semanaDoCiclo(segunda, d.config.ancoras, p)}</b> de 16</span></span>`).join("")}</div>
       </div>
       <div class="chips" id="f-cat">${["Todas", "Adultos", "Kids"].map(f => `<button class="chip${estado.filtro === f ? " on" : ""}" data-f="${f}">${f}</button>`).join("")}</div>
       <div class="grade-agenda" style="--dias:${dias.length}">

@@ -40,3 +40,10 @@ export function faixaSVG(faixa, graus = 0, { mini = false } = {}) {
     `<rect x="0" y="34.5" width="300" height="1.2" fill="${linha}" opacity=".22"/>` +
     `<rect x="206" y="4" width="64" height="36" fill="${ponta}"/>` + fitas + "</svg>";
 }
+
+// Programa da turma na agenda, desenhado como a ponta preta da faixa (com duas fitas brancas).
+const semHTML = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+export function pontaPrograma(programa) {
+  const texto = programa === "GB1+GB2" ? "GB1 · GB2" : (programa || "—");
+  return `<span class="ponta">${semHTML(texto)}<i></i><i></i></span>`;
+}

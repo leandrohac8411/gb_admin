@@ -36,3 +36,14 @@ test("faixas kids", async () => {
   assert.match(s, /aria-label="Faixa laranja e branca, 2 graus"/);
   assert.match(faixaSVG("verde-preta", 0), /height="9" fill="#111111"/);
 });
+
+test("ponta de faixa da agenda: programa no bloco preto, com as fitas", async () => {
+  const { pontaPrograma } = await import("../js/ui/faixa.js");
+  const p = pontaPrograma("GB1");
+  assert.match(p, /class="ponta"/);
+  assert.match(p, />GB1</);
+  assert.equal((p.match(/<i><\/i>/g) || []).length, 2);
+  assert.match(pontaPrograma("GB1+GB2"), />GB1 · GB2</);
+  assert.match(pontaPrograma(""), />—</);
+  assert.doesNotMatch(pontaPrograma('<img src=x onerror=1>'), /<img/);
+});

@@ -202,26 +202,26 @@ export default {
           <div class="lista">${vis.map(p => `<div><div class="cresce"><b>${esc(p.nome)}</b><small>${esc(p.interesse)} · ${esc(p.telefone)}</small></div><span class="pill ok">Visitante</span></div>`).join("")}</div></div>` : ""; })() : ""}
       ${turma ? (() => { const f = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
         return `<div class="card foto-aula"><div class="card-cab"><div><h3>Foto da aula das ${horaTexto(turma.horario)} ${etiquetaPrograma(turma.programa)}</h3><small>${DIAS_LONGOS[diaSemana(data)]}, ${dataLonga(data)} · ${!guardarFotoDaAula(store.modo, turma) ? "a foto é analisada no aparelho e não é guardada" : f ? `salva por Prof. ${esc(nomeProfessor(d, turma.professorId))}` : "o professor registra como foi a aula"}</small></div>
-          ${f ? `<div style="display:flex;gap:8px"><label class="btn sec peq" style="cursor:pointer">Trocar<input type="file" accept="image/*" capture="environment" id="foto-arq" hidden></label><button class="btn sec peq" id="foto-del">Remover</button></div>` : ""}</div>
+          ${f ? `<div style="display:flex;gap:8px"><label class="btn sec peq" style="cursor:pointer">Trocar<input type="file" accept="image/*" id="foto-arq" hidden></label><button class="btn sec peq" id="foto-del">Remover</button></div>` : ""}</div>
           ${f ? `<div class="foto-corpo"><button class="foto-grande" id="foto-ver" aria-label="Ver foto da aula em tela cheia"><img src="${esc(f.foto)}" alt="Foto da aula de ${esc(dataLonga(data))}"><span>Ver em tela cheia</span></button>
             <div class="foto-lado"><label for="foto-leg" class="k">Legenda</label>
               <textarea class="input" id="foto-leg" rows="3" maxlength="140" placeholder="Ex.: drill de passagem com a turma toda">${esc(f.legenda || "")}</textarea>
               <small class="muted">${doDia.filter(c => c.turmaId === turma.id).length} alunos presentes nesta aula</small>
               <button class="btn" id="foto-analisar">${icone("checkins")}Analisar foto e marcar presença</button></div></div>`
           : `<label class="foto-vazia">${icone("camera")}<b>Adicionar foto da aula</b><small>Tire na hora ou escolha da galeria · uma foto por aula</small>
-              <input type="file" accept="image/*" capture="environment" id="foto-arq" hidden></label>`}</div>`; })() : ""}
+              <input type="file" accept="image/*" id="foto-arq" hidden></label>`}</div>`; })() : ""}
       ${turma ? (() => { const temas = temaDaAula(d, turma, data), modelo = (d.modelosAula || []).find(m => m.id === turma.modeloAulaId);
         return temas.length || modelo ? `<div class="card plano-aula">
           ${temas.map(x => `<div class="pa-tema"><span class="k">${esc(x.programa)} · semana ${esc(x.semana)} · Aula ${esc(x.aula)}</span><b>${esc(x.tema)}</b>
             ${x.tecnicas.length ? `<ol class="pa-tecnicas">${x.tecnicas.map(t => `<li>${esc(t.nome)}${t.categoria ? ` <small class="muted">${esc(t.categoria)}</small>` : ""}</li>`).join("")}</ol>` : ""}</div>`).join("")}
           ${modelo ? `<div class="pa-roteiro"><span class="k">Roteiro: ${esc(modelo.nome)}</span><div class="chips">${modelo.blocos.map(b => `<span class="chip">${esc(b.nome)} · ${b.min} min</span>`).join("")}</div></div>` : ""}
         </div>` : ""; })() : ""}
-      ${turma ? `<div class="card"><div class="card-cab"><div><h3>${horaTexto(turma.horario)} · ${etiquetaPrograma(turma.programa)}</h3><small>Prof. ${esc(nomeProfessor(d, turma.professorId))} · ${presentes.length} presente${presentes.length === 1 ? "" : "s"}</small></div>
+      ${turma ? `<div class="card"><div class="card-cab cab-presenca"><div><h3>${horaTexto(turma.horario)} · ${etiquetaPrograma(turma.programa)}</h3><small>Prof. ${esc(nomeProfessor(d, turma.professorId))} · ${presentes.length} presente${presentes.length === 1 ? "" : "s"}</small></div>
           <button class="btn" id="registrar">${icone("checkins")}Registrar presença</button></div>
-        ${presentes.length ? `<table class="tabela resp"><thead><tr><th>Aluno</th><th>Faixa</th><th>Hora</th><th></th></tr></thead><tbody>${presentes.map(c => {
+        ${presentes.length ? `<table class="tabela resp presentes"><thead><tr><th>Aluno</th><th>Faixa</th><th>Hora</th><th></th></tr></thead><tbody>${presentes.map(c => {
           const a = alunos[c.alunoId];
-          return `<tr><td class="cheia">${a ? `<a href="#aluno/${encodeURIComponent(a.id)}">${pessoa(a)}</a>` : "Aluno removido"}</td><td>${a ? faixaCelula(a) : ""}</td><td>${horaTexto(c.hora)}</td>
-            <td class="num"><button class="btn sec peq" data-remover="${esc(c.id)}" aria-label="Remover presença">Remover</button></td></tr>`;
+          return `<tr><td class="pr-nome">${a ? `<a href="#aluno/${encodeURIComponent(a.id)}">${pessoa(a)}</a>` : "Aluno removido"}</td><td class="pr-faixa">${a ? faixaCelula(a) : ""}</td><td class="pr-hora">${horaTexto(c.hora)}</td>
+            <td class="num pr-acao"><button class="btn sec peq" data-remover="${esc(c.id)}" aria-label="Remover presença">Remover</button></td></tr>`;
         }).join("")}</tbody></table>` : `<div class="vazio">Nenhuma presença registrada nesta aula.</div>`}</div>` : ""}`;
 
     const irPara = iso => { estado.data = iso; estado.turmaId = null; ctx.redesenhar(); };

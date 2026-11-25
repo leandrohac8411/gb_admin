@@ -205,6 +205,15 @@ h1,h2,h3{margin:0;line-height:1.2}
   .tabela.resp td[data-l]::before{content:attr(data-l) " ";color:var(--muted);font-size:11px}
   .tabela.resp td.esconde-m{display:none}
   .tabela.resp td.cheia{grid-column:1/-1}
+  /* Presentes da aula (check-ins): nome com o Remover ao lado; faixa e hora embaixo. */
+  .tabela.presentes tr{grid-template-columns:1fr auto;grid-template-areas:"nome acao" "faixa hora";align-items:center;gap:6px 12px}
+  .tabela.presentes td.pr-nome{grid-area:nome;min-width:0}
+  .tabela.presentes td.pr-faixa{grid-area:faixa;padding-left:46px}
+  .tabela.presentes td.pr-hora{grid-area:hora;text-align:right;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+  .tabela.presentes td.pr-acao{grid-area:acao;width:auto}
+  .cab-presenca{flex-wrap:wrap}
+  .cab-presenca>div{flex:1 1 180px;min-width:0}
+  .cab-presenca .btn{flex:1 1 100%;justify-content:center}
 }
 
 /* Faixa */

@@ -875,3 +875,10 @@ h1 .etq-exemplo{font-size:10px;letter-spacing:.08em}
   .dia-aula-ctl #data{flex:1 1 0;min-width:0;width:auto!important;height:52px;font-size:20px;font-weight:800;text-align:center;border-radius:14px;letter-spacing:.3px}
   .dia-aula-ctl #dia-hoje{flex-basis:100%;text-align:center;font-size:14px}
 }
+
+/* Abas Adultos/Kids no celular: dividem a largura toda, centralizadas e na altura das setas do dia. */
+@media (max-width:899px){
+  .abas{width:100%;gap:10px}
+  .abas button{flex:1 1 0;justify-content:center;height:52px;font-size:16px;border-radius:14px}
+  .abas button span{font-size:12px}
+}

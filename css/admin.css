@@ -61,10 +61,16 @@ h1,h2,h3{margin:0;line-height:1.2}
 .lat-restaurar .ic{width:15px;height:15px}
 .lat-restaurar:hover{color:var(--red);border-color:var(--red)}
 
-/* Cabeçalho com o kimono */
-#hero{min-height:150px;position:relative;z-index:5;display:flex;justify-content:space-between;align-items:flex-start;padding:30px 38px 12px;gap:15px;isolation:isolate}
-.hero-kimono{position:absolute;z-index:-1;top:0;left:27%;right:23%;height:160px;background-image:linear-gradient(90deg,#f7f8fa00 70%,#f7f8fa),url("../img/kimono-topo.png");
-  background-size:cover;background-position:center;opacity:.72;-webkit-mask-image:linear-gradient(90deg,transparent,#000 25%,#000 78%,transparent);mask-image:linear-gradient(90deg,transparent,#000 25%,#000 78%,transparent)}
+/* Cabeçalho com o kimono. A imagem desce por trás dos botões da página até o 1º quadro
+   (os quadros brancos de #tela ficam por cima dela) e some aos poucos embaixo, sem corte. */
+#hero{min-height:150px;position:relative;display:flex;justify-content:space-between;align-items:flex-start;padding:30px 38px 12px;gap:15px}
+.hero-kimono{position:absolute;z-index:0;top:0;left:27%;right:23%;height:300px;pointer-events:none;background-image:linear-gradient(90deg,#f7f8fa00 70%,#f7f8fa),url("../img/kimono-topo.png");
+  background-size:cover;background-position:center top;opacity:.72;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 25%,#000 78%,transparent),linear-gradient(180deg,#000 55%,transparent);-webkit-mask-composite:source-in;
+  mask-image:linear-gradient(90deg,transparent,#000 25%,#000 78%,transparent),linear-gradient(180deg,#000 55%,transparent);mask-composite:intersect}
+.hero-esq,.hero-acoes{z-index:2}
+.hero-esq{position:relative}
+#tela{position:relative;z-index:1}
 .hero-esq{min-width:0;max-width:640px}
 .ola{font-size:16px}
 #hero h1{font-size:40px;line-height:1.1;letter-spacing:-1.6px;margin:4px 0 6px;font-weight:900}

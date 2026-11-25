@@ -56,6 +56,23 @@ service cloud.firestore {
         && d.atualizadoEm == request.time;
     }
 
+    // ---------- Foto da aula: uma por aula (id = turma_dia), JPEG pequeno ----------
+    // O app só guarda se todas as crianças marcadas na foto tiverem autorização de imagem.
+    match /fotos/{fotoId} {
+      allow read, delete: if permitido();
+      allow create, update: if permitido() && fotoOk(request.resource.data)
+        && fotoId == request.resource.data.turmaId + '_' + request.resource.data.data
+        && request.resource.data.turmaId in get(/databases/$(database)/documents/painel/turmas).data.itens;
+    }
+    function fotoOk(d) {
+      return d.keys().hasOnly(['turmaId', 'data', 'foto', 'legenda', 'professorId', 'atualizadoEm'])
+        && d.turmaId is string && dataISO(d.data)
+        && d.foto is string && d.foto.size() < 360000 && d.foto.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+$')
+        && d.legenda is string && d.legenda.size() <= 140
+        && (!('professorId' in d) || d.professorId is string)
+        && d.atualizadoEm == request.time;
+    }
+
     // Qualquer outro caminho: negado (é o padrão do Firestore, deixado explícito).
     match /{caminho=**} {
       allow read, write: if false;

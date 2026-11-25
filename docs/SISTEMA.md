@@ -331,7 +331,8 @@ Ficam guardados o rosto da foto de cadastro e os **2 mais recentes** tirados das
 ### O que é guardado (e o que não é)
 
 - Guardados: **só os números** (até 3 descritores), uma **miniatura de 96 px** do rosto (para a tela de conferência) e o **consentimento** (quem autorizou, se foi o responsável, e a data).
-- **A foto da aula nunca é guardada no painel logado.** Ela é analisada no próprio aparelho e descartada.
+- **A foto da aula** é analisada no próprio aparelho em resolução alta (essa cópia é descartada). Uma cópia reduzida (1280 px, até ~220 KB) **é guardada** na coleção `fotos` quando a caixa **Guardar a foto desta aula** está marcada na hora de registrar as presenças. A caixa vem marcada, mas fica bloqueada se alguma criança marcada na foto não tiver autorização de uso de imagem (a tela diz quem); desmarcando essa criança, volta a poder guardar. Adulto não tem esse campo e conta como autorizado.
+- No cartão **Foto da aula** (Check-ins), a foto guardada aparece com legenda, **Ver em tela cheia**, **Trocar** e **Remover** (remover não mexe nas presenças). As fotos são buscadas por dia, só quando a tela precisa. Elas serão a base do portal do aluno.
 - **Apagar dados do rosto** remove tudo, e o cartão volta para "0 de 3 fotos". Excluir o aluno ou o professor também apaga o rosto.
 
 ---
@@ -346,6 +347,7 @@ Projeto `gbadmin-48ff9`, separado do Diário de Tatame. É usado no **plano grat
 |---|---|
 | `painel` | Todos os dados das telas, um documento por tipo ("balde"). |
 | `rostos` | Um documento por pessoa (o id é o do aluno ou do professor): `d0`, `d1`, `d2`, `mini`, `consentimento`, `atualizadoEm`. |
+| `fotos` | Foto da aula, um documento por aula (o id é `turma_AAAA-MM-DD`): `turmaId`, `data`, `foto` (JPEG em data URL, menos de 360 mil caracteres), `legenda`, `professorId`, `atualizadoEm`. Cabem uns 4 mil fotos na cota gratuita de 1 GB. |
 | `alunos`, `turmas`, `checkins` | Coleções da etapa 1. Agora são **só leitura**, porque o conteúdo já foi copiado para o painel. |
 
 ### Os "baldes" da coleção `painel` (`js/logica/baldes.js`)

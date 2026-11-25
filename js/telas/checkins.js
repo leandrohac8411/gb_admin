@@ -8,11 +8,15 @@ import { detectarRostos, descreverRostos } from "../rostos.js";
 import { reconhecer, cadastradosDe, escolhaInicial, alunosSemRosto, aprenderDescritor, presencasDosRostos, resumoDosRostos } from "../logica/reconhecimento.js";
 import { recorte } from "../logica/cadastro-rosto.js";
 import { guardarFotoDaAula } from "../logica/validar-nuvem.js";
+import { semAutorizacao, idFotoAula } from "../logica/foto-aula.js";
 import { sugerirPresenca } from "../logica/presenca-foto.js";
 import { temaDaAula } from "../logica/tema.js";
 import { cabecalho, etiquetaPrograma, nomeProfessor, pessoa, faixaCelula, porId, DIAS_LONGOS, aba, daAba, abasCategoria, ligarAbas, definirAba } from "./comum.js";
 
 const estado = { data: null, turmaId: null };
+// Painel logado: fotos da aula guardadas no banco (coleção "fotos"), buscadas por dia e lembradas aqui.
+const fotosNuvem = new Map();
+const nuvemDados = () => import("../nuvem/dados.js");
 
 function abrirRegistro(store, turma, data, aoFechar) {
   abrirFolha((el, fechar) => {
@@ -64,11 +68,14 @@ function aprenderDaFoto(store, escolhas, rostos) {
 // Presença pela foto. Com alunos reais com rosto cadastrado, reconhece quem é quem (cada rosto
 // aparece recortado ao lado do aluno sugerido); o resto segue pela sugestão por frequência.
 // O professor sempre confirma antes de gravar.
-function abrirAnalise(store, turma, data, foto, pronto) {
+// guardar (painel logado): cópia reduzida da foto, que vai para o banco ao confirmar se "Guardar a foto"
+// estiver marcado e todas as crianças marcadas tiverem autorização de imagem; aoGuardar avisa a tela.
+function abrirAnalise(store, turma, data, foto, pronto, { guardar = null, aoGuardar = null } = {}) {
   const d = store.dados;
   const cadastrados = cadastradosDe(d);
   const reconhecendo = cadastrados.length > 0;
-  let rostos = null, erro = null, pessoas = 0, professorNaFoto = true, marcas = null, escolhas = null, marcasMostradas = false;
+  let rostos = null, erro = null, pessoas = 0, professorNaFoto = true, marcas = null, escolhas = null, marcasMostradas = false, guardarFoto = true;
+  const alunosPorId = porId(d.alunos);
   const reaisAtivos = d.alunos.filter(a => a.status === "ativo").sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
   // Professor reconhecido aparece com o nome e não conta como aluno. Se ele treinou, "Treinou" lança a
   // presença na ficha de aluno ligada a ele (em Professores), onde contam frequência e graduação.
@@ -92,6 +99,10 @@ function abrirAnalise(store, turma, data, foto, pronto) {
       const resumo = res ? [plural(res.novos + res.jaEstavam, "presente", "presentes") + (res.jaEstavam ? ` (${res.jaEstavam} já ${res.jaEstavam === 1 ? "estava" : "estavam"} na lista)` : ""),
         res.professores && plural(res.professores, "professor sem presença", "professores sem presença"), res.semAluno && plural(res.semAluno, "rosto sem aluno escolhido", "rostos sem aluno escolhido"),
         res.desmarcados && plural(res.desmarcados, "desmarcado", "desmarcados")].filter(Boolean) : [];
+      // Guardar a foto: só se todas as crianças marcadas como presentes tiverem autorização de imagem.
+      const naFoto = [...porRosto, ...novos.map(x => x.aluno.id)];
+      const bloqueio = guardar ? semAutorizacao(naFoto, alunosPorId) : [];
+      const vaiGuardar = !!guardar && guardarFoto && !bloqueio.length;
       el.innerHTML = `<h3>Presença pela foto</h3>
         <p class="muted" style="margin:0">${horaTexto(turma.horario)} · ${dataLonga(data)} · ${reconhecendo ? "os rostos cadastrados são reconhecidos" : "a foto mostra quantos; a lista sugere quem"}. Confira antes de confirmar.</p>
         <div class="analise-foto"><span class="af-quadro${!rostos && !erro ? " lendo" : ""}"><img src="${esc(foto)}" alt="Foto da aula">
@@ -121,7 +132,9 @@ function abrirAnalise(store, turma, data, foto, pronto) {
           ${pessoa(x.aluno, x.presente ? "já estava na lista de presença" : x.vezes ? `veio ${x.vezes}× nesta turma nos últimos 3 meses` : x.mesmoDia ? `treina em outra turma deste dia (${x.mesmoDia}×)` : "não costuma vir neste horário")}
           ${x.presente ? '<span class="pill ok">Presente</span>' : ""}</label>`).join("")}</div>
         ${res ? `<p class="af-resumo"><b>${plural(res.rostos, "rosto", "rostos")}:</b> ${resumo.join(" · ")}${novos.length ? ` · mais ${plural(novos.length, "aluno", "alunos")} pela frequência` : ""}</p>` : ""}
-        <div class="acoes"><button class="btn ghost" id="af-x">Cancelar</button><button class="btn" id="af-ok"${total ? "" : " disabled"}>${total ? `Registrar ${total} presença${total === 1 ? "" : "s"}` : "Nada novo para marcar"}</button></div>`;
+        ${guardar ? `<div class="af-guardar"><label class="check"><input type="checkbox" id="af-guardar"${vaiGuardar ? " checked" : ""}${bloqueio.length ? " disabled" : ""}> Guardar a foto desta aula</label>
+          ${bloqueio.length ? `<small class="aviso">Não dá para guardar: ${esc(bloqueio.join(", "))} ${bloqueio.length === 1 ? "não tem" : "não têm"} autorização de uso de imagem.</small>` : '<small class="muted">Fica no registro da aula (e depois no portal do aluno).</small>'}</div>` : ""}
+        <div class="acoes"><button class="btn ghost" id="af-x">Cancelar</button><button class="btn" id="af-ok"${total || vaiGuardar ? "" : " disabled"}>${total ? `Registrar ${total} presença${total === 1 ? "" : "s"}` : vaiGuardar ? "Guardar só a foto" : "Nada novo para marcar"}</button></div>`;
       // Recortes dos rostos, desenhados da própria foto (só na tela, nada é guardado).
       if (escolhas?.length) {
         const img = el.querySelector(".af-quadro img");
@@ -149,14 +162,22 @@ function abrirAnalise(store, turma, data, foto, pronto) {
       const prof = el.querySelector("#af-prof");
       if (prof) prof.onchange = e => { professorNaFoto = e.target.checked; recalcular(); desenhar(); };
       el.querySelectorAll("[data-a]").forEach(c => c.onchange = () => { marcas.set(c.dataset.a, c.checked); desenhar(); });
+      const cxGuardar = el.querySelector("#af-guardar");
+      if (cxGuardar) cxGuardar.onchange = () => { guardarFoto = cxGuardar.checked; desenhar(); };
       el.querySelector("#af-x").onclick = () => { fechar(); pronto(); };
       el.querySelector("#af-ok").onclick = async () => {
+        if (vaiGuardar) {
+          const registro = { turmaId: turma.id, data, foto: guardar, legenda: "", professorId: turma.professorId || "" };
+          nuvemDados().then(m => m.salvarFotoAula(registro))
+            .then(() => { toast("Foto da aula guardada"); aoGuardar?.({ id: idFotoAula(turma.id, data), ...registro }); })
+            .catch(e => { console.error(e); toast("Não consegui guardar a foto da aula. As presenças foram registradas."); });
+        }
         el.querySelector("#af-ok").disabled = true;
         const lancar = [...novosRosto.map(alunoId => ({ alunoId, origem: "rosto" })), ...novos.map(x => ({ alunoId: x.aluno.id, origem: "foto" }))];
         for (const l of lancar) if (!jaPresente(l.alunoId)) d.checkins.push({ id: store.novoId("c"), alunoId: l.alunoId, turmaId: turma.id, data, hora: turma.horario, origem: l.origem });
         const ok = store.salvar() !== false;
         fechar();
-        if (ok) toast(`${total} presença${total === 1 ? "" : "s"} registrada${total === 1 ? "" : "s"} pela foto`);
+        if (ok && total) toast(`${total} presença${total === 1 ? "" : "s"} registrada${total === 1 ? "" : "s"} pela foto`);
         if (ok) aprenderDaFoto(store, escolhas, rostos);
         pronto();
       };
@@ -198,6 +219,16 @@ export default {
     if (!(estado.turmaId === "outras" && orfaos.length) && !turmas.some(t => t.id === estado.turmaId)) estado.turmaId = turmas[0]?.id || (orfaos.length ? "outras" : null);
     const turma = turmas.find(t => t.id === estado.turmaId);
     const presentes = estado.turmaId === "outras" ? orfaos : turma ? doDia.filter(c => c.turmaId === turma.id).sort((a, b) => (alunos[a.alunoId]?.nome || "").localeCompare(alunos[b.alunoId]?.nome || "", "pt-BR")) : [];
+    // Fotos da aula: no painel logado vêm do banco (uma busca por dia); na demonstração, do navegador.
+    const naNuvem = store.modo === "painel";
+    if (naNuvem && !fotosNuvem.has(data)) {
+      fotosNuvem.set(data, null);
+      nuvemDados().then(m => m.fotosDoDia(data)).then(l => { fotosNuvem.set(data, l); ctx.redesenhar(); })
+        .catch(e => { console.error(e); fotosNuvem.set(data, []); });
+    }
+    const carregandoFotos = naNuvem && fotosNuvem.get(data) === null;
+    const fotosDia = naNuvem ? fotosNuvem.get(data) || [] : d.fotosAula;
+    const guardaFoto = naNuvem || guardarFotoDaAula(store.modo, turma);
 
     el.innerHTML = cabecalho("Check-ins", `${doDia.length} presença${doDia.length === 1 ? "" : "s"} em ${dataLonga(data)}`,
       `<div class="dia-aula"><label for="data" class="k">Dia da aula</label><div class="dia-aula-ctl">
@@ -206,14 +237,14 @@ export default {
         <button class="btn sec peq" id="dia-prox" aria-label="Próximo dia"${data >= hoje ? " disabled" : ""}>›</button>
         ${data !== hoje ? '<button class="link" id="dia-hoje">Hoje</button>' : ""}</div></div>`) +
       abasCategoria(d) +
-      `<div class="card">${turmas.length || orfaos.length ? `<div class="k" style="margin-bottom:8px">Escolha a aula</div><div class="aulas-dia" id="turmas">${turmas.map(t => `<button class="aula-opcao${t.id === estado.turmaId ? " on" : ""}" data-id="${esc(t.id)}" aria-pressed="${t.id === estado.turmaId}"><b>${horaTexto(t.horario)}</b>${etiquetaPrograma(t.programa)}<small>Prof. ${esc(nomeProfessor(d, t.professorId))}${t.publico ? ` · ${esc(t.publico)}` : ""}</small><small>${doDia.filter(c => c.turmaId === t.id).length} presentes${d.fotosAula.some(f => f.turmaId === t.id && f.data === data) ? " · 📸" : ""}</small></button>`).join("")}${orfaos.length ? `<button class="aula-opcao${estado.turmaId === "outras" ? " on" : ""}" data-id="outras"><b>Turmas antigas</b><small>${orfaos.length} presenças</small></button>` : ""}</div>`
+      `<div class="card">${turmas.length || orfaos.length ? `<div class="k" style="margin-bottom:8px">Escolha a aula</div><div class="aulas-dia" id="turmas">${turmas.map(t => `<button class="aula-opcao${t.id === estado.turmaId ? " on" : ""}" data-id="${esc(t.id)}" aria-pressed="${t.id === estado.turmaId}"><b>${horaTexto(t.horario)}</b>${etiquetaPrograma(t.programa)}<small>Prof. ${esc(nomeProfessor(d, t.professorId))}${t.publico ? ` · ${esc(t.publico)}` : ""}</small><small>${doDia.filter(c => c.turmaId === t.id).length} presentes${fotosDia.some(f => f.turmaId === t.id && f.data === data) ? " · 📸" : ""}</small></button>`).join("")}${orfaos.length ? `<button class="aula-opcao${estado.turmaId === "outras" ? " on" : ""}" data-id="outras"><b>Turmas antigas</b><small>${orfaos.length} presenças</small></button>` : ""}</div>`
         : `<div class="vazio">Sem aulas em ${DIAS_LONGOS[diaSemana(data)].toLowerCase()}.</div>`}</div>
       ${estado.turmaId === "outras" ? `<div class="card"><div class="card-cab"><div><h3>Turmas antigas</h3><small>presenças de turmas que mudaram de dia ou foram excluídas</small></div></div>${presentes.map(c => { const a = alunos[c.alunoId]; return `<div class="lista"><div>${a ? pessoa(a) : "Aluno removido"}<span class="hora" style="margin-left:auto">${horaTexto(c.hora)}</span></div></div>`; }).join("")}</div>` : ""}
       ${turma ? (() => { const vis = d.prospects.filter(p => p.etapa === "experimental" && p.experimental?.turmaId === turma.id && p.experimental?.data === data);
         return vis.length ? `<div class="card" style="border-color:#bfe3cf;background:#f4fbf7"><div class="card-cab"><h3>Aula experimental</h3><a class="link" href="#prospects">Prospects</a></div>
           <div class="lista">${vis.map(p => `<div><div class="cresce"><b>${esc(p.nome)}</b><small>${esc(p.interesse)} · ${esc(p.telefone)}</small></div><span class="pill ok">Visitante</span></div>`).join("")}</div></div>` : ""; })() : ""}
-      ${turma ? (() => { const f = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
-        return `<div class="card foto-aula"><div class="card-cab"><div><h3>Foto da aula das ${horaTexto(turma.horario)} ${etiquetaPrograma(turma.programa)}</h3><small>${DIAS_LONGOS[diaSemana(data)]}, ${dataLonga(data)} · ${!guardarFotoDaAula(store.modo, turma) ? "a foto é analisada no aparelho e não é guardada" : f ? `salva por Prof. ${esc(nomeProfessor(d, turma.professorId))}` : "o professor registra como foi a aula"}</small></div>
+      ${turma ? (() => { const f = fotosDia.find(x => x.turmaId === turma.id && x.data === data);
+        return `<div class="card foto-aula"><div class="card-cab"><div><h3>Foto da aula das ${horaTexto(turma.horario)} ${etiquetaPrograma(turma.programa)}</h3><small>${DIAS_LONGOS[diaSemana(data)]}, ${dataLonga(data)} · ${carregandoFotos ? "buscando a foto…" : !guardaFoto ? "a foto é analisada no aparelho e não é guardada" : f ? `salva por Prof. ${esc(nomeProfessor(d, f.professorId || turma.professorId))}` : naNuvem ? "fica guardada se as crianças da foto tiverem autorização de imagem" : "o professor registra como foi a aula"}</small></div>
           ${f ? `<div style="display:flex;gap:8px"><label class="btn sec peq" style="cursor:pointer">Trocar<input type="file" accept="image/*" id="foto-arq" hidden></label><button class="btn sec peq" id="foto-del">Remover</button></div>` : ""}</div>
           ${f ? `<div class="foto-corpo"><button class="foto-grande" id="foto-ver" aria-label="Ver foto da aula em tela cheia"><img src="${esc(f.foto)}" alt="Foto da aula de ${esc(dataLonga(data))}"><span>Ver em tela cheia</span></button>
             <div class="foto-lado"><label for="foto-leg" class="k">Legenda</label>
@@ -256,7 +287,10 @@ export default {
     };
     ligarAbas(el, ctx, () => { estado.turmaId = null; });
     el.querySelectorAll("#turmas [data-id]").forEach(b => b.onclick = () => { estado.turmaId = b.dataset.id; ctx.redesenhar(); });
-    // Foto da aula: comprime no aparelho e guarda uma por turma e dia.
+    // Foto da aula: comprime no aparelho e guarda uma por turma e dia (no painel logado, no banco,
+    // depois da análise e só com autorização de imagem das crianças; na demonstração, no navegador).
+    const fotoAtual = () => fotosDia.find(x => x.turmaId === turma.id && x.data === data);
+    const aoGuardarNuvem = registro => { fotosNuvem.set(data, [...(fotosNuvem.get(data) || []).filter(x => x.id !== registro.id), registro]); ctx.redesenhar(); };
     el.querySelector("#foto-arq")?.addEventListener("change", async e => {
       const arq = e.target.files?.[0]; e.target.value = "";
       if (!arq || !turma) return;
@@ -266,9 +300,9 @@ export default {
       try {
         // Para reconhecer, a foto vai em resolução alta (rostos de longe ficam pequenos); só a cópia guardada é reduzida.
         analise = (await comprimirImagem(arq, 2560, 3_000_000)).dados;
-        foto = guardarFotoDaAula(store.modo, turma) ? (await comprimirImagem(arq, 1280, 220 * 1024)).dados : null;
+        foto = guardaFoto ? (await comprimirImagem(arq, 1280, 220 * 1024)).dados : null;
       } catch { toast("Não deu para ler essa imagem"); return; }
-      // Modo logado (alunos reais): a foto só é analisada no aparelho e nunca é guardada.
+      if (naNuvem) { abrirAnalise(store, turma, data, analise, ctx.redesenhar, { guardar: foto, aoGuardar: aoGuardarNuvem }); return; }
       if (!foto) { abrirAnalise(store, turma, data, analise, ctx.redesenhar); return; }
       const antiga = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
       const nova = { id: store.novoId("fa"), turmaId: turma.id, data, foto, legenda: antiga?.legenda || "", professorId: turma.professorId };
@@ -280,20 +314,31 @@ export default {
       } else { ctx.redesenhar(); abrirAnalise(store, turma, data, analise, ctx.redesenhar); }
     });
     el.querySelector("#foto-analisar")?.addEventListener("click", () => {
-      const f = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
+      const f = fotoAtual();
       if (f) abrirAnalise(store, turma, data, f.foto, ctx.redesenhar);
     });
     el.querySelector("#foto-leg")?.addEventListener("change", e => {
-      const f = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
-      if (f) { f.legenda = e.target.value.trim().slice(0, 140); store.salvar(); toast("Legenda salva"); }
+      const f = fotoAtual();
+      if (!f) return;
+      f.legenda = e.target.value.trim().slice(0, 140);
+      if (!naNuvem) { store.salvar(); toast("Legenda salva"); return; }
+      nuvemDados().then(m => m.legendaFotoAula(f.id, f.legenda)).then(() => toast("Legenda salva"))
+        .catch(err => { console.error(err); toast("Não consegui salvar a legenda"); });
     });
     el.querySelector("#foto-del")?.addEventListener("click", async () => {
-      if (!await perguntar("Remover a foto da aula?", "Ela sai do painel e não dá para desfazer.", "Remover", "Cancelar")) return;
-      d.fotosAula = d.fotosAula.filter(x => !(x.turmaId === turma.id && x.data === data));
-      store.salvar(); toast("Foto removida"); ctx.redesenhar();
+      if (!await perguntar("Remover a foto da aula?", "Ela sai do painel e não dá para desfazer. As presenças continuam.", "Remover", "Cancelar")) return;
+      const f = fotoAtual();
+      if (!naNuvem) {
+        d.fotosAula = d.fotosAula.filter(x => !(x.turmaId === turma.id && x.data === data));
+        store.salvar(); toast("Foto removida"); ctx.redesenhar(); return;
+      }
+      if (!f) return;
+      nuvemDados().then(m => m.apagarFotoAula(f.id)).then(() => {
+        fotosNuvem.set(data, (fotosNuvem.get(data) || []).filter(x => x.id !== f.id)); toast("Foto removida"); ctx.redesenhar();
+      }).catch(err => { console.error(err); toast("Não consegui remover a foto"); });
     });
     el.querySelector("#foto-ver")?.addEventListener("click", () => {
-      const f = d.fotosAula.find(x => x.turmaId === turma.id && x.data === data);
+      const f = fotoAtual();
       if (!f) return;
       abrirFolha((fl, fechar) => {
         fl.classList.add("folha-foto");

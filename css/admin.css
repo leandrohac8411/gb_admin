@@ -900,3 +900,7 @@ h1 .etq-exemplo{font-size:10px;letter-spacing:.08em}
   .abas button{flex:1 1 0;justify-content:center;height:52px;font-size:16px;border-radius:14px}
   .abas button span{font-size:12px}
 }
+
+/* Presença pela foto (painel logado): guardar a foto da aula. */
+.af-guardar{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}
+.af-guardar .aviso{margin:0}

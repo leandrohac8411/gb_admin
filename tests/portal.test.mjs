@@ -57,7 +57,7 @@ test("emailValido: minúsculas e sem espaços; inválido dá null", () => {
 test("espelhoGrade: só turmas adultas, só os campos do portal e nenhum dado de aluno", () => {
   const g = espelhoGrade(d);
   assert.deepEqual(Object.keys(g.turmas), ["t1"]);
-  assert.deepEqual(g.turmas.t1, { diaSemana: 3, horario: "12:30", programa: "GB1", professor: "Diego Farias", modeloAulaId: "m1", aula: "" });
+  assert.deepEqual(g.turmas.t1, { diaSemana: 3, horario: "12:30", programa: "GB1", professor: "Diego Farias", modeloAulaId: "m1", aula: "", duracaoMin: 60 });
   assert.deepEqual(g.cronograma, d.cronograma);
   assert.deepEqual(g.ancoras, d.config.ancoras);
   assert.deepEqual(g.modelosAula, d.modelosAula);

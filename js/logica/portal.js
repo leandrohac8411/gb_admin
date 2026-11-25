@@ -34,7 +34,7 @@ export function espelhoGrade(d) {
   const turmas = {};
   for (const t of d.turmas || []) {
     if ((t.categoria || "adulto") !== "adulto") continue;
-    turmas[t.id] = { diaSemana: t.diaSemana, horario: t.horario, programa: t.programa, professor: profs[t.professorId] || "", modeloAulaId: t.modeloAulaId || "", aula: t.aula || "" };
+    turmas[t.id] = { diaSemana: t.diaSemana, horario: t.horario, programa: t.programa, professor: profs[t.professorId] || "", modeloAulaId: t.modeloAulaId || "", aula: t.aula || "", duracaoMin: Number(t.duracaoMin) || 60 };
   }
   return { turmas, cronograma: d.cronograma || [], ancoras: d.config?.ancoras || [], modelosAula: d.modelosAula || [] };
 }

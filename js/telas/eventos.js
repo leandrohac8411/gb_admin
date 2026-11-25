@@ -5,6 +5,7 @@ import { hojeISO, dataValida, diasEntre, diaSemana } from "../logica/datas.js";
 import { aptidao } from "../logica/graduacao.js";
 import { icone } from "../menu.js";
 import { cabecalho, pessoa, faixaCelula, porId, DIAS_LONGOS } from "./comum.js";
+import { inscritosDoPublico } from "../logica/regras-cadastro.js";
 
 const TIPOS = ["Graduação", "Seminário", "Campeonato", "Confraternização"];
 const PUBLICOS = [["todos", "Todos"], ["adulto", "Adultos"], ["kids", "Kids"]];
@@ -39,6 +40,7 @@ function formEvento(store, ev, pronto) {
       e.preventDefault();
       const titulo = el.querySelector("#e-tit").value.trim(), data = el.querySelector("#e-data").value, hora = el.querySelector("#e-hora").value;
       const vagas = Number(el.querySelector("#e-vagas").value);
+      let aviso = "Evento salvo";
       if (titulo.length < 3) return erro("Dê um nome ao evento.");
       if (!dataValida(data)) return erro("Escolha a data.");
       if (!/^\d{2}:\d{2}$/.test(hora)) return erro("Escolha a hora.");
@@ -47,11 +49,13 @@ function formEvento(store, ev, pronto) {
         local: el.querySelector("#e-local").value.trim(), vagas, descricao: el.querySelector("#e-desc").value.trim() };
       if (ev) {
         const alunos = porId(store.dados.alunos);
-        const ficam = ev.inscritos.filter(id => alunos[id] && (campos.publico === "todos" || (alunos[id].categoria || "adulto") === campos.publico));
+        const { ficam, saem } = inscritosDoPublico(ev.inscritos, campos.publico, alunos);
         if (ficam.length > vagas) return erro(`Já há ${ficam.length} inscritos; as vagas não podem ser menos que isso.`);
         Object.assign(ev, campos, { inscritos: ficam });
+        // Mudou o público: avisa quem saiu da lista, para ninguém sumir sem explicação.
+        if (saem.length) aviso = `Evento salvo. ${saem.length} inscrito${saem.length === 1 ? " saiu" : "s saíram"} da lista por não ser${saem.length === 1 ? "" : "em"} do público novo.`;
       } else store.dados.eventos.push({ id: store.novoId("ev"), ...campos, inscritos: [] });
-      store.salvar(); fechar(); toast("Evento salvo"); pronto();
+      store.salvar(); fechar(); toast(aviso); pronto();
     };
   });
 }

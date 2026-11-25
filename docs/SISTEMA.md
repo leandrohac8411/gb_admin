@@ -123,6 +123,7 @@ Várias telas têm as abas **Adultos | Kids**, e a escolha fica lembrada ao troc
   - cria o contrato (`CTR-ano-número`, pendente);
   - registra a graduação inicial, se a faixa não for branca sem grau;
   - aplica o desconto de irmão: mesmo telefone de responsável dá o percentual de Configurações (padrão 10%) a partir do 2º filho;
+  - confere o telefone, que é opcional: se preenchido, precisa ter de 8 a 13 dígitos;
   - no painel logado, aceita uma **Foto do rosto** opcional, que depois pede a autorização.
 
 **Ficha do aluno** (abre ao clicar num aluno)
@@ -147,6 +148,7 @@ Várias telas têm as abas **Adultos | Kids**, e a escolha fica lembrada ao troc
 **Eventos**
 - Graduações, seminários, campeonatos e confraternizações.
 - Cada evento tem público, vagas e lista de inscritos.
+- Se o público mudar (por exemplo, de Todos para Kids), quem não é do público novo sai da lista e o aviso diz quantos saíram.
 - "Inscrever aptos" preenche as vagas com os aptos.
 - Evento passado mostra "Ver participantes".
 
@@ -189,7 +191,8 @@ Várias telas têm as abas **Adultos | Kids**, e a escolha fica lembrada ao troc
 
 **Planos**
 - Mensal, trimestral, semestral e anual, cada um com valor e situação (ativo ou inativo).
-- Ao editar o valor, é possível aplicar o novo valor aos alunos atuais do plano.
+- Ao editar o valor, é possível aplicar o novo valor aos alunos atuais do plano. Quem pagava com desconto de irmão continua com o desconto sobre o valor novo.
+- Valores em reais (planos, mensalidades e despesas) aceitam de R$ 0,01 para cima, com no máximo 2 casas de centavos.
 - Novos alunos só veem os planos ativos.
 
 **Produtos & estoque**
@@ -203,7 +206,7 @@ Várias telas têm as abas **Adultos | Kids**, e a escolha fica lembrada ao troc
 **Prospects**
 - Funil Novo → Contato → Aula experimental → Matriculado, mais a coluna Perdido.
 - Ao agendar a aula experimental, escolhem-se a data e a turma.
-- **Matricular** abre o cadastro de aluno já preenchido.
+- **Matricular** abre o cadastro já preenchido. Se a aula experimental foi numa turma Kids, abre como **Nova criança**, com o telefone no campo do responsável.
 - Origens: Instagram, Indicação, Google, Site, Passou na porta e Outro.
 
 **Comunicação**

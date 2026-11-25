@@ -10,6 +10,8 @@ import { resumoFinanceiro } from "../logica/financeiro.js";
 import { icone } from "../menu.js";
 import { cabecalho, pessoa, porId, DIAS_CURTOS, aba, daAba, abasCategoria, ligarAbas, etiquetaPrograma } from "./comum.js";
 import { abrirFormAluno } from "./alunos.js";
+import { valorReais, categoriaDoProspect } from "../logica/regras-cadastro.js";
+import { valorReajustado } from "../logica/familia.js";
 
 const erroEm = (el, sel, msg) => { const e = el.querySelector(sel); e.textContent = msg; e.hidden = false; };
 const opcoes = (lista, atual) => lista.map(v => Array.isArray(v) ? v : [v, v]).map(([v, t]) => `<option value="${esc(v)}"${v === atual ? " selected" : ""}>${esc(t)}</option>`).join("");
@@ -42,14 +44,16 @@ function formPlano(store, plano, pronto) {
     el.querySelector("#pl-x").onclick = fechar;
     el.querySelector("form").onsubmit = e => {
       e.preventDefault();
-      const d = store.dados, nome = el.querySelector("#pl-nome").value.trim(), valor = Number(el.querySelector("#pl-valor").value);
+      const d = store.dados, nome = el.querySelector("#pl-nome").value.trim(), valor = valorReais(el.querySelector("#pl-valor").value, 100000);
       if (!plano && nome.length < 3) return erroEm(el, "#pl-erro", "Dê um nome ao plano.");
       if (!plano && d.planos.some(x => x.id.toLowerCase() === nome.toLowerCase())) return erroEm(el, "#pl-erro", "Já existe um plano com esse nome.");
-      if (!(valor > 0 && valor <= 100000)) return erroEm(el, "#pl-erro", "Informe um valor entre R$ 0,01 e R$ 100.000.");
+      if (valor == null) return erroEm(el, "#pl-erro", "Informe um valor entre R$ 0,01 e R$ 100.000 (no máximo 2 casas para os centavos).");
       const campos = { meses: Number(el.querySelector("#pl-meses").value), valor, descricao: el.querySelector("#pl-desc").value.trim() };
       if (plano) {
+        const antigo = plano.valor;
         Object.assign(plano, campos);
-        if (el.querySelector("#pl-aplicar").checked) d.alunos.filter(a => a.plano === plano.id).forEach(a => { a.valor = valor; });
+        // Quem paga com desconto de irmão continua com desconto no valor novo.
+        if (el.querySelector("#pl-aplicar").checked) d.alunos.filter(a => a.plano === plano.id).forEach(a => { a.valor = valorReajustado(a, d.alunos, antigo, valor, d.config.descontoIrmaos ?? 10); });
       } else d.planos.push({ id: nome, nome, ativo: true, ...campos });
       store.salvar(); fechar(); toast("Plano salvo"); pronto();
     };
@@ -253,7 +257,9 @@ export const prospects = {
     });
     el.querySelectorAll("[data-matricular]").forEach(b => b.onclick = () => {
       const p = d.prospects.find(x => x.id === b.dataset.matricular);
-      abrirFormAluno(store, null, a => { p.etapa = "matriculado"; p.alunoId = a.id; store.salvar(); ctx.ir(`aluno/${a.id}`); }, { nome: p.nome, telefone: p.telefone, categoria: "adulto" });
+      abrirFormAluno(store, null, a => { p.etapa = "matriculado"; p.alunoId = a.id; store.salvar(); ctx.ir(`aluno/${a.id}`); }, categoriaDoProspect(p, d.turmas) === "kids"
+        ? { nome: p.nome, categoria: "kids", responsavel: { telefone: p.telefone } }
+        : { nome: p.nome, telefone: p.telefone, categoria: "adulto" });
     });
   }
 };

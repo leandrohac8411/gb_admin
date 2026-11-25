@@ -7,6 +7,7 @@ import { hojeISO, somarDias, dataValida } from "../logica/datas.js";
 import { inadimplentes } from "../logica/financeiro.js";
 import { idadeEm } from "../logica/graduacao.js";
 import { irmaos, valorComDesconto } from "../logica/familia.js";
+import { telefoneValido } from "../logica/regras-cadastro.js";
 import { icone } from "../menu.js";
 import { cabecalho, pessoa, faixaCelula, PILL_STATUS, aba, definirAba, daAba, abasCategoria, ligarAbas, anosTexto } from "./comum.js";
 
@@ -81,6 +82,7 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
         : f.peso && !(Number(f.peso) >= (kids ? 10 : 20) && Number(f.peso) <= 250) ? "Peso fora do esperado."
         : kids && (f.rnome || "").trim().length < 3 ? "Escreva o nome do responsável."
         : kids && (f.rtelefone || "").replace(/\D/g, "").length < 8 ? "Informe o telefone do responsável."
+        : !telefoneValido(kids ? f.rtelefone : f.telefone) ? "Confira o telefone: só números, com DDD (8 a 13 dígitos)."
         : foto ? problemaNaFoto(foto.files?.[0]) : "";
       if (falha) { erro.textContent = falha; erro.hidden = false; return; }
       const campos = { nome, sexo: f.sexo, nascimento: f.nascimento || "", peso: f.peso ? Number(f.peso) : null, plano: f.plano,

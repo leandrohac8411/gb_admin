@@ -6,6 +6,7 @@ import { resumoFinanceiro, statusMensalidade } from "../logica/financeiro.js";
 import { icone } from "../menu.js";
 import { cabecalho, pessoa, porId, PILL_STATUS, aba, daAba, abasCategoria, ligarAbas } from "./comum.js";
 import { fluxoDoMes, CATEGORIAS_DESPESA } from "../logica/caixa.js";
+import { valorReais } from "../logica/regras-cadastro.js";
 
 const estado = { comp: null, filtro: "Todos", visao: "Mensalidades" };
 const FORMAS = ["Pix", "Cartão", "Dinheiro"];
@@ -47,8 +48,8 @@ function abrirLancamento(store, comp, aoSalvar) {
     el.querySelector("#l-cancelar").onclick = fechar;
     el.querySelector("form").onsubmit = e => {
       e.preventDefault();
-      const venc = el.querySelector("#l-venc").value, v = Number(valor.value);
-      const falha = !sel.value ? "Escolha o aluno." : !dataValida(venc) ? "Vencimento inválido." : !(v > 0 && v <= 100000) ? "Informe um valor entre R$ 0,01 e R$ 100.000."
+      const venc = el.querySelector("#l-venc").value, v = valorReais(valor.value, 100000);
+      const falha = !sel.value ? "Escolha o aluno." : !dataValida(venc) ? "Vencimento inválido." : v == null ? "Informe um valor entre R$ 0,01 e R$ 100.000 (no máximo 2 casas para os centavos)."
         : d.mensalidades.some(m => m.alunoId === sel.value && m.competencia === comp) ? "Esse aluno já tem mensalidade neste mês." : "";
       if (falha) { erro.textContent = falha; erro.hidden = false; return; }
       d.mensalidades.push({ id: store.novoId("m"), alunoId: sel.value, competencia: comp, vencimento: venc, valor: v, pagoEm: null, forma: null });
@@ -71,10 +72,10 @@ function abrirDespesa(store, comp, aoSalvar) {
     el.querySelector("#dp-x").onclick = fechar;
     el.querySelector("form").onsubmit = e => {
       e.preventDefault();
-      const descricao = el.querySelector("#dp-desc").value.trim(), valor = Number(el.querySelector("#dp-valor").value), data = el.querySelector("#dp-data").value;
+      const descricao = el.querySelector("#dp-desc").value.trim(), valor = valorReais(el.querySelector("#dp-valor").value, 10000000), data = el.querySelector("#dp-data").value;
       const erro = msg => { const x = el.querySelector("#dp-erro"); x.textContent = msg; x.hidden = false; };
       if (descricao.length < 3) return erro("Descreva a despesa.");
-      if (!(valor > 0 && valor <= 10000000)) return erro("Informe um valor entre R$ 0,01 e R$ 10.000.000.");
+      if (valor == null) return erro("Informe um valor entre R$ 0,01 e R$ 10.000.000 (no máximo 2 casas para os centavos).");
       if (!dataValida(data)) return erro("Data inválida.");
       store.dados.despesas.push({ id: store.novoId("dp"), data, categoria: el.querySelector("#dp-cat").value, descricao, valor, pago: el.querySelector("#dp-pago").checked });
       store.salvar(); fechar(); toast("Despesa lançada"); aoSalvar();

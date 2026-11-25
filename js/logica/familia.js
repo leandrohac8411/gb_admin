@@ -21,3 +21,9 @@ export function mediaComportamento(avaliacoes, alunoId, comp) {
   const notas = CRITERIOS.map(c => Number(v.notas?.[c])).filter(Number.isFinite);
   return notas.length ? Math.round(notas.reduce((s, n) => s + n, 0) / notas.length * 10) / 10 : null;
 }
+
+// Reajuste do plano ("aplicar aos alunos atuais"): o irmão que já pagava com desconto continua com desconto.
+export function valorReajustado(aluno, alunos, valorAntigo, valorNovo, pct) {
+  const tinhaDesconto = Number(aluno.valor) < Number(valorAntigo) && irmaos(aluno, alunos).length > 0;
+  return tinhaDesconto ? valorComDesconto(valorNovo, 1, pct) : valorNovo;
+}

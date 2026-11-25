@@ -67,7 +67,7 @@ async function abrirPainelLogado(fb, usuario) {
   store.pronto = true;
   elLogin.hidden = true; elAdmin.hidden = false;
   definirSair(async () => {
-    if (await perguntar("Sair do painel?", "A cópia dos dados guardada neste aparelho será apagada; tudo continua salvo no banco.", "Sair", "Cancelar")) fb.sairELimpar();
+    if (await perguntar("Sair do painel?", "Você volta para a tela de login. Nada é apagado: os dados continuam salvos e aparecem de novo quando você entrar.", "Sair", "Cancelar")) fb.sairELimpar();
   });
   // Saiu em outra aba ou a sessão expirou: volta para o login.
   fb.aoMudarUsuario(u2 => { if (!u2) location.reload(); });

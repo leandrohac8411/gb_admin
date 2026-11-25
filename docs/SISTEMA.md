@@ -51,7 +51,8 @@ O sistema decide sozinho o que abrir (`modoInicial` em `js/logica/validar-nuvem.
 
 - E-mail, senha e "Esqueci minha senha" (o Firebase manda o e-mail de troca).
 - **Bloqueio:** depois de 5 senhas erradas em 10 minutos, espera de 1 minuto; cada erro a mais bloqueia mais 1 minuto. O próprio Firebase também barra excesso de tentativas no servidor.
-- **Sair** (no menu) desconecta e apaga a cópia dos dados guardada no aparelho. Tudo continua salvo no banco.
+- **Sair** (no menu) volta para a tela de login. Nada é apagado do banco. Por segurança, ele só limpa a cópia temporária que o navegador guarda para funcionar sem internet; ao entrar de novo, os dados voltam.
+- **Sair** e **Apagar dados de exemplo** são botões diferentes: sair nunca apaga dados.
 
 ### Primeiro acesso
 

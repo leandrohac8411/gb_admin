@@ -11,6 +11,7 @@ import { cabecalho, pessoa, faixaCelula, etiquetaPrograma, porId, DIAS_CURTOS, d
 import { aulas30 } from "./alunos.js";
 import { problemaNaFoto } from "../logica/cadastro-rosto.js";
 import { salvarComAviso } from "../logica/mesclar.js";
+import { professorTreina } from "../logica/professor-aluno.js";
 
 const erroEm = (el, sel, msg) => { const e = el.querySelector(sel); e.textContent = msg; e.hidden = false; };
 const opcoes = (lista, atual) => lista.map(v => Array.isArray(v) ? v : [v, v]).map(([v, t]) => `<option value="${esc(v)}"${v === atual ? " selected" : ""}>${esc(t)}</option>`).join("");
@@ -34,14 +35,15 @@ function campoRostoProfessor(r) {
 function formProfessor(store, prof, pronto) {
   const p = prof || { nome: "", faixa: "preta", graus: 0 };
   const r = prof && rostoDe(store, prof.id), n = r?.descritores?.length || 0;
+  const fichaAluno = p.alunoId ? store.dados.alunos.find(a => a.id === p.alunoId) : null;
   abrirFolha((el, fechar) => {
     el.innerHTML = `<h3>${prof ? "Editar professor" : "Novo professor"}</h3><form class="campos" novalidate>
       <div class="field cheio"><label for="pr-nome">Nome</label><input class="input" id="pr-nome" value="${esc(p.nome)}" autocomplete="off"></div>
       <div class="field"><label for="pr-faixa">Faixa</label><select class="input" id="pr-faixa">${opcoes(FAIXAS.map(f => [f, nomeFaixa(f)]), p.faixa)}</select></div>
       <div class="field"><label for="pr-graus">Graus</label><select class="input" id="pr-graus">${opcoes(["0", "1", "2", "3", "4", "5", "6"], String(p.graus))}</select></div>
-      <div class="field cheio"><label for="pr-aluno">Também treina como aluno</label>
-        <select class="input" id="pr-aluno"><option value="">Não treina (ou ainda não tem ficha)</option>${opcoes(store.dados.alunos.filter(a => a.status === "ativo").sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR")).map(a => [a.id, a.nome]), p.alunoId || "")}</select>
-        <small class="muted">Quando ele treinar, a foto da aula mostra "Treinou" e a presença vai para essa ficha (frequência e graduação).</small></div>
+      <div class="field cheio"><label class="check"><input type="checkbox" id="pr-treina"${fichaAluno ? " checked" : ""}> <b>Também treina</b> (fica como professor e aluno)</label>
+        <small class="muted">${fichaAluno ? `Ficha de aluno: <a href="#aluno/${encodeURIComponent(fichaAluno.id)}">${esc(fichaAluno.nome)}</a>. A presença, a frequência e a graduação dele contam lá.`
+          : "Desmarcado, ele aparece só como professor. Marcando, ganha uma ficha de aluno (sem mensalidade): na foto da aula aparece \"Treinou\" e a presença conta para a frequência e a graduação."}</small></div>
       ${store.modo === "painel" ? campoRostoProfessor(r) : ""}
       <p class="aviso cheio" id="pr-erro" hidden></p>
       <div class="acoes cheio"><button type="button" class="btn ghost" id="pr-x">Cancelar</button><button class="btn">${prof ? "Salvar" : "Cadastrar"}</button></div></form>`;
@@ -69,12 +71,12 @@ function formProfessor(store, prof, pronto) {
       if (nome.length < 3) return erroEm(el, "#pr-erro", "Escreva o nome do professor.");
       const arq = foto?.files?.[0], problema = problemaNaFoto(arq);
       if (problema) return erroEm(el, "#pr-erro", problema);
-      const alunoId = el.querySelector("#pr-aluno").value;
-      if (alunoId && store.dados.professores.some(x => x !== prof && x.alunoId === alunoId)) return erroEm(el, "#pr-erro", "Essa ficha de aluno já está ligada a outro professor.");
-      const campos = { nome, faixa: el.querySelector("#pr-faixa").value, graus: Number(el.querySelector("#pr-graus").value), alunoId };
+      const campos = { nome, faixa: el.querySelector("#pr-faixa").value, graus: Number(el.querySelector("#pr-graus").value) };
       let alvo = prof;
       if (prof) Object.assign(prof, campos); else { alvo = { id: store.novoId("p"), ...campos }; store.dados.professores.push(alvo); }
-      const gravou = store.salvar(); fechar(); toast(prof ? "Professor salvo" : "Professor cadastrado"); pronto();
+      const ficha = professorTreina(store.dados, alvo, el.querySelector("#pr-treina").checked, { hoje: hojeISO(), novoId: px => store.novoId(px), real: store.modo === "painel" });
+      const gravou = store.salvar(); fechar();
+      toast(ficha.criado ? `${prof ? "Professor salvo" : "Professor cadastrado"} · ficha de aluno criada` : prof ? "Professor salvo" : "Professor cadastrado"); pronto();
       // O rosto só é aceito pelo banco depois que o professor já está gravado.
       if (arq && gravou !== false) Promise.resolve(store.gravando).then(ok => ok !== false && import("./rosto.js").then(m => m.cadastrarFotoRosto(store, alvo, arq)));
     };

@@ -155,7 +155,7 @@ Várias telas têm as abas **Adultos | Kids**, e a escolha fica lembrada ao troc
 
 **Professores**
 - Equipe, com faixa, graus, turmas e alunos atendidos.
-- **Editar e foto** (painel logado): cadastra o rosto do professor. Na foto da aula, ele aparece como **Professor**. O campo **Também treina como aluno** liga o professor a uma ficha de aluno (uma ficha só por professor): aí a foto mostra **Treinou**, e marcando, a presença vai para essa ficha, contando frequência e graduação.
+- **Editar e foto** (painel logado): cadastra o rosto do professor. Na foto da aula, ele aparece como **Professor**. A caixa **Também treina** deixa ele como professor e aluno: cria uma ficha de aluno com o mesmo nome, faixa e graus (plano "Professor", sem mensalidade nem contrato) ou liga a um aluno de mesmo nome que já exista. Ao salvar de novo, a ficha acompanha nome, faixa e graus. Na foto da aula aparece **Treinou**, e marcando, a presença vai para essa ficha (frequência e graduação). Desmarcada, ele fica só como professor: a ficha sem nenhum treino é apagada; com histórico, é trancada (motivo "Professor que não treina") e volta se marcar de novo.
 - Só é possível excluir um professor sem turmas.
 
 **Acompanhamentos**
@@ -310,7 +310,7 @@ Várias telas têm as abas **Adultos | Kids**, e a escolha fica lembrada ao troc
 
    Cada pessoa fica com no máximo um rosto da foto, e os pares mais parecidos são decididos primeiro.
 5. Cada rosto aparece recortado ao lado do aluno sugerido. Quem não é reconhecido segue pela sugestão por frequência: os alunos que mais treinam naquela turma e naquele dia da semana.
-6. O **professor**, se tiver rosto cadastrado, aparece como "Professor". Só ganha presença se estiver ligado a uma ficha de aluno e você marcar **Treinou** (vem desmarcado).
+6. O **professor**, se tiver rosto cadastrado, aparece como "Professor". Só ganha presença se estiver marcado como **Também treina** em Professores e você marcar **Treinou** (vem desmarcado); senão aparece "só professor · não treina".
 7. Embaixo, um resumo explica a conta: "10 rostos: 8 presentes (1 já estava na lista) · 1 professor sem presença · 1 rosto sem aluno escolhido". Cada rosto cai em uma categoria só. O botão **Registrar 8 presenças** conta todos os presentes da foto, inclusive quem já estava na lista (esses não são gravados de novo).
 8. Enquanto analisa, uma faixa verde varre a foto; os rostos achados aparecem um a um.
 9. **Sempre é você quem confirma** antes de gravar.

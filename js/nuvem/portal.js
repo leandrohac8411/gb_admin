@@ -1,11 +1,9 @@
-// Portal do aluno, lado do painel: libera o acesso, grava o espelho e lê os check-ins dos alunos.
+// Portal do aluno, lado do painel: grava o espelho (acessos, portal, portalGrade) e lê os check-ins dos alunos.
 import {
-  doc, setDoc, deleteDoc, getDocs, query, where, collection, writeBatch, serverTimestamp
+  doc, getDocs, query, where, collection, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase.js";
 
-export const liberarAcesso = (email, acesso) => setDoc(doc(db, "acessos", email), { ...acesso, liberadoEm: serverTimestamp() });
-export const tirarAcesso = email => deleteDoc(doc(db, "acessos", email));
 
 // Grava o que mudou e apaga o que sumiu, em lotes (o Firestore aceita até 500 por lote).
 export async function gravarEspelho({ gravar, apagar }, colecao) {
@@ -28,4 +26,9 @@ export async function apagarCheckinsAluno(ids) {
     ids.slice(i, i + 400).forEach(id => lote.delete(doc(db, "checkinsAluno", id)));
     await lote.commit();
   }
+}
+
+export async function lerAcessos() {
+  const s = await getDocs(collection(db, "acessos"));
+  return s.docs.map(d => ({ id: d.id, ...d.data() }));
 }

@@ -11,6 +11,7 @@ import { ligarStoreAoBanco } from "../logica/painel-store.js";
 import { semExemplos, temExemplos } from "../logica/baldes.js";
 import { salvarComAviso } from "../logica/mesclar.js";
 import { vigiarInatividade } from "../logica/inatividade.js";
+import { criarSincroniaPortal } from "../logica/portal-sincronia.js";
 import { montarLogin } from "./login.js";
 import dashboard from "./dashboard.js";
 import alunos from "./alunos.js";
@@ -77,6 +78,15 @@ async function abrirPainelLogado(fb, usuario) {
   ouvirPainel(leitura => { if (!leitura.docs.meta) return; sincronia.receber(leitura); if (store.base) primeira(); }, falhaBanco);
   await pronta;
   store.pronto = true;
+  // Portal do aluno: depois de cada salvar, o espelho acompanha; ao abrir, os check-ins feitos pelos
+  // alunos no celular entram na lista de presença. Uma falha aqui nunca derruba o painel.
+  try {
+    const portal = criarSincroniaPortal({ store, nuvem: await import("../nuvem/portal.js"), hoje: hojeISO() });
+    const salvarPainel = store.salvar;
+    store.salvar = () => { const ok = salvarPainel(); if (ok !== false) portal.aposSalvar().catch(e => console.error(e)); return ok; };
+    store.portal = portal;
+    portal.aoAbrir().then(() => { if (store.pronto) desenhar(); }).catch(e => console.error(e));
+  } catch (e) { console.error(e); }
   elLogin.hidden = true; elAdmin.hidden = false;
   definirSair(async () => {
     if (await perguntar("Sair do painel?", "Você volta para a tela de login. Nada é apagado: os dados continuam salvos e aparecem de novo quando você entrar.", "Sair", "Cancelar")) fb.sairELimpar();

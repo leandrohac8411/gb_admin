@@ -11,6 +11,7 @@ import { icone } from "../menu.js";
 import { etiquetaPrograma, porId, PILL_STATUS, DIAS_CURTOS, estrelas, marcaAluno } from "./comum.js";
 import { aulas30, abrirFormAluno } from "./alunos.js";
 import { cartaoRosto, ligarCartaoRosto } from "./rosto.js";
+import { cartaoPortal, ligarCartaoPortal } from "./portal-cartao.js";
 
 
 const MOTIVOS = ["Mudança", "Financeiro", "Lesão", "Horário", "Falta de tempo", "Insatisfação", "Outro"];
@@ -58,7 +59,7 @@ export default {
         <div class="acoes-cab" style="display:flex;gap:8px"><button class="btn sec" id="editar">Editar</button>
           <button class="btn ${a.status === "ativo" ? "sec" : ""}" id="status">${a.status === "ativo" ? "Trancar matrícula" : "Reativar matrícula"}</button></div>
       </div>
-      ${store.modo === "painel" ? cartaoRosto(a, d) : ""}
+      ${store.modo === "painel" ? cartaoRosto(a, d) + cartaoPortal(a) : ""}
       <div class="card dados">
         ${kids ? `<div><small>Idade · turma</small><b>${anos != null ? `${anos} anos` : "Sem data de nascimento"}${turmaKids ? ` · ${esc(turmaKids.publico)}` : ""}</b></div>
         <div><small>Peso</small><b>${a.peso ? `${String(a.peso).replace(".", ",")} kg` : "—"}</b></div>`
@@ -106,7 +107,7 @@ export default {
       </div>`;
 
     el.querySelector("#editar").onclick = () => abrirFormAluno(store, a, () => ctx.redesenhar());
-    if (store.modo === "painel") ligarCartaoRosto(el, store, a, ctx);
+    if (store.modo === "painel") { ligarCartaoRosto(el, store, a, ctx); ligarCartaoPortal(el, store, a, ctx); }
     const salvarStatus = msg => { store.salvar(); toast(msg); };
     el.querySelector("#status").onclick = async () => {
       if (a.status !== "ativo") {

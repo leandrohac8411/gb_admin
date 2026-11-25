@@ -311,7 +311,7 @@ Várias telas têm as abas **Adultos | Kids**, e a escolha fica lembrada ao troc
    Cada pessoa fica com no máximo um rosto da foto, e os pares mais parecidos são decididos primeiro.
 5. Cada rosto aparece recortado ao lado do aluno sugerido. Quem não é reconhecido segue pela sugestão por frequência: os alunos que mais treinam naquela turma e naquele dia da semana.
 6. O **professor**, se tiver rosto cadastrado, aparece como "Professor". Só ganha presença se estiver ligado a uma ficha de aluno e você marcar **Treinou** (vem desmarcado).
-7. Embaixo, um resumo explica a conta do botão: "10 rostos: 7 presenças novas · 1 já estava na lista · 1 professor sem presença · 1 rosto sem aluno escolhido". Cada rosto cai em uma categoria só.
+7. Embaixo, um resumo explica a conta: "10 rostos: 8 presentes (1 já estava na lista) · 1 professor sem presença · 1 rosto sem aluno escolhido". Cada rosto cai em uma categoria só. O botão **Registrar 8 presenças** conta todos os presentes da foto, inclusive quem já estava na lista (esses não são gravados de novo).
 8. Enquanto analisa, uma faixa verde varre a foto; os rostos achados aparecem um a um.
 9. **Sempre é você quem confirma** antes de gravar.
 

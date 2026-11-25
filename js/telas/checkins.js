@@ -84,10 +84,12 @@ function abrirAnalise(store, turma, data, foto, pronto) {
       if (!marcas) marcas = new Map(sugestao.map(x => [x.aluno.id, x.marcado]));
       const novos = sugestao.filter(x => !x.presente && marcas.get(x.aluno.id));
       const novosRosto = presencasDosRostos(escolhas || [], regra);
-      const total = novos.length + novosRosto.length;
       const res = escolhas?.length ? resumoDosRostos(escolhas, regra) : null;
+      // O botão conta todo mundo que a foto marca como presente, inclusive quem já estava na lista
+      // (esses só não são gravados de novo).
+      const total = novos.length + novosRosto.length + (res?.jaEstavam || 0);
       const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
-      const resumo = res ? [plural(res.novos, "presença nova", "presenças novas"), res.jaEstavam && plural(res.jaEstavam, "já estava na lista", "já estavam na lista"),
+      const resumo = res ? [plural(res.novos + res.jaEstavam, "presente", "presentes") + (res.jaEstavam ? ` (${res.jaEstavam} já ${res.jaEstavam === 1 ? "estava" : "estavam"} na lista)` : ""),
         res.professores && plural(res.professores, "professor sem presença", "professores sem presença"), res.semAluno && plural(res.semAluno, "rosto sem aluno escolhido", "rostos sem aluno escolhido"),
         res.desmarcados && plural(res.desmarcados, "desmarcado", "desmarcados")].filter(Boolean) : [];
       el.innerHTML = `<h3>Presença pela foto</h3>
@@ -119,7 +121,7 @@ function abrirAnalise(store, turma, data, foto, pronto) {
           ${pessoa(x.aluno, x.presente ? "já estava na lista de presença" : x.vezes ? `veio ${x.vezes}× nesta turma nos últimos 3 meses` : x.mesmoDia ? `treina em outra turma deste dia (${x.mesmoDia}×)` : "não costuma vir neste horário")}
           ${x.presente ? '<span class="pill ok">Presente</span>' : ""}</label>`).join("")}</div>
         ${res ? `<p class="af-resumo"><b>${plural(res.rostos, "rosto", "rostos")}:</b> ${resumo.join(" · ")}${novos.length ? ` · mais ${plural(novos.length, "aluno", "alunos")} pela frequência` : ""}</p>` : ""}
-        <div class="acoes"><button class="btn ghost" id="af-x">Cancelar</button><button class="btn" id="af-ok"${total ? "" : " disabled"}>${total ? `Confirmar ${total} presença${total === 1 ? "" : "s"}` : "Nada novo para marcar"}</button></div>`;
+        <div class="acoes"><button class="btn ghost" id="af-x">Cancelar</button><button class="btn" id="af-ok"${total ? "" : " disabled"}>${total ? `Registrar ${total} presença${total === 1 ? "" : "s"}` : "Nada novo para marcar"}</button></div>`;
       // Recortes dos rostos, desenhados da própria foto (só na tela, nada é guardado).
       if (escolhas?.length) {
         const img = el.querySelector(".af-quadro img");
@@ -154,7 +156,7 @@ function abrirAnalise(store, turma, data, foto, pronto) {
         for (const l of lancar) if (!jaPresente(l.alunoId)) d.checkins.push({ id: store.novoId("c"), alunoId: l.alunoId, turmaId: turma.id, data, hora: turma.horario, origem: l.origem });
         const ok = store.salvar() !== false;
         fechar();
-        if (ok) toast(`${lancar.length} presença${lancar.length === 1 ? "" : "s"} confirmada${lancar.length === 1 ? "" : "s"} pela foto`);
+        if (ok) toast(`${total} presença${total === 1 ? "" : "s"} registrada${total === 1 ? "" : "s"} pela foto`);
         if (ok) aprenderDaFoto(store, escolhas, rostos);
         pronto();
       };

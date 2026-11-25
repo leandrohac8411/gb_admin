@@ -79,7 +79,7 @@ async function abrirPainelLogado(fb, usuario) {
     store.salvar();
     desenhar();
     toast("Dados de exemplo apagados");
-  }, "Apagar dados de exemplo");
+  }, "Apagar dados de exemplo", () => temExemplos(store.dados));
   registrarTelas();
   desenhar();
   return store;

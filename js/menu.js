@@ -78,6 +78,6 @@ export function desenharMenu(ativa, usuario = {}, { sair = false, restaurar = "R
         `<div class="lat-sub">${g.itens.map(link).join("")}</div></div>`;
     }).join("") +
     `</nav><a class="lat-perfil" href="#config"><span class="av-foto">🥋</span><span class="quem"><b>${nome}</b><small>Administrador</small></span>${SETA}</a>` +
-    `<button class="lat-restaurar" id="restaurar">${icone("restaurar")}${textoSeguro(restaurar)}</button>` +
+    (restaurar ? `<button class="lat-restaurar" id="restaurar">${icone("restaurar")}${textoSeguro(restaurar)}</button>` : "") +
     (sair ? `<button class="lat-sair" id="sair">${icone("sair")}Sair</button>` : "");
 }

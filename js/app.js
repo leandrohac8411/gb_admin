@@ -80,7 +80,7 @@ export function desenhar() {
   const tela_ = (Object.hasOwn(TELAS, rota) && TELAS[rota]) || (doMenu ? embreve : naoEncontrada);
   const ativa = rota === "aluno" ? "alunos" : rota;
   const u = ctx.store?.dados.config?.usuario || {};
-  lateral.innerHTML = desenharMenu(ativa, u, { sair: !!aoSair, restaurar: rotuloRestaurar });
+  lateral.innerHTML = desenharMenu(ativa, u, { sair: !!aoSair, restaurar: !mostrarRestaurar || mostrarRestaurar() ? rotuloRestaurar : "" });
   lateral.querySelectorAll("[data-grupo]").forEach(b => b.onclick = () => {
     alternarGrupo(b.dataset.grupo);
     const g = b.parentElement, aberto = g.classList.toggle("aberto");
@@ -89,7 +89,7 @@ export function desenhar() {
   ola.innerHTML = `${u.sexo === "F" ? "Bem-vinda" : "Bem-vindo"}, <b>${esc((u.nome || "").trim() || "visitante")}</b>`;
   fecharAvisos();
   document.getElementById("sino-ponto").hidden = !pendencias().length;
-  lateral.querySelector("#restaurar").onclick = () => aoRestaurar?.();
+  lateral.querySelector("#restaurar")?.addEventListener("click", () => aoRestaurar?.());
   lateral.querySelector("#sair")?.addEventListener("click", () => aoSair?.());
   lateral.querySelectorAll("a").forEach(a => a.addEventListener("click", () => abrirMenu(false)));
   fecharFolhas();
@@ -107,8 +107,10 @@ export function desenhar() {
   window.scrollTo(0, 0);
 }
 
-let aoRestaurar = null, aoSair = null, rotuloRestaurar = "Restaurar dados de exemplo";
-export function quandoRestaurar(fn, rotulo = "Restaurar dados de exemplo") { aoRestaurar = fn; rotuloRestaurar = rotulo; }
+// "mostrar": sem ela o botão aparece sempre; com ela, só enquanto ela disser que sim
+// (no painel logado: só enquanto houver dados de exemplo no banco).
+let aoRestaurar = null, aoSair = null, rotuloRestaurar = "Restaurar dados de exemplo", mostrarRestaurar = null;
+export function quandoRestaurar(fn, rotulo = "Restaurar dados de exemplo", mostrar = null) { aoRestaurar = fn; rotuloRestaurar = rotulo; mostrarRestaurar = mostrar; }
 export function definirSair(fn) { aoSair = fn; }
 
 window.addEventListener("hashchange", desenhar);

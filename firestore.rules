@@ -59,7 +59,8 @@ service cloud.firestore {
     // ---------- Foto da aula: uma por aula (id = turma_dia), JPEG pequeno ----------
     // O app só guarda se todas as crianças marcadas na foto tiverem autorização de imagem.
     match /fotos/{fotoId} {
-      allow read, delete: if permitido();
+      allow read: if permitido() || (aluno() && resource.data.turmaId in get(/databases/$(database)/documents/portalGrade/atual).data.turmas);
+      allow delete: if permitido();
       allow create, update: if permitido() && fotoOk(request.resource.data)
         && fotoId == request.resource.data.turmaId + '_' + request.resource.data.data
         && request.resource.data.turmaId in get(/databases/$(database)/documents/painel/turmas).data.itens;
@@ -71,6 +72,59 @@ service cloud.firestore {
         && d.legenda is string && d.legenda.size() <= 140
         && (!('professorId' in d) || d.professorId is string)
         && d.atualizadoEm == request.time;
+    }
+
+    // ---------- Portal do aluno (/aluno) ----------
+    // O painel libera o e-mail em acessos/{email} e mantém um espelho só com o que cada aluno pode ver.
+    // Quem cria conta sem ter sido liberado (ou sem confirmar o e-mail) não lê nada.
+    function aluno() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/acessos/$(request.auth.token.email))
+        && get(/databases/$(database)/documents/acessos/$(request.auth.token.email)).data.ativo == true;
+    }
+    function meuAlunoId() { return get(/databases/$(database)/documents/acessos/$(request.auth.token.email)).data.alunoId; }
+
+    match /acessos/{email} {
+      allow read: if permitido() || (request.auth != null && request.auth.token.email == email && request.auth.token.email_verified == true);
+      allow write: if permitido();
+    }
+    match /portal/{alunoId} {
+      allow read: if permitido() || (aluno() && alunoId == meuAlunoId());
+      allow write: if permitido();
+    }
+    match /portalGrade/{id} {
+      allow read: if permitido() || aluno();
+      allow write: if permitido();
+    }
+    // Diário de cada aluno: só ele lê e escreve (nem o painel lê).
+    match /diarios/{alunoId}/aulas/{aulaId} {
+      allow read, delete: if aluno() && alunoId == meuAlunoId();
+      allow create, update: if aluno() && alunoId == meuAlunoId() && diarioOk(request.resource.data)
+        && aulaId == request.resource.data.turmaId + '_' + request.resource.data.data;
+    }
+    // Check-in pelo celular: o aluno cria o dele (um por turma e dia); o painel junta na presença e apaga.
+    match /checkinsAluno/{id} {
+      allow read: if permitido() || (aluno() && resource.data.alunoId == meuAlunoId());
+      allow delete: if permitido();
+      allow create: if aluno() && request.resource.data.alunoId == meuAlunoId()
+        && id == request.resource.data.alunoId + '_' + request.resource.data.turmaId + '_' + request.resource.data.data
+        && checkinOk(request.resource.data);
+    }
+    function textoAte(d, campo, max) { return !(campo in d) || (d[campo] is string && d[campo].size() <= max); }
+    function diarioOk(d) {
+      return d.keys().hasOnly(['aprendi', 'revisar', 'dificuldade', 'tecnicas', 'turmaId', 'data', 'atualizadoEm'])
+        && d.turmaId is string && d.turmaId.size() <= 60 && dataISO(d.data)
+        && textoAte(d, 'aprendi', 4000) && textoAte(d, 'revisar', 4000)
+        && (!('dificuldade' in d) || (d.dificuldade is number && d.dificuldade >= 1 && d.dificuldade <= 5))
+        && (!('tecnicas' in d) || (d.tecnicas is list && d.tecnicas.size() <= 50))
+        && d.atualizadoEm == request.time;
+    }
+    function checkinOk(d) {
+      return d.keys().hasOnly(['alunoId', 'turmaId', 'data', 'hora', 'distancia', 'criadoEm'])
+        && d.turmaId is string && d.turmaId.size() <= 60 && dataISO(d.data)
+        && d.hora is string && d.hora.matches('^[0-9]{2}:[0-9]{2}$')
+        && d.distancia is number && d.distancia >= 0 && d.distancia <= 100
+        && d.criadoEm == request.time;
     }
 
     // Qualquer outro caminho: negado (é o padrão do Firestore, deixado explícito).

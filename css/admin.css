@@ -863,3 +863,15 @@ h1 .etq-exemplo{font-size:10px;letter-spacing:.08em}
 .rec-linha .pill{grid-area:pill;justify-self:end}
 .rec-linha .check{grid-area:marca;justify-self:end;font-size:12.5px}
 .folha>.secao{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+
+/* Check-ins no celular: o dia da aula no meio da tela, grande, com setas fáceis de tocar. */
+@media (max-width:899px){
+  .cab:has(.dia-aula){justify-content:center}
+  .cab:has(.dia-aula) .acoes-cab{width:100%;justify-content:center}
+  .dia-aula{width:100%;align-items:center}
+  .dia-aula>.k{text-align:center;width:100%}
+  .dia-aula-ctl{width:100%;max-width:420px;flex-wrap:wrap;justify-content:center;gap:10px}
+  .dia-aula-ctl #dia-ant,.dia-aula-ctl #dia-prox{width:52px;height:52px;padding:0;font-size:24px;border-radius:14px;flex:none}
+  .dia-aula-ctl #data{flex:1 1 0;min-width:0;width:auto!important;height:52px;font-size:20px;font-weight:800;text-align:center;border-radius:14px;letter-spacing:.3px}
+  .dia-aula-ctl #dia-hoje{flex-basis:100%;text-align:center;font-size:14px}
+}

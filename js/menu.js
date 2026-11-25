@@ -28,7 +28,7 @@ export const ICONES = {
   config: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
   eventos: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/>',
   camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
-  kimono: '<path d="M8 3h8l4 4-3 3v11H7V10L4 7z"/><path d="m8 3 4 6 4-6M12 9v12"/>',
+  kimono: '<path d="M9 3 3.5 5.5 2 11h4v10h12V11h4l-1.5-5.5L15 3"/><path d="M9 3h6"/><path d="M9 3l5 10M15 3l-2 4"/><path d="M6 13.5h12v2H6z"/><path d="M11 15.5l-1.5 4M13 15.5l1.5 4"/>',
   restaurar: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>',
   sair: '<path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M21 12H10M17 8l4 4-4 4"/>'
 };

@@ -55,7 +55,7 @@ export function linhaDoTempo(dados, hojeISO, { tipo = "", dias = 14 } = {}) {
     add("checkin", c.data, c.hora, `${nome(c.alunoId)} fez check-in`, t ? (t.categoria === "kids" ? "Kids" : t.programa) + ` · ${t.horario.replace(":", "h")}` : "aula removida", `aluno/${c.alunoId}`);
   }
   for (const m of dados.mensalidades) if (m.pagoEm)
-    add("pagamento", m.pagoEm, "", `${nome(m.alunoId)} pagou a mensalidade`, `${mesTexto(m.competencia)} · R$ ${Number(m.valor).toFixed(2).replace(".", ",")}`, "financeiro");
+    add("pagamento", m.pagoEm, "", `${alunos[m.alunoId]?.nome || m.alunoNome || "Aluno removido"} pagou a mensalidade`, `${mesTexto(m.competencia)} · R$ ${Number(m.valor).toFixed(2).replace(".", ",")}`, "financeiro");
   for (const g of dados.graduacoes)
     add("graduacao", g.data, "", `${nome(g.alunoId)} graduou`, g.graus ? `Faixa ${nomeFaixa(g.faixa).toLowerCase()} · ${g.graus}º grau` : `Nova faixa: ${nomeFaixa(g.faixa).toLowerCase()}`, `aluno/${g.alunoId}`);
   for (const a of dados.alunos)

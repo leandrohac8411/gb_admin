@@ -136,7 +136,7 @@ Várias telas têm as abas **Adultos | Kids**, e a escolha fica lembrada ao troc
 - **Próximo passo** de graduação.
 - Mensalidades, graduações e últimos check-ins.
 - Botões: **Editar** e **Trancar / Reativar matrícula**. O aluno trancado deixa de contar como ativo e sai das cobranças.
-- No aluno real: cartão **Rosto para check-in** (até 3 fotos), **Apagar dados do rosto** e **Excluir aluno**. Excluir apaga também tudo o que aponta para ele.
+- No aluno real: cartão **Rosto para check-in** (até 3 fotos), **Apagar dados do rosto** e **Excluir aluno**. Excluir apaga também tudo o que aponta para ele, **menos as mensalidades já pagas**: elas ficam no caixa (com o nome do aluno guardado) para o fluxo daquele mês não mudar para trás.
 
 **Graduações**
 - Quem está apto (ver as regras na [seção 3](#3-regras-da-academia-que-o-sistema-aplica)).

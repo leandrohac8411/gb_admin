@@ -167,3 +167,23 @@ test("nada que o Firestore recusa: lista dentro de lista, chave vazia ou __reser
   ver(paraDocs(preparado()), false);
   assert.deepEqual(probs, []);
 });
+
+import { excluirAluno } from "../js/logica/baldes.js";
+import { fluxoDoMes } from "../js/logica/caixa.js";
+import { linhaDoTempo } from "../js/logica/rotina.js";
+test("excluir aluno mantém no caixa as mensalidades que ele já pagou (achado no teste logado de 25/11/2026)", () => {
+  const d = preparado();
+  const alvo = d.alunos.find(a => d.mensalidades.some(m => m.alunoId === a.id && m.pagoEm) && d.mensalidades.some(m => m.alunoId === a.id && !m.pagoEm));
+  const pagas = d.mensalidades.filter(m => m.alunoId === alvo.id && m.pagoEm);
+  const comp = pagas[0].pagoEm.slice(0, 7);
+  const antes = fluxoDoMes(d, comp).entradas;
+  const r = excluirAluno(d, alvo.id);
+  assert.ok(!r.alunos.some(a => a.id === alvo.id));
+  assert.equal(fluxoDoMes(r, comp).entradas, antes, "o dinheiro que entrou continua no caixa");
+  const ficaram = r.mensalidades.filter(m => m.alunoId === alvo.id);
+  assert.equal(ficaram.length, pagas.length, "só as pagas ficam; as em aberto saem");
+  assert.ok(ficaram.every(m => m.pagoEm && m.alunoNome === alvo.nome));
+  assert.ok(!r.checkins.some(c => c.alunoId === alvo.id), "presenças saem");
+  const tl = linhaDoTempo(r, pagas[0].pagoEm, { tipo: "pagamento" });
+  assert.ok(tl.some(x => x.titulo === `${alvo.nome} pagou a mensalidade`), "a linha do tempo mostra o nome guardado");
+});

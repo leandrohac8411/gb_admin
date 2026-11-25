@@ -5,7 +5,7 @@ import { comprimirImagem } from "../foto.js";
 import { escolherRostoCadastro, consentimentoPadrao, recorte, problemaNaFoto } from "../logica/cadastro-rosto.js";
 import { salvarComAviso } from "../logica/mesclar.js";
 import { hojeISO } from "../logica/datas.js";
-import { semAlunos } from "../logica/baldes.js";
+import { excluirAluno } from "../logica/baldes.js";
 
 const MAX_FOTOS = 3;
 const nuvem = () => import("../nuvem/dados.js");
@@ -101,8 +101,8 @@ export function ligarCartaoRosto(el, store, a, ctx) {
   });
 
   cartao.querySelector("#aluno-excluir")?.addEventListener("click", async () => {
-    if (!await perguntar("Excluir aluno?", `${a.nome} sai do banco junto com o rosto, as presenças, as mensalidades, as graduações e as anotações dele. Não dá para desfazer.`, "Excluir", "Cancelar")) return;
-    store.dados = semAlunos(store.dados, [a.id]);
+    if (!await perguntar("Excluir aluno?", `${a.nome} sai do banco junto com o rosto, as presenças, as mensalidades em aberto, as graduações e as anotações dele. As mensalidades já pagas continuam no caixa. Não dá para desfazer.`, "Excluir", "Cancelar")) return;
+    store.dados = excluirAluno(store.dados, a.id);
     if (!store.salvar()) return;
     if (atual()) { const { apagarRosto } = await nuvem(); apagarRosto(a.id).catch(e => console.error(e)); }
     toast("Aluno excluído");

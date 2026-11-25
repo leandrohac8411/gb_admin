@@ -140,4 +140,13 @@ export function semAlunos(d, ids) {
   for (const e of r.eventos || []) if (Array.isArray(e.inscritos)) e.inscritos = e.inscritos.filter(id => !fora.has(id));
   return r;
 }
+// Excluir um aluno real: some tudo dele, menos as mensalidades já pagas — o dinheiro entrou e o caixa
+// daquele mês não pode mudar para trás. Elas guardam o nome dele para a linha do tempo.
+export function excluirAluno(d, id) {
+  const a = (d.alunos || []).find(x => x.id === id);
+  const pagas = (d.mensalidades || []).filter(m => m.alunoId === id && m.pagoEm).map(m => ({ ...m, alunoNome: a?.nome || m.alunoNome || "" }));
+  const r = semAlunos(d, [id]);
+  r.mensalidades.push(...pagas);
+  return r;
+}
 export const temExemplos = d => COLECOES.some(c => !CATALOGO.has(c) && (d[c] || []).some(x => x?.exemplo));

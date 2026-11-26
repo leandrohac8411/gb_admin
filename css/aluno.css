@@ -353,3 +353,12 @@ textarea.input{min-height:72px;resize:vertical}
 .presentes .av{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff;background:linear-gradient(140deg,#3a3a40,#16161a)}
 .turma-corpo{display:flex;flex-direction:column;gap:12px}
 .troca-faixa{margin:10px 0 0;text-align:center;font-size:13px;opacity:.95}
+/* Medalhas (campeonatos registrados pela academia) */
+.medalhas{display:flex;flex-direction:column;gap:2px;padding:14px 16px}
+.med-cab{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.med-cab span{font-size:13px;color:var(--muted,#888)}
+.med-linha{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line,rgba(0,0,0,.08))}
+.med-linha:first-of-type{border-top:0}
+.med-ic{font-size:26px;width:34px;text-align:center;flex:none}
+.med-linha div{display:flex;flex-direction:column;min-width:0}
+.med-linha small{font-size:12px;color:var(--muted,#888)}

@@ -146,3 +146,12 @@ test("espelhoGrade leva o nome e a logo da academia (cada academia com a sua)", 
   assert.equal(logoValida("data:image/jpeg;base64,AAAA"), "data:image/jpeg;base64,AAAA");
   assert.equal(logoValida("data:image/png;base64," + "A".repeat(300000)), null, "grande demais");
 });
+
+test("espelhoAluno leva as medalhas dos campeonatos para o portal", () => {
+  const comEventos = { ...d, eventos: [
+    { id: "e1", tipo: "Campeonato", titulo: "Copa", data: "2026-10-01", inscritos: [ana.id], detalhes: { [ana.id]: { medalha: "bronze", categoria: "Branca · Adulto" } } },
+    { id: "e2", tipo: "Campeonato", titulo: "Copa 2", data: "2026-11-01", inscritos: [ana.id], detalhes: { [ana.id]: { medalha: "participou" } } }
+  ] };
+  assert.deepEqual(espelhoAluno(comEventos, ana, "2026-11-25").medalhas, [{ eventoId: "e1", titulo: "Copa", data: "2026-10-01", medalha: "bronze", categoria: "Branca · Adulto" }]);
+  assert.deepEqual(espelhoAluno(d, ana, "2026-11-25").medalhas, []);
+});

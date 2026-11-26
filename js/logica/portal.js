@@ -2,6 +2,7 @@
 // docs/superpowers/specs/2026-11-25-portal-aluno-design.md). Só o que cada aluno pode ver.
 import { aptidao, planoDaFaixa } from "./graduacao.js";
 import { somarDias } from "./datas.js";
+import { medalhasDoAluno } from "./eventos.js";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 // Logo da academia (Configurações): imagem PNG/JPEG/WebP em data URL, até ~200 KB.
@@ -33,7 +34,9 @@ export function espelhoAluno(d, aluno, hojeISO) {
     desdeFaixa: aluno.desdeFaixa || "", ultimaGraduacao: aluno.ultimaGraduacao || "",
     presencas, proximoPasso: aptidao(aluno, d.checkins || [], hojeISO),
     // Aulas da faixa até a próxima, pela regra da academia (Configurações): 4 graus + a troca de faixa.
-    metaFaixa: planoDaFaixa(aluno.faixa)?.aulasFaixa ?? null
+    metaFaixa: planoDaFaixa(aluno.faixa)?.aulasFaixa ?? null,
+    // Medalhas dos campeonatos registrados na página do evento (ouro, prata e bronze).
+    medalhas: medalhasDoAluno(d.eventos, aluno.id).map(m => ({ ...m, categoria: m.categoria || "" }))
   };
 }
 

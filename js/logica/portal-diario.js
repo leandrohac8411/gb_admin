@@ -18,7 +18,8 @@ export function montarEstadoDiario({ portal, grade: g, diario, pendentes, prefs 
     graus: Array.from({ length: nGraus }, (_, i) => (i === nGraus - 1 && p.ultimaGraduacao ? { numero: i + 1, data: p.ultimaGraduacao } : { numero: i + 1 })),
     metaSemanal: prefs?.metaSemanal || 2, metaAulasRoxa: p.metaFaixa || 0, desdeFaixa: p.desdeFaixa || "",
     proximoPasso: p.proximoPasso || null, nascimento: p.nascimento || null, sexo: p.sexo || null,
-    peso: p.peso ?? null, telefone: p.telefone || "", plano: p.plano || "", foto: p.foto || null, fotoPerfilId: null
+    peso: p.peso ?? null, telefone: p.telefone || "", plano: p.plano || "", foto: p.foto || null, fotoPerfilId: null,
+    medalhas: Array.isArray(p.medalhas) ? p.medalhas : []
   };
 
   // Uma aula por presença (do painel) ou check-in ainda pendente; o diário do aluno entra por cima.

@@ -5,6 +5,9 @@ import { sair } from "../nuvem.js";
 import { faixaSVG, NOMES, corDaFaixa, proximaFaixa } from "../ui/faixa.js";
 import { esc, iniciais, numero, abrirFolha, perguntar, nomeMes, fotoSegura } from "../ui/util.js";
 
+const EMOJI = { ouro: "🥇", prata: "🥈", bronze: "🥉" };
+const NOME_MEDALHA = { ouro: "Ouro", prata: "Prata", bronze: "Bronze" };
+
 // Portal: tudo do cadastro (nome, foto, nascimento, sexo, peso, telefone, plano, faixa e graus) vem do GB Admin;
 // o aluno só ajusta as metas dele.
 export default {
@@ -19,6 +22,8 @@ export default {
     const [ay, am] = (p.faixa?.desde || hoje.slice(0, 7)).split("-").map(Number);
     const cor = corDaFaixa(p.faixa?.cor), prox = proximaFaixa(cor);
     const naFaixa = e.aulas.filter(a => !p.desdeFaixa || a.data >= p.desdeFaixa).length;
+    // Medalhas registradas pela academia na página do campeonato (GB Admin).
+    const medalhas = (Array.isArray(p.medalhas) ? p.medalhas : []).filter(m => EMOJI[m?.medalha]);
 
     el.innerHTML = `
       <div class="pf">
@@ -32,6 +37,8 @@ export default {
         <button class="cat" id="catIdade"><small>Categoria de idade</small><b>${ci ? ci.nome : "—"}</b><span>${ci ? `${ci.idadeNoAno} anos no ano` : p.nascimento ? "abaixo de 16 anos" : "sem nascimento no cadastro"}</span></button>
         <button class="cat" id="catPeso"><small>Categoria de peso</small><b>${cp ? cp.nome : "—"}</b><span>${cp ? `${numero(p.peso)} kg${cp.limite ? " · até " + numero(cp.limite) : ""}` : !p.sexo ? "sem sexo no cadastro" : "sem peso no cadastro"}</span></button>
       </div>
+      ${medalhas.length ? `<section class="card medalhas"><div class="med-cab"><b>Medalhas</b><span>${["ouro", "prata", "bronze"].map(m => `${EMOJI[m]} ${medalhas.filter(x => x.medalha === m).length}`).join(" · ")}</span></div>
+        ${medalhas.map(m => `<div class="med-linha"><span class="med-ic" aria-hidden="true">${EMOJI[m.medalha] || ""}</span><div><b>${esc(NOME_MEDALHA[m.medalha] || "")} · ${esc(m.titulo)}</b><small>${esc(String(m.data || "").split("-").reverse().join("/"))}${m.categoria ? ` · ${esc(m.categoria)}` : ""}</small></div></div>`).join("")}</section>` : ""}
       <div class="card kv">
         <div><span>Peso</span><span class="step"><b>${p.peso ? numero(p.peso) + " kg" : "—"}</b></span></div>
         ${p.plano ? `<div><span>Plano</span><span class="step"><b>${esc(p.plano)}</b></span></div>` : ""}

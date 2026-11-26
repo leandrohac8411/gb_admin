@@ -70,3 +70,9 @@ test("aulaParaGravar: só as anotações, em texto, com limite de tamanho", () =
   assert.deepEqual(JSON.parse(txt), { dificuldade: 3, aprendi: "a", local: { verificado: true } });
   assert.equal(aulaParaGravar({ aprendi: "x".repeat(LIMITE_AULA) }), null);
 });
+
+test("perfil do portal traz as medalhas do espelho (e lista vazia quando não há)", () => {
+  const med = [{ eventoId: "e1", titulo: "Copa", data: "2026-10-01", medalha: "ouro" }];
+  assert.deepEqual(montarEstadoDiario({ ...base, portal: { ...base.portal, medalhas: med } }).perfil.medalhas, med);
+  assert.deepEqual(montarEstadoDiario(base).perfil.medalhas, []);
+});

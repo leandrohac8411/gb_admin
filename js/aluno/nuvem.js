@@ -3,15 +3,15 @@ import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  doc, getDoc, setDoc, getDocs, onSnapshot, collection, query, where, serverTimestamp
+  doc, getDoc, setDoc, addDoc, deleteDoc, getDocs, onSnapshot, collection, query, where, orderBy, limit, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { auth, db, configurado } from "./firebase.js";
-import { idFotoAula } from "../logica/foto-aula.js";
-import { codificarTecnicas, lerTecnicas } from "../logica/portal-aluno.js";
 
 export { configurado };
 const limpo = e => String(e || "").trim().toLowerCase();
+const idAula = (turmaId, data) => `${turmaId}_${data}`;
 
+/* ---------- Login ---------- */
 export const entrar = (email, senha) => signInWithEmailAndPassword(auth, limpo(email), senha);
 export async function criarConta(email, senha) {
   const c = await createUserWithEmailAndPassword(auth, limpo(email), senha);
@@ -30,6 +30,7 @@ export const sair = () => signOut(auth);
 export const aoMudarUsuario = cb => onAuthStateChanged(auth, cb);
 export const usuarioAtual = () => auth.currentUser;
 
+/* ---------- O que vem do GB Admin (espelho) ---------- */
 export async function lerAcesso(email) {
   const s = await getDoc(doc(db, "acessos", limpo(email)));
   return s.exists() ? s.data() : null;
@@ -37,12 +38,29 @@ export async function lerAcesso(email) {
 export const ouvirPortal = (alunoId, cb, erro) => onSnapshot(doc(db, "portal", alunoId), s => cb(s.exists() ? s.data() : null), erro);
 export const ouvirGrade = (cb, erro) => onSnapshot(doc(db, "portalGrade", "atual"), s => cb(s.exists() ? s.data() : null), erro);
 export async function fotoDaAula(turmaId, data) {
-  const s = await getDoc(doc(db, "fotos", idFotoAula(turmaId, data)));
+  const s = await getDoc(doc(db, "fotos", idAula(turmaId, data)));
   return s.exists() ? s.data() : null;
 }
-export const ouvirDiario = (alunoId, cb, erro) => onSnapshot(collection(db, "diarios", alunoId, "aulas"),
-  s => cb(s.docs.map(d => { const x = d.data(); return { id: d.id, ...x, tecnicas: lerTecnicas(x.tecnicas) }; })), erro);
-export const salvarDiario = (alunoId, turmaId, data, dados) =>
-  setDoc(doc(db, "diarios", alunoId, "aulas", idFotoAula(turmaId, data)), { ...dados, tecnicas: codificarTecnicas(dados.tecnicas), turmaId, data, atualizadoEm: serverTimestamp() });
+
+/* ---------- Do aluno: diário (cada aula num texto JSON), metas, peso e check-in ---------- */
+export const ouvirDiario = (alunoId, cb, erro) => onSnapshot(collection(db, "diarios", alunoId, "aulas"), s => cb(s.docs.map(d => {
+  const x = d.data();
+  let aula = {};
+  try { aula = JSON.parse(x.aula || "{}"); } catch { /* texto estragado: fica sem as anotações */ }
+  return { ...aula, id: d.id, turmaId: x.turmaId, data: x.data };
+})), erro);
+export const salvarDiario = (alunoId, turmaId, data, texto) =>
+  setDoc(doc(db, "diarios", alunoId, "aulas", idAula(turmaId, data)), { turmaId, data, aula: texto, atualizadoEm: serverTimestamp() });
+export const apagarDiario = (alunoId, aulaId) => deleteDoc(doc(db, "diarios", alunoId, "aulas", aulaId));
+
+export const ouvirPreferencias = (alunoId, cb, erro) => onSnapshot(doc(db, "diarios", alunoId), s => cb(s.exists() ? s.data() : {}), erro);
+export const salvarPreferencias = (alunoId, parcial) => setDoc(doc(db, "diarios", alunoId), parcial, { merge: true });
+
+export async function listarPesos(alunoId) {
+  const s = await getDocs(query(collection(db, "diarios", alunoId, "pesos"), orderBy("data", "desc"), limit(20)));
+  return s.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+export const registrarPeso = (alunoId, { data, kg }) => addDoc(collection(db, "diarios", alunoId, "pesos"), { data, kg });
+
 export const fazerCheckin = ({ id, ...dados }) => setDoc(doc(db, "checkinsAluno", id), { ...dados, criadoEm: serverTimestamp() });
 export const meusCheckins = (alunoId, cb, erro) => onSnapshot(query(collection(db, "checkinsAluno"), where("alunoId", "==", alunoId)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), erro);

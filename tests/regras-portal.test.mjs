@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 
 const regras = readFileSync(new URL("../firestore.rules", import.meta.url), "utf8");
 const bloco = nome => { const i = regras.indexOf(`match /${nome}`); assert.ok(i >= 0, `falta match /${nome}`); return regras.slice(i, regras.indexOf("\n    }", i)); };
+const G = /request\.resource\.data\.turmaId in get\(\/databases\/\$\(database\)\/documents\/portalGrade\/atual\)\.data\.turmas/;
 
 test("aluno só entra com e-mail verificado e acesso ativo", () => {
   const f = regras.slice(regras.indexOf("function aluno()"), regras.indexOf("function meuAlunoId()"));
@@ -26,33 +27,33 @@ test("cada coleção do portal tem dono certo e só o painel grava o espelho", (
   assert.doesNotMatch(ck, /allow update/);
 });
 
-test("fotos: aluno só vê foto de turma adulta do portal", () => {
+test("fotos: aluno só vê foto de turma adulta do portal; foto que não existe responde vazio", () => {
   assert.match(bloco("fotos/{fotoId}"), /aluno\(\) && \(resource == null \|\| resource\.data\.turmaId in get\(\/databases\/\$\(database\)\/documents\/portalGrade\/atual\)\.data\.turmas/);
 });
 
-test("formatos: diário com limites e check-in a até 100 m", () => {
+test("formatos: diário (texto do Diário, limitado, sem data futura) e check-in a até 100 m", () => {
   const dia = regras.slice(regras.indexOf("function diarioOk"), regras.indexOf("function checkinOk"));
-  assert.match(dia, /hasOnly\(\['aprendi', 'revisar', 'dificuldade', 'tecnicas', 'turmaId', 'data', 'atualizadoEm'\]\)/);
-  assert.match(dia, /textoAte\(d, 'aprendi', 4000\) && textoAte\(d, 'revisar', 4000\)/);
-  assert.match(dia, /dificuldade >= 1 && d\.dificuldade <= 5/);
+  assert.match(dia, /hasOnly\(\['turmaId', 'data', 'aula', 'atualizadoEm'\]\)/);
+  assert.match(dia, /d\.aula is string && d\.aula\.size\(\) <= 20000/);
+  assert.match(dia, /request\.time >= timestamp\.date\(/);
   const ck = regras.slice(regras.indexOf("function checkinOk"));
   assert.match(ck, /distancia >= 0 && d\.distancia <= 100/);
   assert.match(ck, /criadoEm == request\.time/);
 });
 
+test("metas e peso: só o próprio aluno, com formato conferido", () => {
+  assert.match(bloco("diarios/{alunoId} "), /alunoId == meuAlunoId\(\) && prefsOk/);
+  const pr = regras.slice(regras.indexOf("function prefsOk"), regras.indexOf("function pesoOk"));
+  assert.match(pr, /hasOnly\(\['metaSemanal', 'metaAulasRoxa', 'nascimento', 'sexo'\]\)/);
+  assert.match(bloco("diarios/{alunoId}/pesos/{id}"), /alunoId == meuAlunoId\(\) && pesoOk/);
+  assert.match(regras.slice(regras.indexOf("function pesoOk")), /d\.kg > 20 && d\.kg < 250/);
+});
+
+test("diário e check-in só de turma da grade da academia", () => {
+  assert.match(bloco("diarios/{alunoId}/aulas/{aulaId}"), G);
+  assert.match(bloco("checkinsAluno/{id}"), G);
+});
+
 test("nenhuma regra aberta para qualquer um", () => {
   assert.doesNotMatch(regras, /if true/);
-});
-
-test("revisão final: diário e check-in só de turma da grade; diário com técnicas em texto limitado, dificuldade inteira e sem data futura", () => {
-  const dia = regras.slice(regras.indexOf("function diarioOk"), regras.indexOf("function checkinOk"));
-  assert.match(dia, /d\.tecnicas is string && d\.tecnicas\.size\(\) <= 10500/);
-  assert.match(dia, /d\.dificuldade is int/);
-  assert.match(dia, /request\.time >= timestamp\.date\(/);
-  assert.match(bloco("diarios/{alunoId}/aulas/{aulaId}"), /request\.resource\.data\.turmaId in get\(\/databases\/\$\(database\)\/documents\/portalGrade\/atual\)\.data\.turmas/);
-  assert.match(bloco("checkinsAluno/{id}"), /request\.resource\.data\.turmaId in get\(\/databases\/\$\(database\)\/documents\/portalGrade\/atual\)\.data\.turmas/);
-});
-
-test("revisão final: foto que não existe responde vazio para o aluno (sem erro de permissão)", () => {
-  assert.match(bloco("fotos/{fotoId}"), /aluno\(\) && \(resource == null \|\| resource\.data\.turmaId in/);
 });

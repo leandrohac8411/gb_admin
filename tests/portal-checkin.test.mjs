@@ -57,6 +57,8 @@ test("juntarCheckinsAluno: check-in forjado não vira presença (e é apagado)",
   assert.deepEqual(r.apagar, ruins.map(x => x.id));
   const bom = juntarCheckinsAluno([], [p("ok", { criadoEm: ms("2026-11-25", "12:00") })], { turmas: grade, hoje: "2026-11-26" });
   assert.equal(bom.novos.length, 1, "30 min antes do início vale, e o painel pode juntar no dia seguinte");
+  const depois = juntarCheckinsAluno([], [p("ok2", { criadoEm: ms("2026-11-25", "14:20") })], { turmas: grade, hoje: "2026-11-25" });
+  assert.equal(depois.novos.length, 1, "até 1 hora depois do fim da aula ainda vale (o aluno escreve o diário depois do treino)");
 });
 
 test("avaliarLocal: 40 m da academia passa, 120 m não", () => {

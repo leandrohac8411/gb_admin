@@ -1,17 +1,43 @@
-// Portal do aluno: ajudas comuns às telas.
-import { nomeFaixa } from "../../ui/faixa.js";
-import { esc } from "../ui/util.js";
+import { fotoSegura } from "../ui/util.js";
+// Ajudas compartilhadas entre telas.
+import { diaSemana } from "../logica/datas.js";
+import { chaveCurriculo, lerFoto } from "../dados.js";
 
-export const minutosAgora = (d = new Date()) => d.getHours() * 60 + d.getMinutes();
-export const horaAgora = (d = new Date()) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-export const etiqueta = p => `<span class="et-prog et-${esc(String(p || "").toLowerCase().replace(/[^a-z0-9]/g, ""))}">${esc(p || "")}</span>`;
 
-// Próximo passo da graduação, a partir do que o GB Admin calculou (aptidao).
-export function proximoPassoTexto(pp, faixa) {
-  if (faixa === "preta") return "Faixa preta: os graus vêm por tempo de faixa.";
-  if (!pp) return "";
-  if (pp.tipo === "faixa") return `Pronto para a faixa ${nomeFaixa(pp.proximaFaixa).toLowerCase()}! Fale com o professor.`;
-  if (pp.tipo === "grau") return "Pronto para o próximo grau! Fale com o professor.";
-  if (pp.faltamAulas > 0) return `Faltam ${pp.faltamAulas} aula${pp.faltamAulas === 1 ? "" : "s"} para o próximo grau.`;
-  return "Aulas completas. Agora é o tempo mínimo de graduação.";
+export function turmasDoDia(grade, iso) {
+  const d = diaSemana(iso);
+  return grade.filter(t => t.ativa !== false && Number(t.diaSemana) === d)
+    .sort((a, b) => a.horario.localeCompare(b.horario));
 }
+
+// Conteúdo do currículo para { programa, semana, aula } (ou null).
+export function conteudoPrevisto(curriculo, prev) {
+  if (!prev || !prev.semana || !prev.aula) return null;
+  const c = curriculo[chaveCurriculo(prev.programa, prev.semana)];
+  const a = c?.[`aula${prev.aula}`];
+  return a && (a.tema || a.tecnicas?.length) ? a : null;
+}
+
+export function etiquetaPrograma(p) {
+  const tags = [];
+  if (String(p).includes("GB1")) tags.push('<span class="tag gb1">GB1</span>');
+  if (String(p).includes("GB2")) tags.push('<span class="tag gb2">GB2</span>');
+  return tags.length ? `<span style="display:flex;gap:4px">${tags.join("")}</span>` : '<span class="tag">a definir</span>';
+}
+
+// Põe a foto (base64) como fundo de um elemento quando ela chegar.
+export async function pintarFoto(uid, fotoId, el) {
+  if (!fotoId || !el) return;
+  try {
+    const dados = fotoSegura(await lerFoto(uid, fotoId));
+    if (dados && el.isConnected) {
+      el.style.backgroundImage = `url(${dados})`;
+      el.style.backgroundSize = "cover"; el.style.backgroundPosition = "center";
+      el.querySelector(".ini")?.remove(); // iniciais no lugar da foto de perfil
+      if (!el.children.length) el.textContent = ""; // só tira o "＋", nunca botões e legendas
+    }
+  } catch { /* sem foto, fica o placeholder */ }
+}
+
+export function minutosAgora(d = new Date()) { return d.getHours() * 60 + d.getMinutes(); }
+export function minutosDe(h) { const [hh, mm] = (h || "0:0").split(":").map(Number); return hh * 60 + mm; }

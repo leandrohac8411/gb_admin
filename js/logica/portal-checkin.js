@@ -20,14 +20,14 @@ function brasilia(msUTC) {
 }
 
 // O check-in vale se a turma adulta existe, é daquele dia da semana, não é futuro e foi criado
-// (hora do servidor, criadoEm) no próprio dia, de 30 min antes do início até o fim da aula.
+// (hora do servidor, criadoEm) no próprio dia, de 30 min antes do início até 1 hora depois do fim da aula.
 function checkinValido(p, turmas, hoje) {
   const t = turmas.find(x => x.id === p.turmaId && (x.categoria || "adulto") === "adulto");
   if (!t || typeof p.data !== "string" || p.data > hoje || !Number.isFinite(p.criadoEm)) return false;
   const [a, m, d] = p.data.split("-").map(Number);
   if (new Date(Date.UTC(a, m - 1, d)).getUTCDay() !== t.diaSemana) return false;
   const quando = brasilia(p.criadoEm), ini = minutos(t.horario);
-  return quando.data === p.data && quando.min >= ini - 30 && quando.min <= ini + (Number(t.duracaoMin) || 60);
+  return quando.data === p.data && quando.min >= ini - 30 && quando.min <= ini + (Number(t.duracaoMin) || 60) + 60;
 }
 
 // Check-ins feitos pelo aluno viram presença no painel, sem duplicar, com id fixo (ca_<id do pendente>):

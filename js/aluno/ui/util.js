@@ -1,5 +1,5 @@
 // Pequenas ajudas de interface.
-import { deISO, diaSemana } from "../../logica/datas.js";
+import { deISO, diaSemana } from "../logica/datas.js";
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

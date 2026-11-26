@@ -354,7 +354,8 @@ Projeto `gbadmin-48ff9`, separado do Diário de Tatame. É usado no **plano grat
 | `acessos` | Portal do aluno: um documento por e-mail liberado (o id é o e-mail): `alunoId`, `nome`, `ativo`. Escrito só pelo painel. |
 | `portal` | Portal do aluno: a cópia de cada aluno liberado (`nome`, `faixa`, `graus`, `desdeFaixa`, `ultimaGraduacao`, `presencas`, `proximoPasso`). Escrito só pelo painel. |
 | `portalGrade` | Portal do aluno: `atual`, com as turmas adultas, o cronograma, as âncoras do ciclo e os roteiros. Sem dado pessoal. Escrito só pelo painel. |
-| `diarios/{alunoId}/aulas` | Diário de cada aluno, um documento por aula (`turma_data`): `aprendi`, `revisar`, `dificuldade`, `tecnicas`. Só o próprio aluno lê e grava (nem o painel lê). |
+| `diarios/{alunoId}` | Do aluno: `metaSemanal`, `metaAulasRoxa`, `nascimento`, `sexo`; subcoleção `pesos` (`data`, `kg`). Só o próprio aluno lê e grava. |
+| `diarios/{alunoId}/aulas` | Diário de cada aluno, um documento por aula (`turma_data`): `aula` = as anotações do Diário de Tatame num texto JSON de até 20 mil caracteres. Só o próprio aluno lê e grava (nem o painel lê). |
 | `checkinsAluno` | Check-in feito pelo aluno no celular (`aluno_turma_data`). O painel junta na lista de presença ao abrir e apaga. |
 | `alunos`, `turmas`, `checkins` | Coleções da etapa 1. Agora são **só leitura**, porque o conteúdo já foi copiado para o painel. |
 
@@ -516,11 +517,14 @@ O aluno adulto entra em `admin-gbsob.vercel.app/aluno` e vê as aulas da academi
 4. **Tirar acesso** apaga a liberação; o diário dele fica guardado. Aluno **trancado** perde a leitura até ser reativado.
 
 ### O que o aluno vê
-- **Início:** faixa e graus, aulas no mês, total, aulas desde o último grau, o próximo passo da graduação (o mesmo cálculo do painel) e as aulas de hoje (com **Check-in** na que está acontecendo).
-- **Aulas:** dia a dia, com tema, professor, 📸 quando tem foto e "Você esteve".
-- **Aula:** foto, tema, técnicas e roteiro com horários. Para quem esteve: **Meu diário** (o que aprendi, o que revisar, dificuldade de 1 a 5, como foi cada técnica). Quem não esteve só vê.
-- **Check-in:** de 30 minutos antes até o fim da aula, a até 50 m da academia (mais a margem do GPS, no máximo +50 m). Duas aulas no mesmo horário: ele pergunta qual. Repetido: "Você já fez check-in nesta aula."
-- **Perfil:** nome, e-mail e Sair. O portal não cai por inatividade (é o celular do aluno).
+As **telas do Diário de Tatame** (mesmo visual e funções), com os dados do GB Admin:
+- **Início:** faixa e graus (da academia), anel de aulas realizadas até a meta, semana, mês e horas de tatame, e a **Grade de hoje** com **Check-in** em cada aula (ou **Feito ✓**).
+- **Grade:** a semana, o ciclo GB1/GB2 com o tema da semana e as turmas do dia. Só leitura: a grade e o currículo são da academia.
+- **Check-in:** o formulário do Diário (foi essa aula ou outra, como saiu cada técnica, dificuldade, o que aprendi, o que revisar, onde sofreu no rola, duração). Só vale na academia (GPS) e de 30 min antes do início até 1 hora depois do fim. Salvar grava a presença (`checkinsAluno`) e o diário.
+- **Diário:** a lista das aulas (cada presença registrada pela academia ou pelo check-in vira uma aula), com filtros. **Aula:** a foto que a academia tirou, as anotações, **Editar aula** e **Apagar anotações** (a presença fica).
+- **Evolução:** semana, mês, frequência, meu jogo e a linha do tempo dos graus (só o último tem data, a da última graduação).
+- **Perfil:** faixa, categoria de idade e de peso (nascimento e sexo informados pelo aluno), peso, meta por semana, aulas até a próxima faixa e Sair. O portal não cai por inatividade.
+- Ficam de fora por enquanto: foto do aluno (aula e perfil), aula fora da grade, registrar grau e mexer na grade/currículo.
 
 ### Como os dados chegam (espelho)
 - O painel é o dono dos dados. Depois de cada salvar e ao abrir, ele grava só o que mudou em `acessos`, `portal` e `portalGrade` (`js/logica/portal-sincronia.js`). Por isso a frequência do aluno atualiza quando alguém usa o painel.
@@ -528,4 +532,4 @@ O aluno adulto entra em `admin-gbsob.vercel.app/aluno` e vê as aulas da academi
 - Regras: o aluno só lê o próprio `portal`, a grade, as fotos das turmas adultas e o próprio diário; só cria o próprio check-in. Tudo exige e-mail confirmado e acesso `ativo`.
 
 ### Código
-`aluno/index.html`, `css/aluno.css` (visual do Diário de Tatame), `js/aluno/` (app, login, telas e `nuvem.js`), lógica em `js/logica/portal.js`, `portal-checkin.js`, `portal-aluno.js`, `portal-sincronia.js` e `local.js`; no painel, `js/telas/portal-cartao.js` e `js/nuvem/portal.js`.
+`aluno/index.html`, `css/aluno.css` e `js/aluno/` (telas, ui e lógica copiadas do Diário de Tatame; `dados.js` e `estado.js` trocam o banco do Diário pelo do GB Admin; `nuvem.js` e `firebase.js` com sessão própria), dados montados em `js/logica/portal-diario.js`, lógica em `js/logica/portal.js`, `portal-checkin.js`, `portal-aluno.js`, `portal-sincronia.js` e `local.js`; no painel, `js/telas/portal-cartao.js` e `js/nuvem/portal.js`.

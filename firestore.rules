@@ -97,6 +97,16 @@ service cloud.firestore {
       allow write: if permitido();
     }
     // Diário de cada aluno: só ele lê e escreve (nem o painel lê).
+    // Metas, nascimento e sexo (para as categorias): do próprio aluno.
+    match /diarios/{alunoId} {
+      allow read: if aluno() && alunoId == meuAlunoId();
+      allow create, update: if aluno() && alunoId == meuAlunoId() && prefsOk(request.resource.data);
+    }
+    match /diarios/{alunoId}/pesos/{id} {
+      allow read, delete: if aluno() && alunoId == meuAlunoId();
+      allow create: if aluno() && alunoId == meuAlunoId() && pesoOk(request.resource.data);
+    }
+    // Cada aula do diário: as anotações do Diário de Tatame num texto JSON com tamanho máximo.
     match /diarios/{alunoId}/aulas/{aulaId} {
       allow read, delete: if aluno() && alunoId == meuAlunoId();
       allow create, update: if aluno() && alunoId == meuAlunoId() && diarioOk(request.resource.data)
@@ -112,13 +122,20 @@ service cloud.firestore {
         && request.resource.data.turmaId in get(/databases/$(database)/documents/portalGrade/atual).data.turmas
         && checkinOk(request.resource.data);
     }
-    function textoAte(d, campo, max) { return !(campo in d) || (d[campo] is string && d[campo].size() <= max); }
+    function prefsOk(d) {
+      return d.keys().hasOnly(['metaSemanal', 'metaAulasRoxa', 'nascimento', 'sexo'])
+        && (!('metaSemanal' in d) || (d.metaSemanal is int && d.metaSemanal >= 1 && d.metaSemanal <= 7))
+        && (!('metaAulasRoxa' in d) || (d.metaAulasRoxa is int && d.metaAulasRoxa >= 1 && d.metaAulasRoxa <= 2000))
+        && (!('nascimento' in d) || d.nascimento == null || dataISO(d.nascimento))
+        && (!('sexo' in d) || d.sexo == null || d.sexo in ['M', 'F']);
+    }
+    function pesoOk(d) {
+      return d.keys().hasOnly(['data', 'kg']) && dataISO(d.data) && d.kg is number && d.kg > 20 && d.kg < 250;
+    }
     function diarioOk(d) {
-      return d.keys().hasOnly(['aprendi', 'revisar', 'dificuldade', 'tecnicas', 'turmaId', 'data', 'atualizadoEm'])
+      return d.keys().hasOnly(['turmaId', 'data', 'aula', 'atualizadoEm'])
         && d.turmaId is string && d.turmaId.size() <= 60 && dataISO(d.data)
-        && textoAte(d, 'aprendi', 4000) && textoAte(d, 'revisar', 4000)
-        && (!('dificuldade' in d) || (d.dificuldade is int && d.dificuldade >= 1 && d.dificuldade <= 5))
-        && (!('tecnicas' in d) || (d.tecnicas is string && d.tecnicas.size() <= 10500))
+        && d.aula is string && d.aula.size() <= 20000
         // Sem diário de dia futuro (a data é a do dia da aula).
         && request.time >= timestamp.date(int(d.data.split('-')[0]), int(d.data.split('-')[1]), int(d.data.split('-')[2]))
         && d.atualizadoEm == request.time;

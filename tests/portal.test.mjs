@@ -114,3 +114,18 @@ test("espelhoAluno leva a foto cadastrada no GB Admin (miniatura do rosto) para 
   assert.equal(espelhoAluno(d, ana, "2026-11-25").foto, null, "sem foto cadastrada");
   assert.equal(espelhoAluno({ ...d, rostos: new Map([["a1", { mini: "javascript:alert(1)" }]]) }, ana, "2026-11-25").foto, null, "só JPEG");
 });
+
+import { espelhoAulas, DIAS_AULAS } from "../js/logica/portal.js";
+test("espelhoAulas: quem participou de cada aula adulta dos últimos dias (só o nome)", () => {
+  const dd = { ...d, alunos: [...d.alunos, { id: "a2", nome: "Bruno Lima", categoria: "adulto", status: "ativo", telefone: "x" }],
+    checkins: [...d.checkins, { id: "c9", alunoId: "a2", turmaId: "t1", data: "2026-11-25", hora: "12:30" },
+      { id: "c10", alunoId: "a2", turmaId: "t1", data: "2026-08-01", hora: "12:30" }] };
+  const m = espelhoAulas(dd, "2026-11-25");
+  assert.equal(DIAS_AULAS, 30);
+  assert.deepEqual(m.get("t1_2026-11-25"), { turmaId: "t1", data: "2026-11-25", presentes: ["Ana Souza", "Bruno Lima"] });
+  assert.ok(m.has("t1_2026-11-18"));
+  assert.ok(!m.has("tk_2026-11-25"), "aula kids fica fora");
+  assert.ok(!m.has("t1_2026-08-01"), "mais antiga que 30 dias fica fora");
+  assert.ok(!m.has("sumiu_2026-11-20"), "turma que não está mais na grade fica fora");
+  assert.ok(!JSON.stringify([...m.values()]).includes("x"), "nada além do nome");
+});

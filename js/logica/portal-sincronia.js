@@ -1,12 +1,12 @@
-// Portal do aluno, lado do painel: depois de salvar e ao abrir, mantém o espelho (acessos, portal e
-// portalGrade) e junta na lista de presença os check-ins que os alunos fizeram pelo celular.
+// Portal do aluno, lado do painel: depois de salvar e ao abrir, mantém o espelho (acessos, portal,
+// portalGrade e portalAulas = quem participou de cada aula) e junta na lista de presença os check-ins que os alunos fizeram pelo celular.
 // "nuvem" é o js/nuvem/portal.js (injetado para o teste usar um falso).
-import { espelhoAluno, espelhoAcesso, espelhoGrade, mudancasEspelho, podeTerAcesso, emailValido } from "./portal.js";
+import { espelhoAluno, espelhoAcesso, espelhoGrade, espelhoAulas, mudancasEspelho, podeTerAcesso, emailValido } from "./portal.js";
 import { juntarCheckinsAluno } from "./portal-checkin.js";
 import { somarDias } from "./datas.js";
 
 export function criarSincroniaPortal({ store, nuvem, hoje }) {
-  const memoria = { acessos: new Map(), portal: new Map(), portalGrade: new Map() };
+  const memoria = { acessos: new Map(), portal: new Map(), portalGrade: new Map(), portalAulas: new Map() };
   let fila = Promise.resolve();
 
   const calcular = () => {
@@ -14,14 +14,15 @@ export function criarSincroniaPortal({ store, nuvem, hoje }) {
     return {
       acessos: new Map(comAcesso.map(a => [emailValido(a.emailPortal), espelhoAcesso(a)])),
       portal: new Map(comAcesso.map(a => [a.id, espelhoAluno(d, a, hoje)])),
-      portalGrade: new Map([["atual", espelhoGrade(d)]])
+      portalGrade: new Map([["atual", espelhoGrade(d)]]),
+      portalAulas: espelhoAulas(d, hoje)
     };
   };
   // Uma gravação por vez; a memória só muda depois que o banco confirmou.
   // Uma falha não trava as próximas: a memória não mudou, então a próxima vez tenta de novo.
   const sincronizar = () => (fila = fila.catch(() => {}).then(async () => {
     const novos = calcular();
-    for (const colecao of ["portalGrade", "acessos", "portal"]) {
+    for (const colecao of ["portalGrade", "acessos", "portal", "portalAulas"]) {
       const m = mudancasEspelho(memoria[colecao], novos[colecao]);
       if (!m.gravar.length && !m.apagar.length) continue;
       await nuvem.gravarEspelho(m, colecao);
@@ -47,6 +48,8 @@ export function criarSincroniaPortal({ store, nuvem, hoje }) {
         const { id, alunoId, nome, ativo } = a;
         memoria.acessos.set(id, JSON.stringify({ alunoId, nome, ativo }));
       }
+      // Aulas já no banco: as que não mudaram não são regravadas, e as antigas (mais de 30 dias) são apagadas.
+      for (const { id, turmaId, data, presentes } of await nuvem.lerAulas()) memoria.portalAulas.set(id, JSON.stringify({ turmaId, data, presentes }));
       await sincronizar();
     }
   };

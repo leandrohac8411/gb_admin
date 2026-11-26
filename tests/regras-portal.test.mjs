@@ -57,3 +57,8 @@ test("diário e check-in só de turma da grade da academia", () => {
 test("nenhuma regra aberta para qualquer um", () => {
   assert.doesNotMatch(regras, /if true/);
 });
+
+test("quem participou de cada aula: aluno liberado lê, só o painel grava", () => {
+  assert.match(bloco("portalAulas/{id}"), /allow read: if permitido\(\) \|\| aluno\(\);/);
+  assert.match(bloco("portalAulas/{id}"), /allow write: if permitido\(\);/);
+});

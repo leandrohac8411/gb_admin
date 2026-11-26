@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { criarSincroniaPortal } from "../js/logica/portal-sincronia.js";
 
-function cenario({ acessosNoBanco = [], pendentes = [], salvarOk = true, gravacao = Promise.resolve(true) } = {}) {
+function cenario({ acessosNoBanco = [], aulasNoBanco = [], pendentes = [], salvarOk = true, gravacao = Promise.resolve(true) } = {}) {
   const gravados = [], apagadosCk = [];
   let salvou = 0, n = 0;
   const dados = {
@@ -19,6 +19,7 @@ function cenario({ acessosNoBanco = [], pendentes = [], salvarOk = true, gravaca
   const nuvem = {
     gravarEspelho: async (m, colecao) => { gravados.push({ colecao, gravar: m.gravar.map(([id, o]) => [id, o]), apagar: m.apagar }); },
     lerAcessos: async () => acessosNoBanco,
+    lerAulas: async () => aulasNoBanco,
     checkinsPendentes: async () => pendentes,
     apagarCheckinsAluno: async ids => { apagadosCk.push(...ids); }
   };
@@ -75,4 +76,12 @@ test("pendente só é apagado depois que o painel gravou de verdade", async () =
   const falhou = cenario({ pendentes: [pendente], gravacao: Promise.resolve(false) });
   await falhou.s.aoAbrir();
   assert.deepEqual(falhou.apagadosCk, [], "gravação falhou: o check-in do aluno fica");
+});
+
+test("aoAbrir grava quem participou de cada aula e apaga as aulas antigas que estavam no banco", async () => {
+  const c = cenario({ pendentes: [pendente], aulasNoBanco: [{ id: "t1_2026-09-01" }] });
+  await c.s.aoAbrir();
+  const g = da(c.gravados, "portalAulas");
+  assert.ok(g.some(x => x.gravar.some(([id, o]) => id === "t1_2026-11-25" && o.presentes.includes("Ana"))));
+  assert.ok(g.some(x => x.apagar.includes("t1_2026-09-01")));
 });

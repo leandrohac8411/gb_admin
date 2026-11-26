@@ -33,3 +33,8 @@ export async function lerAcessos() {
   const s = await getDocs(collection(db, "acessos"));
   return s.docs.map(d => ({ id: d.id, ...d.data() }));
 }
+
+export async function lerAulas() {
+  const s = await getDocs(collection(db, "portalAulas"));
+  return s.docs.map(d => ({ id: d.id, ...d.data() }));
+}

@@ -96,6 +96,11 @@ service cloud.firestore {
       allow read: if permitido() || aluno();
       allow write: if permitido();
     }
+    // Quem participou de cada aula adulta dos últimos 30 dias (só os nomes), para o aluno ver a turma da aula.
+    match /portalAulas/{id} {
+      allow read: if permitido() || aluno();
+      allow write: if permitido();
+    }
     // Diário de cada aluno: só ele lê e escreve (nem o painel lê).
     // Metas do próprio aluno (nome, nascimento, sexo, faixa e graus vêm do GB Admin, pelo espelho).
     match /diarios/{alunoId} {

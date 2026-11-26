@@ -7,7 +7,7 @@ const CAMPOS_FIXOS = ["id", "turmaId", "data", "fotoId", "fotoMini", "criadoEm"]
 
 export function montarEstadoDiario({ portal, grade: g, diario, pendentes, prefs }) {
   const turmas = g?.turmas || {}, ancoras = g?.ancoras || [];
-  const grade = Object.entries(turmas).map(([id, t]) => ({ id, diaSemana: t.diaSemana, horario: t.horario, programa: t.programa, professor: t.professor || "", aula: t.aula || null, duracaoMin: Number(t.duracaoMin) || 60 }))
+  const grade = Object.entries(turmas).map(([id, t]) => ({ id, diaSemana: t.diaSemana, horario: t.horario, programa: t.programa, professor: t.professor || "", aula: t.aula || null, duracaoMin: Number(t.duracaoMin) || 60, modeloAulaId: t.modeloAulaId || "" }))
     .sort((a, b) => a.diaSemana - b.diaSemana || a.horario.localeCompare(b.horario));
   const curriculo = Object.fromEntries((g?.cronograma || []).map(s => [`${s.programa}-${s.semana}`, s]));
 
@@ -41,7 +41,8 @@ export function montarEstadoDiario({ portal, grade: g, diario, pendentes, prefs 
     };
     return { ...base, ...(escrito[id] || {}), id, turmaId: x.turmaId, data: x.data, fotoId: `aula:${id}` };
   });
-  return { perfil, aulas, grade, curriculo, ancoras };
+  const roteiros = Object.fromEntries((g?.modelosAula || []).map(m => [m.id, m.blocos || []]));
+  return { perfil, aulas, grade, curriculo, ancoras, roteiros };
 }
 
 // O que vai para o banco: só as anotações da aula (sem id, turma, data e foto), em texto JSON.

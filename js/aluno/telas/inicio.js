@@ -43,7 +43,9 @@ export default {
       const prof = t.professor ? ` · ${esc(t.professor)}` : "";
       let cls = "row", acao = "Check-in", destino = `#checkin/${t.id}/${hoje}`;
       if (feito) { cls += " feito"; acao = "Feito ✓"; destino = `#aula/${feito.id}`; }
-      else if (passou) { cls += " past"; acao = "Check-in"; }
+      // Passou o horário do check-in (1 h depois do fim): dá para ver a aula, mas não fazer check-in.
+      else if (minutosDe(t.horario) + (Number(t.duracaoMin) || 60) + 60 < agora) { cls += " past"; acao = "Ver aula"; destino = `#turma/${t.id}/${hoje}`; }
+      else if (passou) { cls += " next"; acao = "Check-in"; proxMarcada = true; }
       else if (!proxMarcada) { cls += " next"; proxMarcada = true; }
       return `<a class="${cls}" href="${destino}" style="text-decoration:none;color:inherit">
         <span class="t">${esc(horaTexto(t.horario))}</span>

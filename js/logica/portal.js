@@ -1,6 +1,7 @@
 // Portal do aluno: o que o painel copia para as coleções do portal (caminho A do desenho
 // docs/superpowers/specs/2026-11-25-portal-aluno-design.md). Só o que cada aluno pode ver.
 import { aptidao } from "./graduacao.js";
+import { somarDias } from "./datas.js";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const fotoDoRosto = mini => (typeof mini === "string" && mini.length < 20000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(mini) ? mini : null);
@@ -51,6 +52,24 @@ export function espelhoGrade(d) {
     turmas[t.id] = { diaSemana: t.diaSemana, horario: t.horario, programa: t.programa, professor: profs[t.professorId] || "", modeloAulaId: t.modeloAulaId || "", aula: t.aula || "", duracaoMin: Number(t.duracaoMin) || 60 };
   }
   return { turmas, cronograma: d.cronograma || [], ancoras: d.config?.ancoras || [], modelosAula: d.modelosAula || [] };
+}
+
+// Quem participou de cada aula adulta dos últimos DIAS_AULAS dias: id "turma_data" -> { turmaId, data, presentes }.
+// Só os nomes (nada de telefone, faixa ou mensalidade), para o aluno ver a turma da aula no portal.
+export const DIAS_AULAS = 30;
+export function espelhoAulas(d, hojeISO) {
+  const adultas = new Set((d.turmas || []).filter(t => (t.categoria || "adulto") === "adulto").map(t => t.id));
+  const nomes = Object.fromEntries((d.alunos || []).map(a => [a.id, a.nome]));
+  const desde = somarDias(hojeISO, -DIAS_AULAS), m = new Map();
+  for (const c of d.checkins || []) {
+    if (!adultas.has(c.turmaId) || c.data < desde || c.data > hojeISO || !nomes[c.alunoId]) continue;
+    const id = `${c.turmaId}_${c.data}`;
+    if (!m.has(id)) m.set(id, { turmaId: c.turmaId, data: c.data, presentes: [] });
+    const lista = m.get(id).presentes;
+    if (!lista.includes(nomes[c.alunoId])) lista.push(nomes[c.alunoId]);
+  }
+  for (const a of m.values()) a.presentes.sort((x, y) => x.localeCompare(y, "pt-BR"));
+  return m;
 }
 
 // anterior: id -> JSON já gravado; novos: id -> objeto. Grava o que mudou e apaga o que sumiu.

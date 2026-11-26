@@ -356,6 +356,7 @@ Projeto `gbadmin-48ff9`, separado do Diário de Tatame. É usado no **plano grat
 | `portalGrade` | Portal do aluno: `atual`, com as turmas adultas, o cronograma, as âncoras do ciclo e os roteiros. Sem dado pessoal. Escrito só pelo painel. |
 | `diarios/{alunoId}` | Do aluno: `metaSemanal`, `metaAulasRoxa`, `nascimento`, `sexo`; subcoleção `pesos` (`data`, `kg`). Só o próprio aluno lê e grava. |
 | `diarios/{alunoId}/aulas` | Diário de cada aluno, um documento por aula (`turma_data`): `aula` = as anotações do Diário de Tatame num texto JSON de até 20 mil caracteres. Só o próprio aluno lê e grava (nem o painel lê). |
+| `portalAulas` | Portal do aluno: quem participou de cada aula adulta dos últimos 30 dias (`turmaId`, `data`, `presentes` = só os nomes). Escrito só pelo painel; qualquer aluno liberado lê. |
 | `checkinsAluno` | Check-in feito pelo aluno no celular (`aluno_turma_data`). O painel junta na lista de presença ao abrir e apaga. |
 | `alunos`, `turmas`, `checkins` | Coleções da etapa 1. Agora são **só leitura**, porque o conteúdo já foi copiado para o painel. |
 
@@ -519,7 +520,7 @@ O aluno adulto entra em `admin-gbsob.vercel.app/aluno` e vê as aulas da academi
 ### O que o aluno vê
 As **telas do Diário de Tatame** (mesmo visual e funções), com os dados do GB Admin:
 - **Início:** faixa e graus (da academia), anel de aulas realizadas até a meta, semana, mês e horas de tatame, e a **Grade de hoje** com **Check-in** em cada aula (ou **Feito ✓**).
-- **Grade:** a semana, o ciclo GB1/GB2 com o tema da semana e as turmas do dia. Só leitura: a grade e o currículo são da academia.
+- **Grade:** a semana (dá para voltar até 4 semanas), o ciclo GB1/GB2 com o tema e as turmas do dia. Tocar numa aula de hoje ou de antes abre a **aula**: qual foi (tema e técnicas do ciclo), o roteiro com horários, a foto da academia e **quem participou**. Quem treinou nela vê **Ver meu diário** e **Editar** (dificuldades, técnicas, anotações); quem não treinou só vê; hoje, no horário, aparece **Fazer check-in**. Só leitura: a grade e o currículo são da academia.
 - **Check-in:** o formulário do Diário (foi essa aula ou outra, como saiu cada técnica, dificuldade, o que aprendi, o que revisar, onde sofreu no rola, duração). Só vale na academia (GPS) e de 30 min antes do início até 1 hora depois do fim. Salvar grava a presença (`checkinsAluno`) e o diário.
 - **Diário:** a lista das aulas (cada presença registrada pela academia ou pelo check-in vira uma aula), com filtros. **Aula:** a foto que a academia tirou, as anotações, **Editar aula** e **Apagar anotações** (a presença fica).
 - **Evolução:** semana, mês, frequência, meu jogo e a linha do tempo dos graus (só o último tem data, a da última graduação).

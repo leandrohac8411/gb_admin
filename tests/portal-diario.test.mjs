@@ -4,9 +4,9 @@ import assert from "node:assert/strict";
 import { montarEstadoDiario, aulaParaGravar, LIMITE_AULA } from "../js/logica/portal-diario.js";
 
 const grade = {
-  turmas: { t1: { diaSemana: 3, horario: "12:30", programa: "GB1", professor: "Diego", modeloAulaId: "", aula: "", duracaoMin: 60 } },
+  turmas: { t1: { diaSemana: 3, horario: "12:30", programa: "GB1", professor: "Diego", modeloAulaId: "m1", aula: "", duracaoMin: 60 } },
   cronograma: [{ programa: "GB1", semana: 13, aulaB: { tema: "Costas: gola", tecnicas: [{ nome: "Gola", categoria: "Costas" }] } }],
-  ancoras: [{ programa: "GB1", data: "2026-11-16", semana: 12 }], modelosAula: []
+  ancoras: [{ programa: "GB1", data: "2026-11-16", semana: 12 }], modelosAula: [{ id: "m1", nome: "Padrão", blocos: [{ nome: "Aquecimento", min: 10 }] }]
 };
 const portal = { nome: "Ana Souza", nascimento: "1990-05-01", sexo: "F", peso: 61.5, telefone: "61 9999-0000", plano: "Mensal", foto: "data:image/jpeg;base64,AAAA", faixa: "roxa", graus: 2, desdeFaixa: "2026-03-10", ultimaGraduacao: "2026-06-01",
   presencas: [{ data: "2026-11-25", turmaId: "t1", hora: "12:31", horario: "12:30", programa: "GB1" },
@@ -32,7 +32,8 @@ test("perfil vem do GB Admin (nome, nascimento, sexo, faixa e graus) e as metas 
 
 test("grade, currículo e ciclo no formato do Diário", () => {
   const e = montarEstadoDiario(base);
-  assert.deepEqual(e.grade, [{ id: "t1", diaSemana: 3, horario: "12:30", programa: "GB1", professor: "Diego", aula: null, duracaoMin: 60 }]);
+  assert.deepEqual(e.grade, [{ id: "t1", diaSemana: 3, horario: "12:30", programa: "GB1", professor: "Diego", aula: null, duracaoMin: 60, modeloAulaId: "m1" }]);
+  assert.deepEqual(e.roteiros, { m1: [{ nome: "Aquecimento", min: 10 }] }, "roteiro de cada aula");
   assert.deepEqual(e.curriculo["GB1-13"].aulaB.tema, "Costas: gola");
   assert.deepEqual(e.ancoras, grade.ancoras);
 });

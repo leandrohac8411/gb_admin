@@ -10,7 +10,7 @@ const $menu = document.getElementById("menu");
 
 // Cada tela é um módulo em js/aluno/telas/<nome>.js que exporta default:
 //   { menu: "inicio" | null, vivo: boolean, montar(el, params, ctx) -> (limpar?) }
-const TELAS = ["inicio", "checkin", "grade", "diario", "aula", "evolucao", "perfil"];
+const TELAS = ["inicio", "checkin", "grade", "diario", "aula", "turma", "evolucao", "perfil"];
 const cache = {};
 async function carregarTela(nome) {
   if (!cache[nome]) cache[nome] = (await import(`./telas/${nome}.js`)).default;

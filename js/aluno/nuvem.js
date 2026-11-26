@@ -64,3 +64,8 @@ export const registrarPeso = (alunoId, { data, kg }) => addDoc(collection(db, "d
 
 export const fazerCheckin = ({ id, ...dados }) => setDoc(doc(db, "checkinsAluno", id), { ...dados, criadoEm: serverTimestamp() });
 export const meusCheckins = (alunoId, cb, erro) => onSnapshot(query(collection(db, "checkinsAluno"), where("alunoId", "==", alunoId)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), erro);
+// Quem participou de uma aula (espelho do painel, últimos 30 dias).
+export async function presentesDaAula(turmaId, data) {
+  const s = await getDoc(doc(db, "portalAulas", idAula(turmaId, data)));
+  return s.exists() ? s.data().presentes || [] : null;
+}

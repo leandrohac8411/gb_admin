@@ -53,3 +53,29 @@ test("mensagemDeErroLogin: em português, com padrão para o resto", () => {
   assert.equal(mensagemDeErroLogin("auth/network-request-failed"), "Sem internet. Confira a conexão e tente de novo.");
   assert.equal(mensagemDeErroLogin("auth/qualquer"), "Não deu para entrar. Tente de novo.");
 });
+
+import { codificarTecnicas, lerTecnicas } from "../js/logica/portal-aluno.js";
+test("técnicas do diário viram um texto curto no banco (a regra limita o tamanho) e voltam iguais", () => {
+  const lista = [{ nome: "Toreando", resultado: "bem" }, { nome: "Gola | cruzada", resultado: "nao" }];
+  const txt = codificarTecnicas(lista);
+  assert.equal(typeof txt, "string");
+  assert.deepEqual(lerTecnicas(txt), [{ nome: "Toreando", resultado: "bem" }, { nome: "Gola / cruzada", resultado: "nao" }]);
+  assert.ok(codificarTecnicas(Array.from({ length: 50 }, (_, i) => ({ nome: "x".repeat(200), resultado: "asvezes" }))).length <= 10500, "cabe no limite da regra");
+  assert.deepEqual(lerTecnicas(""), []);
+  assert.deepEqual(lerTecnicas(undefined), []);
+  assert.deepEqual(lerTecnicas("lixo sem separador\nbem|Ok"), [{ nome: "Ok", resultado: "bem" }]);
+});
+
+import { aulasDoDiaDoAluno } from "../js/logica/portal-aluno.js";
+test("aula que saiu da grade continua na lista do dia em que o aluno esteve (com horário e programa guardados)", () => {
+  const grade = { turmas: { t1: { diaSemana: 3, horario: "12:30", programa: "GB1", professor: "Diego" } }, cronograma: [], ancoras: [], modelosAula: [] };
+  const portal = { presencas: [
+    { data: "2026-11-25", turmaId: "velha", hora: "07:00", horario: "07:00", programa: "GB2" },
+    { data: "2026-11-25", turmaId: "t1", hora: "12:30", horario: "12:30", programa: "GB1" }
+  ] };
+  const pend = [{ data: "2026-11-25", turmaId: "outra-velha", hora: "21:00" }];
+  const l = aulasDoDiaDoAluno(grade, "2026-11-25", portal, pend);
+  assert.deepEqual(l.map(a => [a.turmaId, a.horario, a.programa]), [["velha", "07:00", "GB2"], ["t1", "12:30", "GB1"], ["outra-velha", "21:00", ""]]);
+  assert.deepEqual(l[0].temas, []);
+  assert.deepEqual(aulasDoDiaDoAluno(grade, "2026-11-24", portal, pend).map(a => a.turmaId), [], "terça: nada");
+});

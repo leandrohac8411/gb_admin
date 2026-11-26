@@ -27,7 +27,7 @@ test("cada coleção do portal tem dono certo e só o painel grava o espelho", (
 });
 
 test("fotos: aluno só vê foto de turma adulta do portal", () => {
-  assert.match(bloco("fotos/{fotoId}"), /aluno\(\) && resource\.data\.turmaId in get\(\/databases\/\$\(database\)\/documents\/portalGrade\/atual\)\.data\.turmas/);
+  assert.match(bloco("fotos/{fotoId}"), /aluno\(\) && \(resource == null \|\| resource\.data\.turmaId in get\(\/databases\/\$\(database\)\/documents\/portalGrade\/atual\)\.data\.turmas/);
 });
 
 test("formatos: diário com limites e check-in a até 100 m", () => {
@@ -42,4 +42,17 @@ test("formatos: diário com limites e check-in a até 100 m", () => {
 
 test("nenhuma regra aberta para qualquer um", () => {
   assert.doesNotMatch(regras, /if true/);
+});
+
+test("revisão final: diário e check-in só de turma da grade; diário com técnicas em texto limitado, dificuldade inteira e sem data futura", () => {
+  const dia = regras.slice(regras.indexOf("function diarioOk"), regras.indexOf("function checkinOk"));
+  assert.match(dia, /d\.tecnicas is string && d\.tecnicas\.size\(\) <= 10500/);
+  assert.match(dia, /d\.dificuldade is int/);
+  assert.match(dia, /request\.time >= timestamp\.date\(/);
+  assert.match(bloco("diarios/{alunoId}/aulas/{aulaId}"), /request\.resource\.data\.turmaId in get\(\/databases\/\$\(database\)\/documents\/portalGrade\/atual\)\.data\.turmas/);
+  assert.match(bloco("checkinsAluno/{id}"), /request\.resource\.data\.turmaId in get\(\/databases\/\$\(database\)\/documents\/portalGrade\/atual\)\.data\.turmas/);
+});
+
+test("revisão final: foto que não existe responde vazio para o aluno (sem erro de permissão)", () => {
+  assert.match(bloco("fotos/{fotoId}"), /aluno\(\) && \(resource == null \|\| resource\.data\.turmaId in/);
 });

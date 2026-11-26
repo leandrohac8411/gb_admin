@@ -7,6 +7,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { auth, db, configurado } from "../nuvem/firebase.js";
 import { idFotoAula } from "../logica/foto-aula.js";
+import { codificarTecnicas, lerTecnicas } from "../logica/portal-aluno.js";
 
 export { configurado };
 const limpo = e => String(e || "").trim().toLowerCase();
@@ -35,16 +36,13 @@ export async function lerAcesso(email) {
 }
 export const ouvirPortal = (alunoId, cb, erro) => onSnapshot(doc(db, "portal", alunoId), s => cb(s.exists() ? s.data() : null), erro);
 export const ouvirGrade = (cb, erro) => onSnapshot(doc(db, "portalGrade", "atual"), s => cb(s.exists() ? s.data() : null), erro);
-export async function fotosDoDia(data) {
-  const s = await getDocs(query(collection(db, "fotos"), where("data", "==", data)));
-  return s.docs.map(d => ({ id: d.id, ...d.data() }));
-}
 export async function fotoDaAula(turmaId, data) {
   const s = await getDoc(doc(db, "fotos", idFotoAula(turmaId, data)));
   return s.exists() ? s.data() : null;
 }
-export const ouvirDiario = (alunoId, cb, erro) => onSnapshot(collection(db, "diarios", alunoId, "aulas"), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), erro);
+export const ouvirDiario = (alunoId, cb, erro) => onSnapshot(collection(db, "diarios", alunoId, "aulas"),
+  s => cb(s.docs.map(d => { const x = d.data(); return { id: d.id, ...x, tecnicas: lerTecnicas(x.tecnicas) }; })), erro);
 export const salvarDiario = (alunoId, turmaId, data, dados) =>
-  setDoc(doc(db, "diarios", alunoId, "aulas", idFotoAula(turmaId, data)), { ...dados, turmaId, data, atualizadoEm: serverTimestamp() });
+  setDoc(doc(db, "diarios", alunoId, "aulas", idFotoAula(turmaId, data)), { ...dados, tecnicas: codificarTecnicas(dados.tecnicas), turmaId, data, atualizadoEm: serverTimestamp() });
 export const fazerCheckin = ({ id, ...dados }) => setDoc(doc(db, "checkinsAluno", id), { ...dados, criadoEm: serverTimestamp() });
 export const meusCheckins = (alunoId, cb, erro) => onSnapshot(query(collection(db, "checkinsAluno"), where("alunoId", "==", alunoId)), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), erro);

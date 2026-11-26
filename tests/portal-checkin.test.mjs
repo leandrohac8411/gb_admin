@@ -27,17 +27,36 @@ test("idCheckinAluno: um por aluno, turma e dia", () => {
   assert.equal(idCheckinAluno("a1", "t1230", "2026-11-25"), "a1_t1230_2026-11-25");
 });
 
-test("juntarCheckinsAluno: vira presença sem duplicar, e o pendente é apagado", () => {
-  let n = 0;
+// criadoEm = hora do servidor (ms). Brasília é UTC-3: 12:31 local = 15:31 UTC.
+const ms = (data, hhmm) => Date.parse(`${data}T${hhmm}:00-03:00`);
+const grade = [{ id: "t1230", diaSemana: 3, horario: "12:30", duracaoMin: 60, categoria: "adulto" }, { id: "tk", diaSemana: 3, horario: "17:00", categoria: "kids" }];
+const p = (id, extra) => ({ id, alunoId: "a1", turmaId: "t1230", data: "2026-11-25", hora: "12:31", criadoEm: ms("2026-11-25", "12:31"), ...extra });
+
+test("juntarCheckinsAluno: vira presença com id fixo (dois painéis não duplicam), sem repetir, e o pendente é apagado", () => {
   const checkins = [{ id: "c1", alunoId: "a2", turmaId: "t1230", data: "2026-11-25", hora: "12:30" }];
-  const pendentes = [
-    { id: "a1_t1230_2026-11-25", alunoId: "a1", turmaId: "t1230", data: "2026-11-25", hora: "12:31" },
-    { id: "a2_t1230_2026-11-25", alunoId: "a2", turmaId: "t1230", data: "2026-11-25", hora: "12:29" },
-    { id: "dup", alunoId: "a1", turmaId: "t1230", data: "2026-11-25", hora: "12:40" }
-  ];
-  const r = juntarCheckinsAluno(checkins, pendentes, p => `${p}${++n}`);
-  assert.deepEqual(r.novos, [{ id: "c1", alunoId: "a1", turmaId: "t1230", data: "2026-11-25", hora: "12:31", origem: "aluno" }]);
+  const pendentes = [p("a1_t1230_2026-11-25"), p("a2_t1230_2026-11-25", { alunoId: "a2" }), p("dup", { hora: "12:40" })];
+  const r = juntarCheckinsAluno(checkins, pendentes, { turmas: grade, hoje: "2026-11-25" });
+  assert.deepEqual(r.novos, [{ id: "ca_a1_t1230_2026-11-25", alunoId: "a1", turmaId: "t1230", data: "2026-11-25", hora: "12:31", origem: "aluno" }]);
   assert.deepEqual(r.apagar, ["a1_t1230_2026-11-25", "a2_t1230_2026-11-25", "dup"]);
+  const outroPainel = juntarCheckinsAluno([], [pendentes[0]], { turmas: grade, hoje: "2026-11-25" });
+  assert.equal(outroPainel.novos[0].id, r.novos[0].id, "o mesmo id nos dois aparelhos");
+});
+
+test("juntarCheckinsAluno: check-in forjado não vira presença (e é apagado)", () => {
+  const ruins = [
+    p("x1", { turmaId: "inventada" }),                                         // turma que não existe
+    p("x2", { turmaId: "tk" }),                                                // turma kids
+    p("x3", { data: "2026-11-24", criadoEm: ms("2026-11-24", "12:31") }),      // terça: a turma é de quarta
+    p("x4", { data: "2026-12-02", criadoEm: ms("2026-12-02", "12:31") }),      // futuro
+    p("x5", { criadoEm: ms("2026-11-26", "12:31") }),                         // criado em outro dia
+    p("x6", { criadoEm: ms("2026-11-25", "18:00") }),                         // fora do horário da aula
+    p("x7", { criadoEm: undefined })                                          // sem hora do servidor
+  ];
+  const r = juntarCheckinsAluno([], ruins, { turmas: grade, hoje: "2026-11-25" });
+  assert.deepEqual(r.novos, []);
+  assert.deepEqual(r.apagar, ruins.map(x => x.id));
+  const bom = juntarCheckinsAluno([], [p("ok", { criadoEm: ms("2026-11-25", "12:00") })], { turmas: grade, hoje: "2026-11-26" });
+  assert.equal(bom.novos.length, 1, "30 min antes do início vale, e o painel pode juntar no dia seguinte");
 });
 
 test("avaliarLocal: 40 m da academia passa, 120 m não", () => {

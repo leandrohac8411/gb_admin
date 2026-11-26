@@ -13,15 +13,33 @@ export function turmaDoCheckin(turmas, diaSemana, minutosAgora) {
 
 export const idCheckinAluno = (alunoId, turmaId, data) => `${alunoId}_${turmaId}_${data}`;
 
-// Check-ins feitos pelo aluno viram presença no painel, sem duplicar; todos os pendentes são apagados.
-export function juntarCheckinsAluno(checkins, pendentes, novoId) {
+// Hora local de Brasília (UTC-3, sem horário de verão) de um instante em ms: { data: "AAAA-MM-DD", min }.
+function brasilia(msUTC) {
+  const d = new Date(msUTC - 3 * 3600_000);
+  return { data: d.toISOString().slice(0, 10), min: d.getUTCHours() * 60 + d.getUTCMinutes() };
+}
+
+// O check-in vale se a turma adulta existe, é daquele dia da semana, não é futuro e foi criado
+// (hora do servidor, criadoEm) no próprio dia, de 30 min antes do início até o fim da aula.
+function checkinValido(p, turmas, hoje) {
+  const t = turmas.find(x => x.id === p.turmaId && (x.categoria || "adulto") === "adulto");
+  if (!t || typeof p.data !== "string" || p.data > hoje || !Number.isFinite(p.criadoEm)) return false;
+  const [a, m, d] = p.data.split("-").map(Number);
+  if (new Date(Date.UTC(a, m - 1, d)).getUTCDay() !== t.diaSemana) return false;
+  const quando = brasilia(p.criadoEm), ini = minutos(t.horario);
+  return quando.data === p.data && quando.min >= ini - 30 && quando.min <= ini + (Number(t.duracaoMin) || 60);
+}
+
+// Check-ins feitos pelo aluno viram presença no painel, sem duplicar, com id fixo (ca_<id do pendente>):
+// dois painéis abertos ao mesmo tempo gravam a mesma presença. Todo pendente é apagado (os inválidos também).
+export function juntarCheckinsAluno(checkins, pendentes, { turmas, hoje }) {
   const chave = c => `${c.alunoId}|${c.turmaId}|${c.data}`;
   const ja = new Set(checkins.map(chave)), novos = [], apagar = [];
   for (const p of pendentes) {
     apagar.push(p.id);
-    if (ja.has(chave(p))) continue;
+    if (!checkinValido(p, turmas, hoje) || ja.has(chave(p))) continue;
     ja.add(chave(p));
-    novos.push({ id: novoId("c"), alunoId: p.alunoId, turmaId: p.turmaId, data: p.data, hora: p.hora, origem: "aluno" });
+    novos.push({ id: `ca_${p.id}`, alunoId: p.alunoId, turmaId: p.turmaId, data: p.data, hora: p.hora, origem: "aluno" });
   }
   return { novos, apagar };
 }

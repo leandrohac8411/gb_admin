@@ -59,7 +59,7 @@ service cloud.firestore {
     // ---------- Foto da aula: uma por aula (id = turma_dia), JPEG pequeno ----------
     // O app só guarda se todas as crianças marcadas na foto tiverem autorização de imagem.
     match /fotos/{fotoId} {
-      allow read: if permitido() || (aluno() && resource.data.turmaId in get(/databases/$(database)/documents/portalGrade/atual).data.turmas);
+      allow read: if permitido() || (aluno() && (resource == null || resource.data.turmaId in get(/databases/$(database)/documents/portalGrade/atual).data.turmas));
       allow delete: if permitido();
       allow create, update: if permitido() && fotoOk(request.resource.data)
         && fotoId == request.resource.data.turmaId + '_' + request.resource.data.data
@@ -100,6 +100,7 @@ service cloud.firestore {
     match /diarios/{alunoId}/aulas/{aulaId} {
       allow read, delete: if aluno() && alunoId == meuAlunoId();
       allow create, update: if aluno() && alunoId == meuAlunoId() && diarioOk(request.resource.data)
+        && request.resource.data.turmaId in get(/databases/$(database)/documents/portalGrade/atual).data.turmas
         && aulaId == request.resource.data.turmaId + '_' + request.resource.data.data;
     }
     // Check-in pelo celular: o aluno cria o dele (um por turma e dia); o painel junta na presença e apaga.
@@ -108,6 +109,7 @@ service cloud.firestore {
       allow delete: if permitido();
       allow create: if aluno() && request.resource.data.alunoId == meuAlunoId()
         && id == request.resource.data.alunoId + '_' + request.resource.data.turmaId + '_' + request.resource.data.data
+        && request.resource.data.turmaId in get(/databases/$(database)/documents/portalGrade/atual).data.turmas
         && checkinOk(request.resource.data);
     }
     function textoAte(d, campo, max) { return !(campo in d) || (d[campo] is string && d[campo].size() <= max); }
@@ -115,8 +117,10 @@ service cloud.firestore {
       return d.keys().hasOnly(['aprendi', 'revisar', 'dificuldade', 'tecnicas', 'turmaId', 'data', 'atualizadoEm'])
         && d.turmaId is string && d.turmaId.size() <= 60 && dataISO(d.data)
         && textoAte(d, 'aprendi', 4000) && textoAte(d, 'revisar', 4000)
-        && (!('dificuldade' in d) || (d.dificuldade is number && d.dificuldade >= 1 && d.dificuldade <= 5))
-        && (!('tecnicas' in d) || (d.tecnicas is list && d.tecnicas.size() <= 50))
+        && (!('dificuldade' in d) || (d.dificuldade is int && d.dificuldade >= 1 && d.dificuldade <= 5))
+        && (!('tecnicas' in d) || (d.tecnicas is string && d.tecnicas.size() <= 10500))
+        // Sem diário de dia futuro (a data é a do dia da aula).
+        && request.time >= timestamp.date(int(d.data.split('-')[0]), int(d.data.split('-')[1]), int(d.data.split('-')[2]))
         && d.atualizadoEm == request.time;
     }
     function checkinOk(d) {

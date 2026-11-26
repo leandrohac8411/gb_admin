@@ -1,5 +1,5 @@
 // Portal do aluno: uma aula (foto, tema, técnicas e roteiro) e, para quem esteve, o "Meu diário".
-import { aulasDoDia, esteveNaAula, diarioValido } from "../../logica/portal-aluno.js";
+import { aulasDoDiaDoAluno, esteveNaAula, diarioValido } from "../../logica/portal-aluno.js";
 import { dataValida } from "../../logica/datas.js";
 import { esc, horaTexto, dataLonga, toast } from "../ui/util.js";
 import { etiqueta } from "./comum.js";
@@ -12,7 +12,7 @@ export default {
   vivo: false,
   montar(el, [turmaId, data], ctx) {
     if (!turmaId || !dataValida(data || "")) { el.innerHTML = '<p class="vazio">Aula não encontrada. <a class="link" href="#aulas">Ver aulas</a></p>'; return; }
-    const a = aulasDoDia(ctx.grade, data).find(x => x.turmaId === turmaId);
+    const a = aulasDoDiaDoAluno(ctx.grade, data, ctx.portal, ctx.pendentes).find(x => x.turmaId === turmaId);
     const pres = (ctx.portal?.presencas || []).find(x => x.turmaId === turmaId && x.data === data);
     const horario = a?.horario || pres?.horario || "", programa = a?.programa || pres?.programa || "";
     const esteve = esteveNaAula(ctx.portal, ctx.pendentes, turmaId, data);

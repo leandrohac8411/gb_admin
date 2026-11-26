@@ -17,7 +17,8 @@ export async function gravarEspelho({ gravar, apagar }, colecao) {
 
 export async function checkinsPendentes(desdeISO) {
   const s = await getDocs(query(collection(db, "checkinsAluno"), where("data", ">=", desdeISO)));
-  return s.docs.map(d => ({ id: d.id, ...d.data() }));
+  // criadoEm vem do relógio do servidor (a regra exige): vira ms para a conferência do horário.
+  return s.docs.map(d => { const x = d.data(); return { id: d.id, ...x, criadoEm: x.criadoEm?.toMillis?.() }; });
 }
 
 export async function apagarCheckinsAluno(ids) {

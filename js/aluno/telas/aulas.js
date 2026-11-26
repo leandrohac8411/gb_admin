@@ -1,23 +1,24 @@
 // Portal do aluno: aulas da academia, dia a dia (tema, professor, foto e "você esteve").
 import { hojeISO, somarDias, dataValida } from "../../logica/datas.js";
-import { aulasDoDia, esteveNaAula } from "../../logica/portal-aluno.js";
+import { aulasDoDiaDoAluno, esteveNaAula } from "../../logica/portal-aluno.js";
 import { esc, horaTexto, dataCurta } from "../ui/util.js";
 import { etiqueta } from "./comum.js";
 
 const estado = { dia: null };
-const fotos = new Map(); // dia -> Set(turmaId) com foto (busca uma vez por dia)
+const fotos = new Map(); // dia -> Set(turmaId) com foto (busca uma vez por dia, aula por aula: as regras do banco
+                         // não deixam o aluno listar as fotos do dia inteiro)
 
 export default {
   menu: "aulas",
   montar(el, params, ctx) {
     const hoje = hojeISO();
     if (!estado.dia || !dataValida(estado.dia) || estado.dia > hoje) estado.dia = hoje;
-    const dia = estado.dia, aulas = aulasDoDia(ctx.grade, dia);
+    const dia = estado.dia, aulas = aulasDoDiaDoAluno(ctx.grade, dia, ctx.portal, ctx.pendentes);
     if (!fotos.has(dia)) {
       fotos.set(dia, null);
       const aqui = location.hash;
-      ctx.nuvem.fotosDoDia(dia).then(l => { fotos.set(dia, new Set(l.map(f => f.turmaId))); if (location.hash === aqui && estado.dia === dia) this.montar(el, params, ctx); })
-        .catch(e => { console.error(e); fotos.set(dia, new Set()); });
+      Promise.all(aulas.map(a => ctx.nuvem.fotoDaAula(a.turmaId, dia).then(f => (f ? a.turmaId : null)).catch(() => null)))
+        .then(ids => { fotos.set(dia, new Set(ids.filter(Boolean))); if (location.hash === aqui && estado.dia === dia) this.montar(el, params, ctx); });
     }
     const comFoto = fotos.get(dia) || new Set();
     el.innerHTML = `<div class="ttl">Aulas</div>

@@ -20,6 +20,15 @@ export function diarioValido(x) {
   return r;
 }
 
+// No banco, as técnicas do diário ficam num texto "resultado|nome" por linha (a regra limita o tamanho
+// do texto; uma lista não teria como ser conferida item a item).
+export const codificarTecnicas = lista => (lista || []).map(t => `${t.resultado}|${String(t.nome).replace(/[|\n\r]/g, "/").slice(0, 200)}`).join("\n");
+export function lerTecnicas(txt) {
+  if (Array.isArray(txt)) return txt;
+  return String(txt || "").split("\n").map(l => { const i = l.indexOf("|"); return i < 0 ? null : { resultado: l.slice(0, i), nome: l.slice(i + 1) }; })
+    .filter(t => t && t.nome && RESULTADOS.includes(t.resultado));
+}
+
 export function esteveNaAula(portal, pendentes, turmaId, data) {
   const igual = p => p.turmaId === turmaId && p.data === data;
   return (portal?.presencas || []).some(igual) || (pendentes || []).some(igual);
@@ -35,6 +44,18 @@ export function aulasDoDia(grade, dataISO) {
       temas: temaDaAula(base, { ...t, id }, dataISO),
       roteiro: (grade.modelosAula || []).find(m => m.id === t.modeloAulaId)?.blocos || []
     }));
+}
+
+// As aulas do dia na grade, mais as que o aluno fez e que saíram da grade ou mudaram de dia
+// (com o horário e o programa guardados na presença): o diário delas continua ao alcance.
+export function aulasDoDiaDoAluno(grade, dataISO, portal, pendentes) {
+  const lista = aulasDoDia(grade, dataISO), na = new Set(lista.map(a => a.turmaId));
+  for (const p of [...(portal?.presencas || []), ...(pendentes || [])]) {
+    if (p.data !== dataISO || na.has(p.turmaId)) continue;
+    na.add(p.turmaId);
+    lista.push({ turmaId: p.turmaId, horario: p.horario || p.hora || "", programa: p.programa || "", professor: "", duracaoMin: 60, temas: [], roteiro: [] });
+  }
+  return lista.sort((a, b) => a.horario.localeCompare(b.horario));
 }
 
 export function frequenciaDoMes(presencas, mesISO) {

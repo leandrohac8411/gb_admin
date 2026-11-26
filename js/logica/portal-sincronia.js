@@ -34,9 +34,14 @@ export function criarSincroniaPortal({ store, nuvem, hoje }) {
     aposSalvar: sincronizar,
     async aoAbrir() {
       const pendentes = await nuvem.checkinsPendentes(somarDias(hoje, -7));
-      const { novos, apagar } = juntarCheckinsAluno(store.dados.checkins, pendentes, p => store.novoId(p));
-      if (novos.length) { store.dados.checkins.push(...novos); store.salvar(); }
-      if (apagar.length) await nuvem.apagarCheckinsAluno(apagar);
+      const { novos, apagar } = juntarCheckinsAluno(store.dados.checkins, pendentes, { turmas: store.dados.turmas || [], hoje });
+      let gravou = true;
+      if (novos.length) {
+        store.dados.checkins.push(...novos);
+        // Só apaga os pendentes depois que o banco confirmou; senão eles ficam para a próxima abertura.
+        gravou = store.salvar() !== false && (await store.gravando) !== false;
+      }
+      if (gravou && apagar.length) await nuvem.apagarCheckinsAluno(apagar);
       // O que já está no banco entra na memória: assim um acesso que ninguém mais tem é apagado.
       for (const a of await nuvem.lerAcessos()) {
         const { id, alunoId, nome, ativo } = a;

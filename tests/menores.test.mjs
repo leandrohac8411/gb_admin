@@ -18,15 +18,16 @@ test("CSV não vira fórmula no Excel", () => {
   assert.match(t, /;'\+1;'-2;'@a;ok$/);
 });
 
-test("regras vêm das configurações", async () => {
-  const { aptidao, aplicarRegras, REGRAS } = await import("../js/logica/graduacao.js");
-  const al = { id: "a", faixa: "azul", graus: 1, ultimaGraduacao: "2026-07-01", desdeFaixa: "2025-01-01", status: "ativo" };
-  const aulas = Array.from({ length: 20 }, (_, i) => ({ alunoId: "a", data: `2026-08-${String(i + 1).padStart(2, "0")}` }));
-  assert.equal(aptidao(al, aulas, "2026-11-20").tipo, null);
-  aplicarRegras({ aulasPorGrau: 20, mesesPorGrau: 3, mesesMinFaixa: { branca: 12, azul: 24, roxa: 18, marrom: 12 } });
-  assert.equal(aptidao(al, aulas, "2026-11-20").tipo, "grau");
-  aplicarRegras({ aulasPorGrau: 30, mesesPorGrau: 3, mesesMinFaixa: { branca: 12, azul: 24, roxa: 18, marrom: 12 } });
-  assert.equal(REGRAS.aulasPorGrau, 30);
+test("regras vêm das configurações (tempo da faixa, treinos por semana e folga)", async () => {
+  const { aptidao, aplicarRegras, REGRAS, planoDaFaixa } = await import("../js/logica/graduacao.js");
+  const al = { id: "a", faixa: "azul", graus: 0, ultimaGraduacao: "2026-01-01", desdeFaixa: "2026-01-01", status: "ativo" };
+  const aulas = Array.from({ length: 30 }, (_, i) => ({ alunoId: "a", data: `2026-02-${String(i % 28 + 1).padStart(2, "0")}` }));
+  assert.equal(aptidao(al, aulas, "2026-04-15").tipo, null, "azul 24 meses: 1º grau só aos ~4,8 meses");
+  aplicarRegras({ mesesFaixa: { azul: 12 }, treinosPorSemana: 2, folgaPct: 15 });
+  assert.equal(planoDaFaixa("azul").diasFaixa, 365);
+  assert.equal(aptidao(al, aulas, "2026-04-15").tipo, "grau", "azul 12 meses: 1º grau aos ~2,4 meses com 18 aulas");
+  aplicarRegras({ mesesFaixa: { branca: 12, azul: 24, roxa: 12, marrom: 12 }, treinosPorSemana: 2, folgaPct: 15 });
+  assert.equal(REGRAS.mesesFaixa.azul, 24);
 });
 
 test("academia de exemplo tem as coleções novas", () => {
@@ -34,13 +35,15 @@ test("academia de exemplo tem as coleções novas", () => {
   for (const c of ["planos", "produtos", "prospects", "modelosAula", "habilidades", "modelosDoc", "modelosMsg", "perfis", "usuarios", "contratos", "cronograma"]) assert.ok(d[c].length > 0, c);
   assert.equal(d.contratos.length, d.alunos.length);
   assert.equal(d.cronograma.length, 32);
-  assert.equal(d.config.regras.aulasPorGrau, 30);
+  assert.deepEqual(d.config.regras.mesesFaixa, { branca: 12, azul: 24, roxa: 12, marrom: 12 });
 });
 
-test("regra com zero meses vale", async () => {
+test("configuração antiga (aulas e meses por grau) não quebra: fica o padrão novo", async () => {
   const { aplicarRegras, REGRAS } = await import("../js/logica/graduacao.js");
   aplicarRegras({ aulasPorGrau: 30, mesesPorGrau: 0, mesesMinFaixa: {} });
-  assert.equal(REGRAS.mesesPorGrau, 0);
-  aplicarRegras({ aulasPorGrau: "", mesesPorGrau: 3 });
-  assert.equal(REGRAS.aulasPorGrau, 30);
+  assert.deepEqual(REGRAS.mesesFaixa, { branca: 12, azul: 24, roxa: 12, marrom: 12 });
+  aplicarRegras({ treinosPorSemana: "", folgaPct: 0 });
+  assert.equal(REGRAS.treinosPorSemana, 2);
+  assert.equal(REGRAS.folgaPct, 0, "zero de folga vale");
+  aplicarRegras({ folgaPct: 15 });
 });

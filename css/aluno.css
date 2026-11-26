@@ -352,3 +352,4 @@ textarea.input{min-height:72px;resize:vertical}
 .presentes li span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .presentes .av{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff;background:linear-gradient(140deg,#3a3a40,#16161a)}
 .turma-corpo{display:flex;flex-direction:column;gap:12px}
+.troca-faixa{margin:10px 0 0;text-align:center;font-size:13px;opacity:.95}

@@ -1,6 +1,6 @@
 // Portal do aluno: o que o painel copia para as coleções do portal (caminho A do desenho
 // docs/superpowers/specs/2026-11-25-portal-aluno-design.md). Só o que cada aluno pode ver.
-import { aptidao, regrasDe } from "./graduacao.js";
+import { aptidao, planoDaFaixa } from "./graduacao.js";
 import { somarDias } from "./datas.js";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -33,7 +33,7 @@ export function espelhoAluno(d, aluno, hojeISO) {
     desdeFaixa: aluno.desdeFaixa || "", ultimaGraduacao: aluno.ultimaGraduacao || "",
     presencas, proximoPasso: aptidao(aluno, d.checkins || [], hojeISO),
     // Aulas da faixa até a próxima, pela regra da academia (Configurações): 4 graus + a troca de faixa.
-    metaFaixa: aluno.faixa === "preta" ? null : regrasDe(aluno).aulasPorGrau * 5
+    metaFaixa: planoDaFaixa(aluno.faixa)?.aulasFaixa ?? null
   };
 }
 

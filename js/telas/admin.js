@@ -6,7 +6,7 @@ import { reais, competenciaTexto } from "../ui/util-admin.js";
 import { faixaSVG, nomeFaixa, faixasDe } from "../ui/faixa.js";
 import { hojeISO, diaSemana, dataValida } from "../logica/datas.js";
 import { preencher, varsParaContato, CAMPOS } from "../logica/modelos.js";
-import { aptidao, aplicarRegras, regrasDe } from "../logica/graduacao.js";
+import { aptidao, aplicarRegras, regrasDe, REGRAS, planoDaFaixa } from "../logica/graduacao.js";
 import { statusMensalidade } from "../logica/financeiro.js";
 import { aulasNosUltimos } from "../logica/relatorios.js";
 import { MODULOS } from "../dados-extras.js";
@@ -174,8 +174,10 @@ export const config = {
           ${num("cf-venc", "Dia de vencimento padrão", c.vencimentoPadrao, 1, 28)}${num("cf-meta", "Meta de treinos em 30 dias", c.metaAulas30, 1, 60)}
         </div></div>
         <div class="card"><div class="card-cab"><h3>Regras de graduação</h3></div><div class="campos">
-          ${num("cf-aulas", "Aulas por grau", r.aulasPorGrau, 1, 200)}${num("cf-meses", "Meses mínimos por grau", r.mesesPorGrau, 0, 24)}
-          ${["branca", "azul", "roxa", "marrom"].map(f => num(`cf-min-${f}`, `Meses mínimos na ${f}`, r.mesesMinFaixa[f], 0, 120)).join("")}
+          <p class="muted cheio" style="margin:0">O tempo de cada faixa é dividido em 4 graus + a troca de faixa. As aulas da faixa são estimadas pelos treinos por semana, descontando recesso e feriados. Para graduar, valem as duas coisas: o tempo e as aulas.</p>
+          ${["branca", "azul", "roxa", "marrom"].map(f => num(`cf-fx-${f}`, `Meses na ${f} até a próxima`, REGRAS.mesesFaixa[f], 1, 120)).join("")}
+          ${num("cf-treinos", "Treinos por semana (base do cálculo)", REGRAS.treinosPorSemana, 1, 7)}${num("cf-folga", "Folga para recesso e feriados (%)", REGRAS.folgaPct, 0, 50)}
+          <div class="cheio" id="cf-previa-grad"></div>
         </div></div>
         <div class="card"><div class="card-cab"><h3>Regras de graduação kids</h3><span class="tag kids">Kids</span></div><div class="campos">
           ${num("cf-k-meses", "Grau a cada (meses)", rk.mesesPorGrau, 1, 24)}${num("cf-k-aulas", "Mínimo de aulas no período", rk.aulasPorGrau, 0, 60)}
@@ -241,6 +243,18 @@ export const config = {
       if (store.salvar() !== false) toast(`${lida.turmas.length} turmas importadas${lida.descartadas ? `, ${lida.descartadas} descartadas` : ""}`);
       ctx.redesenhar();
     });
+    // Prévia das regras de graduação: de quanto em quanto tempo vem o grau e quantas aulas a faixa pede.
+    const previaGrad = () => {
+      const val = id => Number(el.querySelector(id)?.value);
+      const r = { mesesFaixa: Object.fromEntries(["branca", "azul", "roxa", "marrom"].map(f => [f, val(`#cf-fx-${f}`)])), treinosPorSemana: val("#cf-treinos"), folgaPct: val("#cf-folga") };
+      const linhas = ["branca", "azul", "roxa", "marrom"].map(f => {
+        const pl = r.mesesFaixa[f] > 0 && r.treinosPorSemana > 0 ? planoDaFaixa(f, r) : null;
+        return pl ? `<tr><td>${f[0].toUpperCase() + f.slice(1)}</td><td>a cada ~${String(Math.round(pl.graus[0].dias / 30.44 * 10) / 10).replace(".", ",")} meses</td><td>4º grau ~${String(Math.round((pl.diasFaixa - pl.graus[3].dias) / 30.44 * 10) / 10).replace(".", ",")} meses antes da troca</td><td>~${pl.aulasFaixa} aulas (${pl.aulasPorGrau} por grau)</td></tr>` : "";
+      }).join("");
+      el.querySelector("#cf-previa-grad").innerHTML = `<table class="tabela"><thead><tr><th>Faixa</th><th>Graus</th><th>Último grau</th><th>Aulas na faixa</th></tr></thead><tbody>${linhas}</tbody></table>`;
+    };
+    ["#cf-fx-branca", "#cf-fx-azul", "#cf-fx-roxa", "#cf-fx-marrom", "#cf-treinos", "#cf-folga"].forEach(id => el.querySelector(id).addEventListener("input", previaGrad));
+    previaGrad();
     // Logo: undefined = não mexeu; null = voltar para a padrão; texto = logo nova (já reduzida no aparelho).
     let logoNova;
     el.querySelector("#cf-logo").onchange = async ev => {
@@ -259,7 +273,7 @@ export const config = {
     el.querySelector("#cfg").onsubmit = e => {
       e.preventDefault();
       const v = id => el.querySelector(id).value.trim(), n = id => Number(v(id));
-      const inteiros = ["#cf-venc", "#cf-meta", "#cf-aulas", "#cf-meses", "#cf-min-branca", "#cf-min-azul", "#cf-min-roxa", "#cf-min-marrom",
+      const inteiros = ["#cf-venc", "#cf-meta", "#cf-fx-branca", "#cf-fx-azul", "#cf-fx-roxa", "#cf-fx-marrom", "#cf-treinos", "#cf-folga",
         "#cf-k-aulas", "#cf-k-meses", "#cf-k-faixa", "#cf-k-cinza", "#cf-k-amarela", "#cf-k-laranja", "#cf-k-verde"];
       const ruim = inteiros.find(id => { const x = el.querySelector(id), k = Number(x.value); return x.value === "" || !Number.isInteger(k) || k < Number(x.min) || k > Number(x.max); });
       if (v("#cf-nome").length < 2) return erroEm(el, "#cf-erro", "Escreva o nome da academia.");
@@ -268,7 +282,7 @@ export const config = {
       if (!ik.every((v, i) => i === 0 || ik[i - 1] <= v)) return erroEm(el, "#cf-erro", "As idades mínimas kids precisam subir: cinza ≤ amarela ≤ laranja ≤ verde.");
       c.academia = { nome: v("#cf-nome"), endereco: v("#cf-end"), telefone: v("#cf-tel"), email: v("#cf-email"), logo: logoNova !== undefined ? logoNova : (c.academia.logo || null) };
       c.vencimentoPadrao = n("#cf-venc"); c.metaAulas30 = n("#cf-meta");
-      c.regras = { aulasPorGrau: n("#cf-aulas"), mesesPorGrau: n("#cf-meses"), mesesMinFaixa: Object.fromEntries(["branca", "azul", "roxa", "marrom"].map(f => [f, n(`#cf-min-${f}`)])) };
+      c.regras = { mesesFaixa: Object.fromEntries(["branca", "azul", "roxa", "marrom"].map(f => [f, n(`#cf-fx-${f}`)])), treinosPorSemana: n("#cf-treinos"), folgaPct: n("#cf-folga") };
       c.regrasKids = { aulasPorGrau: n("#cf-k-aulas"), mesesPorGrau: n("#cf-k-meses"), mesesMinFaixa: n("#cf-k-faixa"),
         idadeMin: Object.fromEntries(["cinza", "amarela", "laranja", "verde"].map(f => [f, n(`#cf-k-${f}`)])) };
       aplicarRegras(c.regras, c.regrasKids);

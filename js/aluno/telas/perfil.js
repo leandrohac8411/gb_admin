@@ -36,7 +36,8 @@ export default {
         <div><span>Peso</span><span class="step"><b>${p.peso ? numero(p.peso) + " kg" : "—"}</b></span></div>
         ${p.plano ? `<div><span>Plano</span><span class="step"><b>${esc(p.plano)}</b></span></div>` : ""}
         <div><span>Meta por semana</span><span class="step"><button id="menos" aria-label="Diminuir">−</button><b>${p.metaSemanal}</b><button id="mais" aria-label="Aumentar">+</button></span></div>
-        ${prox && p.metaAulasRoxa ? `<div><span>Aulas até a ${NOMES[prox]} <small class="muted" style="display:block;font-size:11px">regra da academia</small></span><span class="step"><b>${naFaixa} de ${p.metaAulasRoxa}</b></span></div>` : ""}
+        ${prox && p.proximoPasso?.trocaFaixa ? `<div><span>Faixa ${NOMES[prox]} prevista <small class="muted" style="display:block;font-size:11px">pelo tempo de faixa da academia</small></span><span class="step"><b>${p.proximoPasso.trocaFaixa.data.split("-").reverse().join("/")}${p.proximoPasso.trocaFaixa.dias ? ` · ${p.proximoPasso.trocaFaixa.dias} dias` : ""}</b></span></div>` : ""}
+        ${prox && p.metaAulasRoxa ? `<div><span>Aulas até a ${NOMES[prox]}<small class="muted" style="display:block;font-size:11px">regra da academia</small></span><span class="step"><b>${naFaixa} de ${p.metaAulasRoxa}</b></span></div>` : ""}
         <button id="dados"><span>Dados pessoais</span><b>›</b></button>
       </div>
       <button class="btn sair" id="sair"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M21 12H10M17 8l4 4-4 4"/></svg><span>Sair da conta</span></button>`;

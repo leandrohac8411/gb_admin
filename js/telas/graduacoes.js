@@ -3,7 +3,7 @@
 import { esc, perguntar, toast, dataLonga } from "../ui/util.js";
 import { faixaSVG, nomeFaixa, faixasDe, CORES_FAIXA, corBase } from "../ui/faixa.js";
 import { hojeISO } from "../logica/datas.js";
-import { aptidao, regrasDe, mesesEntre, idadeEm, passaParaAdulto, REGRAS, REGRAS_KIDS } from "../logica/graduacao.js";
+import { aptidao, regrasDe, mesesEntre, idadeEm, passaParaAdulto, REGRAS, REGRAS_KIDS, progressoGraduacao } from "../logica/graduacao.js";
 import { cabecalho, pessoa, faixaCelula, porId, aba, daAba, abasCategoria, ligarAbas, anosTexto, estrelas } from "./comum.js";
 import { mediaComportamento } from "../logica/familia.js";
 
@@ -19,11 +19,11 @@ function situacao(a, apt, hoje) {
   if (a.graus === 4) {
     const lista = faixasDe(a.categoria), prox = lista[lista.indexOf(a.faixa) + 1];
     if (!prox) return '<span class="pill">Última faixa kids</span>';
-    const minMeses = kids ? R.mesesMinFaixa : R.mesesMinFaixa[a.faixa];
-    if (mesesEntre(a.desdeFaixa, hoje) < minMeses) return `<span class="pill alerta">Aguardando tempo (${mesesEntre(a.desdeFaixa, hoje)}/${minMeses} meses)</span>`;
+    const minMeses = kids ? R.mesesMinFaixa : null;
+    if (kids && mesesEntre(a.desdeFaixa, hoje) < minMeses) return `<span class="pill alerta">Aguardando tempo (${mesesEntre(a.desdeFaixa, hoje)}/${minMeses} meses)</span>`;
     if (kids) return `<span class="pill alerta">Aguardando idade (${idadeEm(a.nascimento, hoje) ?? "?"}/${R.idadeMin[corBase(prox)]} anos)</span>`;
   }
-  return '<span class="pill alerta">Aguardando tempo</span>';
+  return apt.dataPrevista ? `<span class="pill alerta">Previsto para ${dataLonga(apt.dataPrevista)}</span>` : '<span class="pill alerta">Aguardando tempo</span>';
 }
 
 // Ao virar adulto, faixa kids vira branca (ou azul se já é verde) — regra simplificada da vitrine.
@@ -43,7 +43,7 @@ export default {
     const alunos = porId(d.alunos);
     const regraTexto = kids
       ? `Regra kids: grau mensal (${R.mesesPorGrau === 1 ? "a cada mês" : `a cada ${R.mesesPorGrau} meses`}, com pelo menos ${R.aulasPorGrau} aula${R.aulasPorGrau === 1 ? "" : "s"} no período); troca de faixa com 4 graus, ${R.mesesMinFaixa} meses na faixa e idade mínima da cor (cinza ${R.idadeMin.cinza}, amarela ${R.idadeMin.amarela}, laranja ${R.idadeMin.laranja}, verde ${R.idadeMin.verde} anos).`
-      : `Regra adulto: ${R.aulasPorGrau} aulas e ${R.mesesPorGrau} meses por grau; troca de faixa com 4 graus e tempo mínimo na faixa.`;
+      : `Regra adulto: o tempo de cada faixa (${["branca", "azul", "roxa", "marrom"].map(f => `${f} ${R.mesesFaixa[f]} meses`).join(", ")}) é dividido em 4 graus + a troca de faixa, com as aulas proporcionais (base de ${R.treinosPorSemana} treinos por semana, ${R.folgaPct}% de folga para recesso e feriados).`;
 
     const cartaoVirarAdulto = viramAdultos.length ? `<div class="card" style="border-color:#f0d39a;background:#fffaf0">
         <div class="card-cab"><div><h3>Passam para Adultos</h3><small>completaram ${REGRAS_KIDS.idadeAdulto} anos</small></div></div>
@@ -66,7 +66,7 @@ export default {
       ? `<div class="card">${lista.length ? `<table class="tabela resp"><thead><tr><th>${kids ? "Criança" : "Aluno"}</th><th>Faixa</th><th>Aulas p/ próximo grau</th><th>Situação</th></tr></thead><tbody>${lista
           .sort((x, y) => faixas.indexOf(y.a.faixa) - faixas.indexOf(x.a.faixa) || y.a.graus - x.a.graus || x.a.nome.localeCompare(y.a.nome, "pt-BR"))
           .map(({ a, apt }) => `<tr class="clica" data-id="${esc(a.id)}"><td class="cheia">${pessoa(a, kids ? anosTexto(idadeEm(a.nascimento, hoje)) : "")}</td><td>${faixaCelula(a)}</td>
-            <td style="min-width:140px">${a.faixa === "preta" ? "—" : `<div class="progresso ${apt.faltamAulas ? "" : "ok"}"><i style="width:${Math.min(100, Math.round(apt.aulas / R.aulasPorGrau * 100))}%"></i></div><small class="muted">${Math.min(apt.aulas, R.aulasPorGrau)}/${R.aulasPorGrau}</small>`}</td>
+            <td style="min-width:140px">${a.faixa === "preta" ? "—" : `${(pg => `<div class="progresso ${apt.faltamAulas ? "" : "ok"}"><i style="width:${Math.min(100, Math.round(pg.feitas / (pg.necessarias || 1) * 100))}%"></i></div><small class="muted">${Math.min(pg.feitas, pg.necessarias)}/${pg.necessarias}</small>`)(progressoGraduacao(a, apt))}`}</td>
             <td>${situacao(a, apt, hoje)}</td></tr>`).join("")}</tbody></table>` : `<div class="vazio">Nenhum aluno ativo nesta aba.</div>`}</div>`
       : (() => {
           const hist = [...d.graduacoes].filter(g => alunos[g.alunoId] && daAba(alunos[g.alunoId])).sort((x, y) => y.data.localeCompare(x.data)).slice(0, 40);

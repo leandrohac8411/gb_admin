@@ -131,8 +131,8 @@ test("espelhoAulas: quem participou de cada aula adulta dos últimos dias (só o
 });
 
 import { REGRAS } from "../js/logica/graduacao.js";
-test("espelhoAluno leva a meta de aulas da faixa pela regra da academia (4 graus + a troca de faixa)", () => {
-  assert.equal(espelhoAluno(d, ana, "2026-11-25").metaFaixa, REGRAS.aulasPorGrau * 5);
+test("espelhoAluno leva a meta de aulas da faixa pela regra da academia (tempo da faixa x treinos)", () => {
+  assert.equal(espelhoAluno(d, ana, "2026-11-25").metaFaixa, 177, "azul: ~177 aulas em 24 meses (plano da faixa)");
   assert.equal(espelhoAluno(d, { ...ana, faixa: "preta" }, "2026-11-25").metaFaixa, null, "faixa preta não tem próxima");
 });
 

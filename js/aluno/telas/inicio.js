@@ -3,7 +3,7 @@ import { aulaPrevista, semanaDoCiclo } from "../logica/ciclo.js";
 import { progressoRoxa, progressoSemana, progressoMes, horasTatame } from "../logica/metas.js";
 import { faixaSVG, CORES, NOMES, corDaFaixa, proximaFaixa } from "../ui/faixa.js";
 import { anelSVG } from "../ui/graficos.js";
-import { esc, temaCurto, saudacao, iniciais, horaTexto, numero, fotoSegura } from "../ui/util.js";
+import { esc, temaCurto, saudacao, iniciais, horaTexto, numero, fotoSegura, dataLonga } from "../ui/util.js";
 import { turmasDoDia, conteudoPrevisto, pintarFoto, minutosAgora, minutosDe } from "./comum.js";
 
 const CAL = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M7.5 14h3M13.5 14h3M7.5 17.5h3"/></svg>';
@@ -23,6 +23,8 @@ export default {
     const naFaixa = e.aulas.filter(a => !perfil.desdeFaixa || a.data >= perfil.desdeFaixa);
     const roxa = progressoRoxa(naFaixa, perfil.metaAulasRoxa || naFaixa.length || 1);
     const cor = corDaFaixa(perfil.faixa?.cor), prox = proximaFaixa(cor);
+    // Troca de faixa prevista pela regra da academia (tempo da faixa), calculada no GB Admin.
+    const troca = perfil.proximoPasso?.trocaFaixa;
     const sem = progressoSemana(e.aulas, hoje, perfil.metaSemanal);
     const mes = progressoMes(e.aulas, hoje, perfil.metaSemanal);
     const horas = horasTatame(e.aulas);
@@ -75,6 +77,7 @@ export default {
           <div><b>${mes.feitas}/${mes.meta}</b><small>Mês</small></div>
           <div><b>${numero(horas)}h</b><small>Tatame</small></div>
         </div>
+        ${troca && prox ? `<p class="troca-faixa">Faixa ${NOMES[prox]} prevista para <b>${dataLonga(troca.data)}</b>${troca.dias ? ` · em ~${troca.dias} dias` : ""}</p>` : ""}
       </div>
       <section class="card-grade">
         <div class="cg-cab"><span class="cg-ic">${CAL}</span><div class="cg-tit"><b>Grade de hoje</b><small>${dataExtenso(hoje)}</small></div>${semGB1 ? `<span class="selo-sem">${CAL}Semana ${semGB1}</span>` : ""}</div>

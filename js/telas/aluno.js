@@ -5,7 +5,7 @@ import { reais, anelClaroSVG, competenciaTexto } from "../ui/util-admin.js";
 import { faixaSVG, nomeFaixa, faixasDe, corBase } from "../ui/faixa.js";
 import { hojeISO } from "../logica/datas.js";
 import { categoriaIdade, categoriaPeso } from "../logica/categorias.js";
-import { aptidao, regrasDe, mesesEntre, idadeEm, passaParaAdulto, ehKids } from "../logica/graduacao.js";
+import { aptidao, regrasDe, mesesEntre, idadeEm, passaParaAdulto, ehKids, progressoGraduacao } from "../logica/graduacao.js";
 import { statusMensalidade, inadimplentes } from "../logica/financeiro.js";
 import { icone } from "../menu.js";
 import { etiquetaPrograma, porId, PILL_STATUS, DIAS_CURTOS, estrelas, marcaAluno } from "./comum.js";
@@ -30,9 +30,9 @@ export default {
     const media = mediaComportamento(d.avaliacoes || [], a.id);
     const idade = categoriaIdade(a.nascimento, hoje), peso = categoriaPeso(a.peso, a.sexo);
     const lista = faixasDe(a.categoria), proximaCor = lista[lista.indexOf(a.faixa) + 1];
-    const minMeses = kids ? R.mesesMinFaixa : R.mesesMinFaixa[a.faixa];
+    const minMeses = kids ? R.mesesMinFaixa : null;
     const turmaKids = kids ? d.turmas.filter(t => t.categoria === "kids" && anos >= t.idadeMin && Math.min(anos, 15) <= t.idadeMax && t.idadeMax - t.idadeMin < 11)[0] : null;
-    const n30 = aulas30(a.id, d.checkins, hoje), apt = aptidao(a, d.checkins, hoje);
+    const n30 = aulas30(a.id, d.checkins, hoje), apt = aptidao(a, d.checkins, hoje), prog = progressoGraduacao(a, apt);
     const devendo = inadimplentes(d.mensalidades, d.alunos, hoje).includes(a.id);
     const turmas = porId(d.turmas);
     const mens = d.mensalidades.filter(m => m.alunoId === a.id).sort((x, y) => y.competencia.localeCompare(x.competencia)).slice(0, 4);
@@ -44,6 +44,8 @@ export default {
       : !proximaCor && a.graus === 4 ? "Última faixa kids completa. Aos 16 anos passa para Adultos."
       : apt.tipo === "faixa" ? `Pronto para a faixa ${nomeFaixa(apt.proximaFaixa).toLowerCase()}!`
       : apt.tipo === "grau" ? `Pronto para o ${a.graus + 1}º grau!`
+      // Adulto: passo previsto pelo tempo da faixa + aulas proporcionais (Configurações › Regras de graduação).
+      : !kids && apt.dataPrevista ? `${a.graus === 4 ? `Faixa ${nomeFaixa(proximaCor).toLowerCase()}` : `${a.graus + 1}º grau`} previsto para ${dataLonga(apt.dataPrevista)}${apt.diasFaltam ? ` (em ${apt.diasFaltam} dias)` : ""}${apt.faltamAulas ? ` · faltam ${apt.faltamAulas} aulas` : " · aulas completas"}.`
       : apt.faltamAulas ? `Faltam ${apt.faltamAulas} aulas para ${a.graus === 4 ? `a faixa ${nomeFaixa(proximaCor).toLowerCase()}` : `o ${a.graus + 1}º grau`}.`
       : a.graus === 4 && mesesEntre(a.desdeFaixa, hoje) < minMeses ? `4 graus: pede ${minMeses} meses na faixa (está com ${mesesEntre(a.desdeFaixa, hoje)}).`
       : a.graus === 4 && kids ? `4 graus: a faixa ${nomeFaixa(proximaCor).toLowerCase()} pede ${R.idadeMin[corBase(proximaCor)]} anos (tem ${anos}).`
@@ -93,8 +95,8 @@ export default {
           <p class="muted" style="margin:0">${n30 >= META_30_DIAS ? "Frequência excelente: 3 treinos por semana ou mais." : n30 >= 6 ? "Treinando com regularidade." : n30 ? "Frequência baixa: vale um contato." : "Sem treinos no último mês."}</p></div></div>
         <div class="card"><div class="card-cab"><h3>Próximo passo</h3><a class="link" href="#graduacoes">Graduações</a></div>
           <p style="margin:0 0 10px;font-weight:700">${proximo}</p>
-          ${a.faixa !== "preta" ? `<div class="progresso ${apt.tipo ? "ok" : ""}"><i style="width:${Math.min(100, Math.round(apt.aulas / R.aulasPorGrau * 100))}%"></i></div>
-          <small class="muted">${Math.min(apt.aulas, R.aulasPorGrau)} de ${R.aulasPorGrau} aulas desde a última graduação</small>` : ""}</div>
+          ${a.faixa !== "preta" ? `<div class="progresso ${apt.tipo ? "ok" : ""}"><i style="width:${Math.min(100, Math.round(prog.feitas / (prog.necessarias || 1) * 100))}%"></i></div>
+          <small class="muted">${Math.min(prog.feitas, prog.necessarias)} de ${prog.necessarias} aulas ${kids ? "desde a última graduação" : "na faixa para o próximo passo"}${!kids && apt.trocaFaixa ? ` · troca de faixa prevista para ${dataLonga(apt.trocaFaixa.data)}` : ""}</small>` : ""}</div>
         <div class="card"><div class="card-cab"><h3>Mensalidades</h3><a class="link" href="#financeiro">Financeiro</a></div>
           ${mens.length ? `<div class="lista">${mens.map(m => `<div><div class="cresce"><b>${competenciaTexto(m.competencia)}</b><small>vence ${dataLonga(m.vencimento)}${m.pagoEm ? ` · pago em ${dataLonga(m.pagoEm)}` : ""}</small></div><b>${reais(m.valor)}</b>${PILL_STATUS[statusMensalidade(m, hoje)]}</div>`).join("")}</div>`
             : `<div class="vazio">Nenhuma mensalidade lançada.</div>`}</div>

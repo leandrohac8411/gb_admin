@@ -265,11 +265,11 @@ textarea.input{min-height:72px;resize:vertical}
 .need.good .bar i{background:var(--good)}
 
 /* Perfil */
-.pf{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:4px}
+.pf{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:4px;padding-top:28px;text-align:center}
 .pf-logo{position:absolute;left:0;top:0;width:60px;height:60px}
-.pf .foto{width:84px;height:84px;font-size:32px}
+.pf .foto{width:96px;height:96px;font-size:34px}
 .pf .foto i{width:26px;height:26px;font-size:12px}
-.pf h3{margin:8px 0 0;font-size:20px}
+.pf h3{margin:10px 0 0;font-size:20px;text-align:center;line-height:1.25}
 .cats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .cat{background:var(--fg);color:#fff;border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;line-height:1.25;text-align:left}
 .cat:last-child{background:var(--blue)}

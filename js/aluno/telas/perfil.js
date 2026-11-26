@@ -3,7 +3,7 @@ import { categoriaIdade, categoriaPeso } from "../logica/categorias.js";
 import { salvarPerfil } from "../dados.js";
 import { sair } from "../nuvem.js";
 import { faixaSVG, NOMES, corDaFaixa, proximaFaixa } from "../ui/faixa.js";
-import { esc, iniciais, numero, abrirFolha, perguntar, toast, nomeMes, fotoSegura } from "../ui/util.js";
+import { esc, iniciais, numero, abrirFolha, perguntar, nomeMes, fotoSegura } from "../ui/util.js";
 
 // Portal: tudo do cadastro (nome, foto, nascimento, sexo, peso, telefone, plano, faixa e graus) vem do GB Admin;
 // o aluno só ajusta as metas dele.
@@ -18,6 +18,7 @@ export default {
     const foto = fotoSegura(p.foto);
     const [ay, am] = (p.faixa?.desde || hoje.slice(0, 7)).split("-").map(Number);
     const cor = corDaFaixa(p.faixa?.cor), prox = proximaFaixa(cor);
+    const naFaixa = e.aulas.filter(a => !p.desdeFaixa || a.data >= p.desdeFaixa).length;
 
     el.innerHTML = `
       <div class="pf">
@@ -35,7 +36,7 @@ export default {
         <div><span>Peso</span><span class="step"><b>${p.peso ? numero(p.peso) + " kg" : "—"}</b></span></div>
         ${p.plano ? `<div><span>Plano</span><span class="step"><b>${esc(p.plano)}</b></span></div>` : ""}
         <div><span>Meta por semana</span><span class="step"><button id="menos" aria-label="Diminuir">−</button><b>${p.metaSemanal}</b><button id="mais" aria-label="Aumentar">+</button></span></div>
-        ${prox ? `<button id="roxa"><span>Aulas até a ${NOMES[prox]}</span><b>${p.metaAulasRoxa} ›</b></button>` : ""}
+        ${prox && p.metaAulasRoxa ? `<div><span>Aulas até a ${NOMES[prox]} <small class="muted" style="display:block;font-size:11px">regra da academia</small></span><span class="step"><b>${naFaixa} de ${p.metaAulasRoxa}</b></span></div>` : ""}
         <button id="dados"><span>Dados pessoais</span><b>›</b></button>
       </div>
       <button class="btn sair" id="sair"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M21 12H10M17 8l4 4-4 4"/></svg><span>Sair da conta</span></button>`;
@@ -48,13 +49,6 @@ export default {
     const mudarMeta = d => salvarPerfil(e.uid, { metaSemanal: Math.max(1, Math.min(7, p.metaSemanal + d)) });
     $("menos").onclick = () => mudarMeta(-1);
     $("mais").onclick = () => mudarMeta(1);
-    if ($("roxa")) $("roxa").onclick = () => formulario(`Aulas até a ${NOMES[prox]}`, [
-      { id: "n", rotulo: `Meta de aulas na faixa ${NOMES[cor]}`, tipo: "number", valor: p.metaAulasRoxa, passo: "1" }
-    ], async v => {
-      const n = Math.round(Number(v.n));
-      if (!(n >= 1 && n <= 2000)) { toast("Número inválido."); return; }
-      await salvarPerfil(e.uid, { metaAulasRoxa: n });
-    });
 
     // Dados pessoais vêm do cadastro na academia (GB Admin): aqui só para ver.
     const abrirDados = () => abrirFolha((folha, fechar) => {
@@ -71,17 +65,3 @@ export default {
     $("sair").onclick = async () => { if (await perguntar("Sair do portal?", "Para entrar de novo, use seu e-mail e senha.", "Sair", "Cancelar")) sair(); };
   }
 };
-
-function formulario(titulo, campos, aoSalvar) {
-  abrirFolha((folha, fechar) => {
-    folha.innerHTML = `<h3>${esc(titulo)}</h3>` + campos.map(c => `<div class="field"><label for="f_${c.id}">${esc(c.rotulo)}</label>${
-      c.tipo === "select" ? `<select class="input" id="f_${c.id}">${c.opcoes.map(([v, t]) => `<option value="${v}" ${v === c.valor ? "selected" : ""}>${t}</option>`).join("")}</select>`
-      : `<input class="input" id="f_${c.id}" maxlength="80" type="${c.tipo || "text"}" value="${esc(c.valor)}" ${c.passo ? `step="${c.passo}" inputmode="decimal"` : ""} ${c.somenteLeitura ? "readonly" : ""}>`}</div>`).join("") +
-      `<div class="acoes"><button class="btn ghost" id="c">Cancelar</button><button class="btn" id="ok">Salvar</button></div>`;
-    folha.querySelector("#c").onclick = fechar;
-    folha.querySelector("#ok").onclick = async () => {
-      const v = {}; campos.forEach(c => { v[c.id] = folha.querySelector("#f_" + c.id).value; });
-      fechar(); await aoSalvar(v);
-    };
-  });
-}

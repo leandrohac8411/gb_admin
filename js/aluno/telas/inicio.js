@@ -19,7 +19,9 @@ export default {
     const hoje = hojeISO();
     const perfil = e.perfil;
     const graus = perfil.graus?.length || 0;
-    const roxa = progressoRoxa(e.aulas, perfil.metaAulasRoxa);
+    // Anel: aulas desde que pegou a faixa atual, até a meta da academia (regra de graduação do GB Admin).
+    const naFaixa = e.aulas.filter(a => !perfil.desdeFaixa || a.data >= perfil.desdeFaixa);
+    const roxa = progressoRoxa(naFaixa, perfil.metaAulasRoxa || naFaixa.length || 1);
     const cor = corDaFaixa(perfil.faixa?.cor), prox = proximaFaixa(cor);
     const sem = progressoSemana(e.aulas, hoje, perfil.metaSemanal);
     const mes = progressoMes(e.aulas, hoje, perfil.metaSemanal);
@@ -65,7 +67,7 @@ export default {
       <div class="prog">
         <div class="ptop">
           <div class="ring">${anelSVG(roxa.fracao)}<b>${roxa.feitas}<small>de ${roxa.meta}</small></b></div>
-          <div><h3>Aulas realizadas</h3>
+          <div><h3>Aulas na faixa</h3>
             <div class="journey" aria-label="${prox ? `Da ${NOMES[cor]} para a ${NOMES[prox]}` : `Faixa ${NOMES[cor]}`}"><span class="mb" style="background:${CORES[cor]}"></span><span class="jt"><span style="width:${(roxa.fracao * 100).toFixed(1)}%"></span></span><span class="mb" style="background:${CORES[prox || cor]}"></span></div></div>
         </div>
         <div class="stats">

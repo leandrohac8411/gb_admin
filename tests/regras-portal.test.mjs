@@ -44,7 +44,7 @@ test("formatos: diário (texto do Diário, limitado, sem data futura) e check-in
 test("metas e peso: só o próprio aluno, com formato conferido", () => {
   assert.match(bloco("diarios/{alunoId} "), /alunoId == meuAlunoId\(\) && prefsOk/);
   const pr = regras.slice(regras.indexOf("function prefsOk"), regras.indexOf("function pesoOk"));
-  assert.match(pr, /hasOnly\(\['metaSemanal', 'metaAulasRoxa'\]\)/, "nascimento e sexo vêm do GB Admin");
+  assert.match(pr, /hasOnly\(\['metaSemanal'\]\)/, "nascimento, sexo e a meta da faixa vêm do GB Admin");
   assert.match(bloco("diarios/{alunoId}/pesos/{id}"), /alunoId == meuAlunoId\(\) && pesoOk/);
   assert.match(regras.slice(regras.indexOf("function pesoOk")), /d\.kg > 20 && d\.kg < 250/);
 });

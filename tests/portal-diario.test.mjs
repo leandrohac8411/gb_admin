@@ -8,13 +8,15 @@ const grade = {
   cronograma: [{ programa: "GB1", semana: 13, aulaB: { tema: "Costas: gola", tecnicas: [{ nome: "Gola", categoria: "Costas" }] } }],
   ancoras: [{ programa: "GB1", data: "2026-11-16", semana: 12 }], modelosAula: [{ id: "m1", nome: "Padrão", blocos: [{ nome: "Aquecimento", min: 10 }] }]
 };
-const portal = { nome: "Ana Souza", nascimento: "1990-05-01", sexo: "F", peso: 61.5, telefone: "61 9999-0000", plano: "Mensal", foto: "data:image/jpeg;base64,AAAA", faixa: "roxa", graus: 2, desdeFaixa: "2026-03-10", ultimaGraduacao: "2026-06-01",
+const portal = { nome: "Ana Souza", nascimento: "1990-05-01", sexo: "F", peso: 61.5, telefone: "61 9999-0000", plano: "Mensal", foto: "data:image/jpeg;base64,AAAA", metaFaixa: 150, faixa: "roxa", graus: 2, desdeFaixa: "2026-03-10", ultimaGraduacao: "2026-06-01",
   presencas: [{ data: "2026-11-25", turmaId: "t1", hora: "12:31", horario: "12:30", programa: "GB1" },
     { data: "2026-11-11", turmaId: "velha", hora: "07:00", horario: "07:00", programa: "GB2" }], proximoPasso: { faltamAulas: 10 } };
 const base = { portal, grade, diario: [], pendentes: [], prefs: {}, email: "ana@x.com", alunoId: "a1" };
 
 test("perfil vem do GB Admin (nome, nascimento, sexo, faixa e graus) e as metas do aluno", () => {
-  const e = montarEstadoDiario({ ...base, prefs: { metaSemanal: 3, nascimento: "2000-01-01", sexo: "M" } });
+  const e = montarEstadoDiario({ ...base, prefs: { metaSemanal: 3, metaAulasRoxa: 999, nascimento: "2000-01-01", sexo: "M" } });
+  assert.equal(e.perfil.metaAulasRoxa, 150, "meta da faixa é regra da academia, não do aluno");
+  assert.equal(e.perfil.desdeFaixa, "2026-03-10");
   assert.equal(e.perfil.nascimento, "1990-05-01");
   assert.equal(e.perfil.sexo, "F");
   assert.equal(e.perfil.peso, 61.5);
@@ -27,7 +29,6 @@ test("perfil vem do GB Admin (nome, nascimento, sexo, faixa e graus) e as metas 
   assert.equal(e.perfil.graus[1].data, "2026-06-01", "o último grau tem a data da última graduação");
   assert.equal(e.perfil.graus[0].data, undefined);
   assert.equal(e.perfil.metaSemanal, 3);
-  assert.equal(e.perfil.metaAulasRoxa, 175, "padrão do Diário");
 });
 
 test("grade, currículo e ciclo no formato do Diário", () => {

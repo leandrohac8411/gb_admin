@@ -129,3 +129,9 @@ test("espelhoAulas: quem participou de cada aula adulta dos últimos dias (só o
   assert.ok(!m.has("sumiu_2026-11-20"), "turma que não está mais na grade fica fora");
   assert.ok(!JSON.stringify([...m.values()]).includes("x"), "nada além do nome");
 });
+
+import { REGRAS } from "../js/logica/graduacao.js";
+test("espelhoAluno leva a meta de aulas da faixa pela regra da academia (4 graus + a troca de faixa)", () => {
+  assert.equal(espelhoAluno(d, ana, "2026-11-25").metaFaixa, REGRAS.aulasPorGrau * 5);
+  assert.equal(espelhoAluno(d, { ...ana, faixa: "preta" }, "2026-11-25").metaFaixa, null, "faixa preta não tem próxima");
+});

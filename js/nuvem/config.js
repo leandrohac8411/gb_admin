@@ -11,7 +11,5 @@ export const firebaseConfig = {
 
 // Só estes e-mails entram (em minúsculas). Use os MESMOS em firestore.rules.
 export const USERS = {
-  "leandrohacarvalho@gmail.com": { nome: "Leandro", sexo: "M" },
-  "leandrohenriqueac@gmail.com": { nome: "Leandro", sexo: "M" },
-  "strandrade@gmail.com": { nome: "Stephany", sexo: "F" }
+  "leandrohenriqueac@gmail.com": { nome: "Leandro", sexo: "M", uid: "Uhr6XYnS5jcaLEB05MaJFW11Msu1" }
 };

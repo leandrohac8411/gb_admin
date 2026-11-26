@@ -31,10 +31,12 @@ Outros documentos:
 
 ### Quem entra
 
-Só entram as contas cadastradas por e-mail e senha no Firebase Authentication (hoje, Leandro e Stephany). A lista de e-mails autorizados fica em **dois lugares**, que precisam ser iguais:
+No painel só entra o admin cadastrado (hoje, só `leandrohenriqueac@gmail.com`). Ele é reconhecido pelo **UID** da conta (Firebase › Authentication › Users), e não só pelo e-mail: o cadastro fica aberto para o portal do aluno, e com ele aberto qualquer um poderia criar uma conta com um e-mail de admin que ainda não existisse. A lista fica em **dois lugares**, que precisam ser iguais:
 
-- `js/nuvem/config.js` (`USERS`): define nome e saudação ("Bem-vindo" ou "Bem-vinda");
-- `firestore.rules` (`permitido()`): é o que de fato libera o banco.
+- `js/nuvem/config.js` (`USERS`): e-mail, `uid`, nome e saudação ("Bem-vindo" ou "Bem-vinda"); o app abre o painel só se o e-mail **e** o UID baterem;
+- `firestore.rules` (`permitido()`): a lista de UIDs, que é o que de fato libera o banco.
+
+Para incluir outro admin (a Stephany, por exemplo): crie a conta em Authentication › Users (*Add user*), copie o UID e acrescente nos dois lugares; depois `firebase deploy --only firestore:rules`.
 
 Uma conta que existe no Firebase mas não está nessa lista é desconectada, e o login mostra "O e-mail … não tem acesso ao painel".
 
@@ -242,7 +244,7 @@ Várias telas têm as abas **Adultos | Kids**, e a escolha fica lembrada ao troc
 
 **Permissões**
 - Usuários e o que cada perfil vê (Administrador, Professor, Recepção).
-- **Ilustrativa**: quem entra de verdade é definido pelos e-mails autorizados (seção 1).
+- **Ilustrativa**: quem entra de verdade é definido pela lista de admins (seção 1).
 
 **Configurações**
 - Quem usa o painel (nome e saudação).
@@ -389,7 +391,7 @@ Projeto `gbadmin-48ff9`, separado do Diário de Tatame. É usado no **plano grat
 ## 6. Segurança e privacidade
 
 - **Regras do banco** (`firestore.rules`):
-  - só os e-mails autorizados leem e gravam;
+  - só o admin (pelo UID da conta) lê e grava tudo; o aluno liberado só o que é dele (seção 11);
   - os nomes de documento e o formato são conferidos;
   - um rosto só pode ser gravado para um aluno ou professor que já existe no painel, com exatamente 128 números por descritor, miniatura JPEG com menos de 20 mil caracteres e consentimento completo;
   - qualquer outro caminho é negado.
@@ -475,7 +477,7 @@ Os testes cobrem a lógica pura, as regras do Firestore (por leitura do arquivo)
 
 - **Mensalidades dos meses seguintes**: o painel logado cria a mensalidade do mês da matrícula. Os meses seguintes **não são gerados sozinhos**: use **Financeiro › Novo lançamento**. Na demonstração, os dados de exemplo são refeitos a cada mês.
 - **Comunicação**: o envio é simulado. Use **Copiar mensagem** e envie pelo WhatsApp.
-- **Permissões**: a tela é ilustrativa. O acesso real é a lista de e-mails autorizados.
+- **Permissões**: a tela é ilustrativa. O acesso real é a lista de admins (seção 1).
 - **Contratos**: não há assinatura eletrônica. O "assinado" é marcado à mão.
 - **Fotos das aulas**: não são guardadas no painel logado. Só a presença confirmada fica.
 - **Backup**: exporta JSON. Importar só existe na demonstração.

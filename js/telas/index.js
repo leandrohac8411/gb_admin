@@ -3,7 +3,7 @@ import { registrar, desenhar, definirStore, quandoRestaurar, definirSair } from 
 import { criarStore } from "../store.js";
 import { hojeISO } from "../logica/datas.js";
 import { aplicarRegras } from "../logica/graduacao.js";
-import { modoInicial, emailAutorizado } from "../logica/validar-nuvem.js";
+import { modoInicial, adminAutorizado } from "../logica/validar-nuvem.js";
 import { USERS } from "../nuvem/config.js";
 import { perguntar, toast, esc, haFolhaAberta } from "../ui/util.js";
 import { criarSincronia } from "../logica/sincronia.js";
@@ -163,7 +163,7 @@ async function iniciar() {
   if (modo === "login") {
     let aviso = "";
     try { if (sessionStorage.getItem(CHAVE_INATIVO)) { aviso = "Sua sessão foi encerrada depois de 15 minutos sem uso. Entre de novo."; sessionStorage.removeItem(CHAVE_INATIVO); } } catch { /* segue */ }
-    if (usuario && !emailAutorizado(usuario.email)) { aviso = `O e-mail ${usuario.email} não tem acesso ao painel.`; await fb.sair(); }
+    if (usuario && !adminAutorizado(usuario)) { aviso = `O e-mail ${usuario.email} não tem acesso ao painel.`; await fb.sair(); }
     return mostrarLogin(fb, aviso);
   }
   if (modo === "painel") return abrirPainelLogado(fb, usuario);

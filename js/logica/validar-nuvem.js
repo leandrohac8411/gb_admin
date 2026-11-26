@@ -55,8 +55,10 @@ export function turmaNuvem(t) {
 //  - "demo": sem login, só quando o Firebase não está configurado — dados fictícios;
 //  - "login": qualquer outro caso (site publicado sem login, ou e-mail sem acesso).
 export const emailAutorizado = email => Object.hasOwn(USERS, String(email || "").toLowerCase());
+// Admin = e-mail da lista E a mesma conta (UID). O banco confere só o UID (firestore.rules).
+export const adminAutorizado = usuario => !!usuario && emailAutorizado(usuario.email) && USERS[String(usuario.email).toLowerCase()].uid === usuario.uid;
 export function modoInicial({ configurado, host, usuario }) {
-  if (configurado && usuario && emailAutorizado(usuario.email)) return "painel";
+  if (configurado && adminAutorizado(usuario)) return "painel";
   if (!configurado) return "demo";
   return "login";
 }

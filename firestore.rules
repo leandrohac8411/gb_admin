@@ -1,13 +1,13 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Só estes dois e-mails entram (em minúsculas). Mantenha igual a USERS em js/nuvem/config.js.
+    // Admin do painel: reconhecido pelo UID da conta (Authentication › Users), não pelo e-mail.
+    // O cadastro fica aberto para o portal do aluno; com ele aberto, qualquer um poderia criar uma
+    // conta com um e-mail de admin que ainda não existe. Mantenha igual aos uid de USERS em js/nuvem/config.js.
     function permitido() {
       return request.auth != null
-        && request.auth.token.email in [
-          'leandrohacarvalho@gmail.com',
-          'leandrohenriqueac@gmail.com',
-          'strandrade@gmail.com'
+        && request.auth.uid in [
+          'Uhr6XYnS5jcaLEB05MaJFW11Msu1'
         ];
     }
 

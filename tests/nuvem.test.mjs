@@ -49,18 +49,23 @@ test("turmaNuvem recusa horário e dia inválidos", () => {
   assert.equal(turmaNuvem({ ...t, categoria: "vip" }), null);
 });
 
-test("firestore.rules usa exatamente os e-mails de USERS", async () => {
+test("firestore.rules: admin é reconhecido pelo UID (exatamente os de USERS), nunca só pelo e-mail", async () => {
   const { USERS } = await import("../js/nuvem/config.js");
-  const regras = readFileSync("firestore.rules", "utf8");
-  const lista = [...regras.matchAll(/'([^']+@[^']+)'/g)].map(m => m[1]).sort();
-  assert.deepEqual(lista, Object.keys(USERS).sort());
+  const regras = readFileSync(new URL("../firestore.rules", import.meta.url), "utf8");
+  const f = regras.slice(regras.indexOf("function permitido()"), regras.indexOf("}", regras.indexOf("function permitido()")));
+  assert.doesNotMatch(f, /token\.email/, "com o cadastro aberto, e-mail sozinho não prova quem é");
+  const uids = [...f.matchAll(/'([A-Za-z0-9]{20,40})'/g)].map(m => m[1]).sort();
+  assert.deepEqual(uids, Object.values(USERS).map(u => u.uid).sort());
+  assert.deepEqual(Object.keys(USERS), ["leandrohenriqueac@gmail.com"]);
+  assert.equal(USERS["leandrohenriqueac@gmail.com"].uid, "Uhr6XYnS5jcaLEB05MaJFW11Msu1");
 });
 
 import { modoInicial } from "../js/logica/validar-nuvem.js";
 
 test("modoInicial: painel com usuário autorizado, login no resto (também no localhost), demo só sem config", () => {
-  const u = { email: "leandrohacarvalho@gmail.com" };
+  const u = { email: "leandrohenriqueac@gmail.com", uid: "Uhr6XYnS5jcaLEB05MaJFW11Msu1" };
   assert.equal(modoInicial({ configurado: true, host: "gb-admin.vercel.app", usuario: u }), "painel");
+  assert.equal(modoInicial({ configurado: true, host: "gb-admin.vercel.app", usuario: { ...u, uid: "outraConta123456789012" } }), "login", "mesmo e-mail, outra conta: não abre o painel");
   assert.equal(modoInicial({ configurado: true, host: "gb-admin.vercel.app", usuario: null }), "login");
   assert.equal(modoInicial({ configurado: true, host: "gb-admin.vercel.app", usuario: { email: "x@y.com" } }), "login");
   assert.equal(modoInicial({ configurado: true, host: "localhost", usuario: null }), "login");

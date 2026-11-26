@@ -11,7 +11,7 @@ let modo = "entrar", ultimoEnvio = 0;
 
 const marca = `<div class="lp-fundo" aria-hidden="true"></div>
   <header class="lp-marca"><div class="lp-linha-marca">
-    <div class="lp-gb"><img class="lp-logo" src="../img/logo-gb.png" alt="Gracie Barra"><div class="lp-gb-texto"><strong>GRACIE BARRA</strong><span>GB SOBRADINHO</span></div></div>
+    <div class="lp-gb"><img class="lp-logo" src="../img/logo-sobradinho.png" alt="GB Sobradinho"><div class="lp-gb-texto"><strong>GRACIE BARRA</strong><span>GB SOBRADINHO</span></div></div>
     <span class="lp-separador" aria-hidden="true"></span><h1 class="lp-app">Portal do<br>Aluno</h1></div>
     <div class="lp-regua" aria-hidden="true"></div></header>`;
 

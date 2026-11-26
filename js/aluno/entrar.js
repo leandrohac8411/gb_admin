@@ -46,7 +46,7 @@ export default {
       <p class="lp-frase">${primeiro ? "Crie sua senha com o e-mail que a academia liberou." : esqueci ? "Enviamos um link para criar uma senha nova." : "Acesse suas aulas no <em>tatame</em>"}</p>
       <form id="f" class="lp-form" novalidate>
         <div class="lp-grupo"><label for="email">E-mail</label><div class="lp-campo"><input id="email" type="email" placeholder="seu@email.com" autocomplete="username" inputmode="email" maxlength="254" autocapitalize="none" spellcheck="false"></div></div>
-        ${esqueci ? "" : `<div class="lp-grupo"><label for="senha">Senha</label><div class="lp-campo"><input id="senha" type="password" placeholder="${primeiro ? "Mínimo 6 caracteres" : "Digite sua senha"}" autocomplete="${primeiro ? "new-password" : "current-password"}" maxlength="128"></div></div>`}
+        ${esqueci ? "" : `<div class="lp-grupo"><label for="senha">Senha</label><div class="lp-campo"><input id="senha" type="password" placeholder="${primeiro ? "Mínimo 8 caracteres" : "Digite sua senha"}" autocomplete="${primeiro ? "new-password" : "current-password"}" maxlength="128"></div></div>`}
         ${primeiro ? '<div class="lp-grupo"><label for="senha2">Repita a senha</label><div class="lp-campo"><input id="senha2" type="password" autocomplete="new-password" maxlength="128"></div></div>' : ""}
         ${modo === "entrar" ? '<div class="lp-esqueci"><button type="button" data-modo="esqueci">Esqueci minha senha</button></div>' : ""}
         <button class="lp-entrar" type="submit" id="ok"><span>${primeiro ? "CRIAR ACESSO" : esqueci ? "ENVIAR LINK" : "ENTRAR"}</span></button>
@@ -69,7 +69,7 @@ export default {
         return;
       }
       if (!senha) return erro("Digite a senha.");
-      if (primeiro && senha.length < 6) return erro("A senha precisa ter pelo menos 6 caracteres.");
+      if (primeiro && senha.length < 8) return erro("A senha precisa ter pelo menos 8 caracteres.");
       if (primeiro && senha !== $("senha2").value) return erro("As duas senhas não estão iguais.");
       if (!primeiro && esperaRestante(lerT(), Date.now())) return erro("Muitas tentativas erradas. Espere 1 minuto e tente de novo.");
       $("ok").disabled = true; erro("");

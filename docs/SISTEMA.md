@@ -23,6 +23,7 @@ Outros documentos:
 8. [Rodar no computador e testar](#8-rodar-no-computador-e-testar)
 9. [O que ainda é simulado ou manual](#9-o-que-ainda-é-simulado-ou-manual)
 10. [Onde mexer para mudar uma regra](#10-onde-mexer-para-mudar-uma-regra)
+11. [Portal do aluno (/aluno)](#11-portal-do-aluno-aluno)
 
 ---
 
@@ -348,6 +349,11 @@ Projeto `gbadmin-48ff9`, separado do Diário de Tatame. É usado no **plano grat
 | `painel` | Todos os dados das telas, um documento por tipo ("balde"). |
 | `rostos` | Um documento por pessoa (o id é o do aluno ou do professor): `d0`, `d1`, `d2`, `mini`, `consentimento`, `atualizadoEm`. |
 | `fotos` | Foto da aula, um documento por aula (o id é `turma_AAAA-MM-DD`): `turmaId`, `data`, `foto` (JPEG em data URL, menos de 360 mil caracteres), `legenda`, `professorId`, `atualizadoEm`. Cabem uns 4 mil fotos na cota gratuita de 1 GB. |
+| `acessos` | Portal do aluno: um documento por e-mail liberado (o id é o e-mail): `alunoId`, `nome`, `ativo`. Escrito só pelo painel. |
+| `portal` | Portal do aluno: a cópia de cada aluno liberado (`nome`, `faixa`, `graus`, `desdeFaixa`, `ultimaGraduacao`, `presencas`, `proximoPasso`). Escrito só pelo painel. |
+| `portalGrade` | Portal do aluno: `atual`, com as turmas adultas, o cronograma, as âncoras do ciclo e os roteiros. Sem dado pessoal. Escrito só pelo painel. |
+| `diarios/{alunoId}/aulas` | Diário de cada aluno, um documento por aula (`turma_data`): `aprendi`, `revisar`, `dificuldade`, `tecnicas`. Só o próprio aluno lê e grava (nem o painel lê). |
+| `checkinsAluno` | Check-in feito pelo aluno no celular (`aluno_turma_data`). O painel junta na lista de presença ao abrir e apaga. |
 | `alunos`, `turmas`, `checkins` | Coleções da etapa 1. Agora são **só leitura**, porque o conteúdo já foi copiado para o painel. |
 
 ### Os "baldes" da coleção `painel` (`js/logica/baldes.js`)
@@ -396,7 +402,7 @@ Projeto `gbadmin-48ff9`, separado do Diário de Tatame. É usado no **plano grat
 - **Telas**: todo texto vindo dos dados passa por `esc()` antes de virar HTML. Arquivos importados (grade, currículo, backup) são lidos sem confiar no conteúdo: tamanho limitado, chaves perigosas descartadas e cada item validado.
 - **Repositório privado**: ele tem a marca GB e a configuração do banco.
 - Os passos de proteção do console do Firebase estão no [PUBLICAR.md](PUBLICAR.md), passo 2:
-  - desligar o cadastro aberto;
+  - manter o cadastro aberto (o portal do aluno precisa), com as regras barrando quem não foi liberado;
   - ligar a proteção contra enumeração de e-mails;
   - exigir senha mínima de 8 caracteres;
   - autorizar só os domínios usados;
@@ -494,3 +500,30 @@ Os testes cobrem a lógica pura, as regras do Firestore (por leitura do arquivo)
 | Visual | `css/admin.css` |
 
 Depois de mudar qualquer coisa: rode `npm test`, faça o commit e o `git push`. A Vercel publica sozinha. Mudou `firestore.rules`? Rode também `firebase deploy --only firestore:rules`.
+
+---
+
+## 11. Portal do aluno (`/aluno`)
+
+O aluno adulto entra em `admin-gbsob.vercel.app/aluno` e vê as aulas da academia, a foto do dia e escreve o próprio diário. Desenho completo em `docs/superpowers/specs/2026-11-25-portal-aluno-design.md`. Kids, peso e evolução ficam para depois.
+
+### Como o aluno ganha acesso
+1. Na ficha do aluno (painel logado, só adulto), cartão **Portal do aluno**: e-mail e **Liberar acesso**. O e-mail não pode estar liberado para outro aluno.
+2. O aluno abre `/aluno`, toca em **Primeiro acesso** e cria a senha (mínimo 8). Chega um e-mail de confirmação.
+3. Depois de confirmar o e-mail, ele entra. Sem confirmar, aparece "Confirme o e-mail…"; com e-mail não liberado, "ainda não foi liberado pela academia".
+4. **Tirar acesso** apaga a liberação; o diário dele fica guardado. Aluno **trancado** perde a leitura até ser reativado.
+
+### O que o aluno vê
+- **Início:** faixa e graus, aulas no mês, total, aulas desde o último grau, o próximo passo da graduação (o mesmo cálculo do painel) e as aulas de hoje (com **Check-in** na que está acontecendo).
+- **Aulas:** dia a dia, com tema, professor, 📸 quando tem foto e "Você esteve".
+- **Aula:** foto, tema, técnicas e roteiro com horários. Para quem esteve: **Meu diário** (o que aprendi, o que revisar, dificuldade de 1 a 5, como foi cada técnica). Quem não esteve só vê.
+- **Check-in:** de 30 minutos antes até o fim da aula, a até 50 m da academia (mais a margem do GPS, no máximo +50 m). Duas aulas no mesmo horário: ele pergunta qual. Repetido: "Você já fez check-in nesta aula."
+- **Perfil:** nome, e-mail e Sair. O portal não cai por inatividade (é o celular do aluno).
+
+### Como os dados chegam (espelho)
+- O painel é o dono dos dados. Depois de cada salvar e ao abrir, ele grava só o que mudou em `acessos`, `portal` e `portalGrade` (`js/logica/portal-sincronia.js`). Por isso a frequência do aluno atualiza quando alguém usa o painel.
+- Ao abrir, o painel também junta os check-ins dos alunos dos últimos 7 dias (`origem: "aluno"`), sem duplicar, e apaga os pendentes.
+- Regras: o aluno só lê o próprio `portal`, a grade, as fotos das turmas adultas e o próprio diário; só cria o próprio check-in. Tudo exige e-mail confirmado e acesso `ativo`.
+
+### Código
+`aluno/index.html`, `css/aluno.css` (visual do Diário de Tatame), `js/aluno/` (app, login, telas e `nuvem.js`), lógica em `js/logica/portal.js`, `portal-checkin.js`, `portal-aluno.js`, `portal-sincronia.js` e `local.js`; no painel, `js/telas/portal-cartao.js` e `js/nuvem/portal.js`.

@@ -21,7 +21,8 @@ Passos em ordem. Os comandos são para o PowerShell, rodados dentro de `C:\xampp
 
    Confira na saída a linha `Project Console: .../project/gbadmin-48ff9/...`.
 2. **Authentication › Settings:**
-   - **User actions:** desmarque *Enable create (sign-up)*. Só as 2 contas criadas por você entram.
+   - **User actions:** deixe **marcado** *Enable create (sign-up)*. O portal do aluno (`/aluno`) precisa disso para o aluno criar a senha no **Primeiro acesso**. Quem cria conta sem ter o e-mail liberado na ficha (e confirmado) não lê nada: as regras do banco barram.
+   - **Sign-in method › E-mail/senha:** ligado (é o login do painel e do portal).
    - **User account management / Email enumeration protection:** ligue.
    - **Password policy:** mínimo de 8 caracteres.
    - **Authorized domains:** depois do passo 3, adicione o endereço da Vercel (por exemplo `gb-admin-xxxx.vercel.app`).
@@ -55,6 +56,19 @@ Faça no celular, no site da Vercel:
 - [ ] **Sair**: volta para o login e os dados do aparelho são apagados.
 
 Se o reconhecimento marcar a pessoa errada como **Reconhecido**, ou deixar quase todo mundo em **Confira**, anote as duas situações. Os limites (0,45 e 0,55) ficam em `js/logica/reconhecimento.js` e são ajustados com esses testes.
+
+## 5. Portal do aluno (`/aluno`)
+
+Depois do `git push` e do `firebase deploy --only firestore:rules` (as regras do portal estão no mesmo arquivo):
+
+- [ ] No painel, abra a ficha de um aluno adulto (pode ser você) e, no cartão **Portal do aluno**, digite o e-mail e toque em **Liberar acesso**.
+- [ ] No celular, abra `admin-gbsob.vercel.app/aluno` e toque em **Primeiro acesso**. Crie a senha (mínimo 8 caracteres).
+- [ ] Abra o e-mail de confirmação (veja o spam), toque no link e volte ao portal. Toque em **Já confirmei**.
+- [ ] Aparece o **Início** com a sua faixa, os graus e as aulas de hoje. Em **Aulas**, as aulas de cada dia, com a foto quando tiver.
+- [ ] Na academia, no horário de uma aula: **Check-in**. Ele pede a localização. Depois, abra o painel: a presença aparece em **Check-ins** (pode levar até abrir ou recarregar o painel).
+- [ ] Na aula com presença, escreva o **Meu diário** e salve. Recarregue: continua lá.
+- [ ] Teste com um e-mail **não** liberado: ele cria a conta, mas o portal diz "ainda não foi liberado pela academia".
+- [ ] No painel, **Tirar acesso**: o aluno deixa de ver o portal (ao recarregar).
 
 ## Como os dados ficam guardados (etapa 2)
 

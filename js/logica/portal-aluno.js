@@ -47,7 +47,8 @@ const ERROS = {
   "auth/user-not-found": "E-mail ou senha incorretos.",
   "auth/invalid-email": "Confira o e-mail.",
   "auth/email-already-in-use": "Esse e-mail já tem conta. Toque em Entrar ou em Esqueci a senha.",
-  "auth/weak-password": "A senha precisa ter pelo menos 6 caracteres.",
+  "auth/weak-password": "A senha precisa ter pelo menos 8 caracteres.",
+  "auth/password-does-not-meet-requirements": "A senha precisa ter pelo menos 8 caracteres.",
   "auth/too-many-requests": "Muitas tentativas. Espere um pouco e tente de novo.",
   "auth/network-request-failed": "Sem internet. Confira a conexão e tente de novo."
 };

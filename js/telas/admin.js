@@ -153,57 +153,70 @@ export const config = {
     const { store } = ctx, d = store.dados, c = d.config, r = c.regras;
     const rk = c.regrasKids || { aulasPorGrau: 4, mesesPorGrau: 1, mesesMinFaixa: 6, idadeMin: { cinza: 4, amarela: 7, laranja: 10, verde: 13 } };
     const num = (id, rot, val, min, max) => `<div class="field"><label for="${id}">${rot}</label><input class="input" type="number" inputmode="numeric" id="${id}" min="${min}" max="${max}" step="1" value="${esc(val)}"></div>`;
+    const cartaoAcao = (titulo, corpo, extra = "") => `<div class="card cfg-acao"><div class="card-cab"><h3>${titulo}</h3>${extra}</div>${corpo}</div>`;
     el.innerHTML = cabecalho("Configurações", "Dados da academia e regras usadas em todo o painel.") +
-      `<form id="cfg" novalidate class="grade2">
-        <div class="card"><div class="card-cab"><h3>Portal do aluno</h3></div><div class="campos">
-          <p class="muted cheio" style="margin:0">Os alunos entram em <b>${esc(location.origin)}/aluno</b> com o e-mail liberado na ficha (ou no cadastro). Lá eles fazem check-in, veem as aulas, a foto e escrevem o diário.</p>
-          <a class="btn sec cheio" href="/aluno" target="_blank" rel="noopener">Abrir o portal do aluno ↗</a>
-        </div></div>
-        <div class="card"><div class="card-cab"><h3>Academia</h3></div><div class="campos">
-          <div class="field cheio"><span class="rotulo">Logo da academia</span>
-            <div class="foto-escolha">
-              <span class="rosto-mini${logoAcademia(c) ? "" : " vazio-mini"}" id="cf-logo-previa" aria-hidden="true">${logoAcademia(c) ? `<img src="${esc(logoAcademia(c))}" alt="">` : icone("config")}</span>
-              <div class="cresce"><b id="cf-logo-nome">${c.academia.logo ? "Logo cadastrada" : "Usando a logo padrão"}</b><small class="muted">Aparece no menu, no topo, no login e no portal do aluno. PNG com fundo transparente fica melhor.</small></div>
-              <label class="btn sec peq" for="cf-logo">${c.academia.logo ? "Trocar" : "Escolher logo"}</label><input type="file" accept="image/png,image/jpeg,image/webp" id="cf-logo" hidden>
+      `<form id="cfg" novalidate class="cfg">
+        <div class="card"><div class="card-cab"><h3>Academia</h3><small>Aparece no menu, no topo, no login e no portal do aluno</small></div>
+          <div class="cfg-academia">
+            <div class="cfg-logo">
+              <span class="cfg-logo-previa${logoAcademia(c) ? "" : " vazio-mini"}" id="cf-logo-previa" aria-hidden="true">${logoAcademia(c) ? `<img src="${esc(logoAcademia(c))}" alt="">` : icone("config")}</span>
+              <b id="cf-logo-nome">${c.academia.logo ? "Logo cadastrada" : "Usando a logo padrão"}</b>
+              <small class="muted">PNG com fundo transparente fica melhor.</small>
+              <label class="btn sec peq" for="cf-logo">${c.academia.logo ? "Trocar logo" : "Escolher logo"}</label><input type="file" accept="image/png,image/jpeg,image/webp" id="cf-logo" hidden>
+              ${c.academia.logo ? '<button type="button" class="btn ghost peq" id="cf-logo-tirar">Voltar para a logo padrão</button>' : ""}
             </div>
-            ${c.academia.logo ? '<button type="button" class="btn ghost peq" id="cf-logo-tirar" style="align-self:flex-start">Voltar para a logo padrão</button>' : ""}</div>
-          <div class="field cheio"><label for="cf-nome">Nome</label><input class="input" id="cf-nome" value="${esc(c.academia.nome)}"></div>
-          <div class="field cheio"><label for="cf-end">Endereço</label><input class="input" id="cf-end" value="${esc(c.academia.endereco)}"></div>
-          <div class="field"><label for="cf-tel">Telefone</label><input class="input" id="cf-tel" value="${esc(c.academia.telefone)}"></div>
-          <div class="field"><label for="cf-email">E-mail</label><input class="input" type="email" id="cf-email" value="${esc(c.academia.email)}"></div>
-          ${num("cf-venc", "Dia de vencimento padrão", c.vencimentoPadrao, 1, 28)}${num("cf-meta", "Meta de treinos em 30 dias", c.metaAulas30, 1, 60)}
-        </div></div>
-        <div class="card"><div class="card-cab"><h3>Regras de graduação</h3></div><div class="campos">
-          <p class="muted cheio" style="margin:0">O tempo de cada faixa é dividido em 4 graus + a troca de faixa. As aulas da faixa são estimadas pelos treinos por semana, descontando recesso e feriados. Para graduar, valem as duas coisas: o tempo e as aulas.</p>
-          ${["branca", "azul", "roxa", "marrom"].map(f => num(`cf-fx-${f}`, `Meses na ${f} até a próxima`, REGRAS.mesesFaixa[f], 1, 120)).join("")}
-          ${num("cf-treinos", "Treinos por semana (base do cálculo)", REGRAS.treinosPorSemana, 1, 7)}${num("cf-folga", "Folga para recesso e feriados (%)", REGRAS.folgaPct, 0, 50)}
-          <div class="cheio" id="cf-previa-grad"></div>
-        </div></div>
-        <div class="card"><div class="card-cab"><h3>Regras de graduação kids</h3><span class="tag kids">Kids</span></div><div class="campos">
-          ${num("cf-k-meses", "Grau a cada (meses)", rk.mesesPorGrau, 1, 24)}${num("cf-k-aulas", "Mínimo de aulas no período", rk.aulasPorGrau, 0, 60)}
-          ${num("cf-k-faixa", "Meses mínimos na faixa", rk.mesesMinFaixa, 0, 60)}
-          ${["cinza", "amarela", "laranja", "verde"].map(f => num(`cf-k-${f}`, `Idade mínima: ${f}`, rk.idadeMin[f], 3, 17)).join("")}
-        </div></div>
-        <div class="card"><div class="card-cab"><h3>Ciclo do currículo</h3><a class="link" href="#cronogramas">Cronogramas</a></div>
-          <div class="lista">${["GB1", "GB2"].map(p => { const an = c.ancoras.filter(a => a.programa === p).sort((x, y) => y.data.localeCompare(x.data))[0];
-            return `<div><div class="cresce"><b>${p}</b><small>${an ? `semana ${an.semana} a partir de ${dataLonga(an.data)}` : "sem referência"}</small></div></div>`; }).join("")}</div></div>
-        ${store.modo === "painel" ? `<div class="card" style="display:flex;flex-direction:column;gap:10px"><div class="card-cab"><h3>Grade real (do Diário)</h3></div>
-          <p class="muted" style="margin:0">No Diário de Tatame, abra <b>Perfil › Exportar grade para o GB Admin</b> e escolha aqui o arquivo <b>grade-diario.json</b>. As turmas adultas passam a ser as reais; as kids continuam as de exemplo.</p>
-          <p class="muted" style="margin:0">${d.turmas.filter(t => t.real).length ? `Hoje: ${d.turmas.filter(t => t.real).length} turmas reais no banco.` : "Ainda sem grade real: os check-ins usam a grade de exemplo."}</p>
-          <label class="btn sec" style="cursor:pointer">${icone("agenda")}Importar grade do Diário<input type="file" id="cf-grade" accept="application/json,.json" hidden></label></div>` : ""}
-        ${store.modo === "painel" ? `<div class="card" style="display:flex;flex-direction:column;gap:10px"><div class="card-cab"><h3>Dados de exemplo</h3></div>
-          <p class="muted" style="margin:0">Tudo fica salvo no banco. ${temExemplos(d) ? "Os alunos, presenças, mensalidades e demais registros de exemplo podem ser apagados quando a academia real estiver cadastrada; os dados reais não são tocados." : "Não há mais dados de exemplo."}</p>
-          ${temExemplos(d) ? `<button type="button" class="btn sec" id="cf-restaurar">${icone("restaurar")}Apagar dados de exemplo</button>` : ""}
-          <button type="button" class="btn sec" id="cf-exportar">${icone("documentos")}Exportar backup (JSON)</button>
-          <small class="muted">O backup guarda tudo (menos os rostos) num arquivo neste aparelho. Ele tem dados pessoais dos alunos: guarde com cuidado.</small></div>`
-        : `<div class="card" style="display:flex;flex-direction:column;gap:10px"><div class="card-cab"><h3>Dados de exemplo</h3></div>
-          <p class="muted" style="margin:0">Tudo aqui é fictício e fica salvo só neste navegador. Restaurar volta a academia de exemplo do zero.</p>
-          <button type="button" class="btn sec" id="cf-restaurar">${icone("restaurar")}Restaurar dados de exemplo</button>
-          <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn sec" id="cf-exportar">${icone("documentos")}Exportar backup (JSON)</button>
-            <label class="btn sec" style="cursor:pointer">${icone("restaurar")}Importar backup<input type="file" id="cf-importar" accept="application/json,.json" hidden></label></div>
-          <small class="muted">O backup guarda alunos, turmas, check-ins, financeiro e todo o resto num arquivo.</small></div>`}
-        <p class="aviso" id="cf-erro" hidden style="grid-column:1/-1"></p>
-        <div style="grid-column:1/-1;display:flex;justify-content:flex-end"><button class="btn">Salvar configurações</button></div>
+            <div class="campos cfg-dados">
+              <div class="field cheio"><label for="cf-nome">Nome</label><input class="input" id="cf-nome" value="${esc(c.academia.nome)}"></div>
+              <div class="field cheio"><label for="cf-end">Endereço</label><input class="input" id="cf-end" value="${esc(c.academia.endereco)}"></div>
+              <div class="field"><label for="cf-tel">Telefone</label><input class="input" id="cf-tel" value="${esc(c.academia.telefone)}"></div>
+              <div class="field"><label for="cf-email">E-mail</label><input class="input" type="email" id="cf-email" value="${esc(c.academia.email)}"></div>
+              ${num("cf-venc", "Dia de vencimento padrão", c.vencimentoPadrao, 1, 28)}${num("cf-meta", "Meta de treinos em 30 dias", c.metaAulas30, 1, 60)}
+            </div>
+          </div></div>
+        <div class="cfg-linha">
+          <div class="card"><div class="card-cab"><h3>Regras de graduação</h3><span class="tag">Adultos</span></div>
+            <p class="muted cfg-nota">O tempo de cada faixa é dividido em 4 graus + a troca de faixa. As aulas da faixa são estimadas pelos treinos por semana, descontando recesso e feriados. Para graduar, valem as duas coisas: o tempo e as aulas.</p>
+            <div class="campos cfg-quatro">
+              <p class="secao">Meses em cada faixa até a próxima</p>
+              ${["branca", "azul", "roxa", "marrom"].map(f => num(`cf-fx-${f}`, f[0].toUpperCase() + f.slice(1), REGRAS.mesesFaixa[f], 1, 120)).join("")}
+              <p class="secao">Base do cálculo das aulas</p>
+              <div class="cfg-meia">${num("cf-treinos", "Treinos por semana", REGRAS.treinosPorSemana, 1, 7)}</div>
+              <div class="cfg-meia">${num("cf-folga", "Folga para recesso e feriados (%)", REGRAS.folgaPct, 0, 50)}</div>
+              <div class="cheio" id="cf-previa-grad"></div>
+            </div></div>
+          <div class="card"><div class="card-cab"><h3>Regras de graduação</h3><span class="tag kids">Kids</span></div>
+            <p class="muted cfg-nota">Crianças pegam grau por mês, desde que tenham o mínimo de aulas no período. A troca de faixa depende do tempo na faixa e da idade.</p>
+            <div class="campos cfg-quatro">
+              <p class="secao">Graus</p>
+              <div class="cfg-meia">${num("cf-k-meses", "Grau a cada (meses)", rk.mesesPorGrau, 1, 24)}</div>
+              <div class="cfg-meia">${num("cf-k-aulas", "Mínimo de aulas no período", rk.aulasPorGrau, 0, 60)}</div>
+              <p class="secao">Troca de faixa</p>
+              <div class="cfg-meia">${num("cf-k-faixa", "Meses mínimos na faixa", rk.mesesMinFaixa, 0, 60)}</div>
+              <p class="secao">Idade mínima para cada faixa</p>
+              ${["cinza", "amarela", "laranja", "verde"].map(f => num(`cf-k-${f}`, f[0].toUpperCase() + f.slice(1), rk.idadeMin[f], 3, 17)).join("")}
+            </div></div>
+        </div>
+        <div class="cfg-linha cfg-tres">
+          ${cartaoAcao("Portal do aluno", `<p class="muted">Os alunos entram em <b>${esc(location.origin)}/aluno</b> com o e-mail liberado na ficha (ou no cadastro). Lá eles fazem check-in, veem as aulas, a foto e escrevem o diário.</p>
+            <div class="cfg-botoes"><a class="btn sec" href="/aluno" target="_blank" rel="noopener">Abrir o portal do aluno ↗</a></div>`)}
+          ${cartaoAcao("Ciclo do currículo", `<div class="lista">${["GB1", "GB2"].map(p => { const an = c.ancoras.filter(a => a.programa === p).sort((x, y) => y.data.localeCompare(x.data))[0];
+            return `<div><div class="cresce"><b>${p}</b><small>${an ? `semana ${an.semana} a partir de ${dataLonga(an.data)}` : "sem referência"}</small></div></div>`; }).join("")}</div>
+            <div class="cfg-botoes"><a class="btn sec" href="#cronogramas">Abrir cronogramas</a></div>`)}
+          ${store.modo === "painel" ? cartaoAcao("Grade real (do Diário)", `<p class="muted">No Diário de Tatame, abra <b>Perfil › Exportar grade para o GB Admin</b> e escolha aqui o arquivo <b>grade-diario.json</b>. As turmas adultas passam a ser as reais; as kids continuam as de exemplo.</p>
+            <p class="muted">${d.turmas.filter(t => t.real).length ? `Hoje: ${d.turmas.filter(t => t.real).length} turmas reais no banco.` : "Ainda sem grade real: os check-ins usam a grade de exemplo."}</p>
+            <div class="cfg-botoes"><label class="btn sec" style="cursor:pointer">${icone("agenda")}Importar grade do Diário<input type="file" id="cf-grade" accept="application/json,.json" hidden></label></div>`) : ""}
+          ${store.modo === "painel" ? cartaoAcao("Dados e backup", `<p class="muted">Tudo fica salvo no banco. ${temExemplos(d) ? "Os alunos, presenças, mensalidades e demais registros de exemplo podem ser apagados quando a academia real estiver cadastrada; os dados reais não são tocados." : "Não há mais dados de exemplo."}</p>
+            <small class="muted">O backup guarda tudo (menos os rostos) num arquivo neste aparelho. Ele tem dados pessoais dos alunos: guarde com cuidado.</small>
+            <div class="cfg-botoes">${temExemplos(d) ? `<button type="button" class="btn sec" id="cf-restaurar">${icone("restaurar")}Apagar dados de exemplo</button>` : ""}
+            <button type="button" class="btn sec" id="cf-exportar">${icone("documentos")}Exportar backup (JSON)</button></div>`)
+          : cartaoAcao("Dados e backup", `<p class="muted">Tudo aqui é fictício e fica salvo só neste navegador. Restaurar volta a academia de exemplo do zero.</p>
+            <small class="muted">O backup guarda alunos, turmas, check-ins, financeiro e todo o resto num arquivo.</small>
+            <div class="cfg-botoes"><button type="button" class="btn sec" id="cf-restaurar">${icone("restaurar")}Restaurar dados de exemplo</button>
+            <button type="button" class="btn sec" id="cf-exportar">${icone("documentos")}Exportar backup (JSON)</button>
+            <label class="btn sec" style="cursor:pointer">${icone("restaurar")}Importar backup<input type="file" id="cf-importar" accept="application/json,.json" hidden></label></div>`)}
+        </div>
+        <p class="aviso" id="cf-erro" hidden></p>
+        <div class="cfg-salvar"><button class="btn">Salvar configurações</button></div>
       </form>`;
     el.querySelector("#cf-restaurar")?.addEventListener("click", () => document.getElementById("restaurar")?.click());
     el.querySelector("#cf-exportar").onclick = () => {

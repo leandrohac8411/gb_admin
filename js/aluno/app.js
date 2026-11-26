@@ -8,7 +8,7 @@ const $tela = document.getElementById("tela");
 const $menu = document.getElementById("menu");
 
 // Cada tela é um módulo em js/aluno/telas/<nome>.js que exporta default:
-//   { menu: "inicio" | "aulas" | "perfil" | null, montar(el, params, ctx) }
+//   { menu: "inicio" | "aulas" | "perfil" | null, vivo?: false (não redesenha sozinha), montar(el, params, ctx) }
 const TELAS = ["inicio", "aulas", "aula", "checkin", "perfil"];
 const cache = {};
 const carregar = async nome => (cache[nome] ||= (await import(`./telas/${nome}.js`)).default);
@@ -21,7 +21,7 @@ const menuInferior = ativo => '<nav class="nav" aria-label="Menu">' + MENU.map((
 
 // situacao: "carregando" | "login" | "verificar" | "naoLiberado" | "pronto"
 export const ctx = { nuvem, situacao: "carregando", usuario: null, acesso: null, portal: null, grade: null, diario: [], pendentes: [], erro: "" };
-let parar = [];
+let parar = [], telaAtual = null;
 
 export function irPara(rota, ...params) {
   const hash = "#" + [rota, ...params.map(p => encodeURIComponent(p))].join("/");
@@ -46,6 +46,7 @@ export async function desenhar() {
   if (ctx.erro) { $tela.className = "sem-menu"; $tela.innerHTML = `<p class="aviso">${esc(ctx.erro)}</p>`; return; }
   const { rota, params } = lerRota();
   const tela = await carregar(rota);
+  telaAtual = tela;
   const rolagem = $tela.dataset.rota === location.hash ? window.scrollY : 0;
   $tela.dataset.rota = location.hash;
   $tela.className = tela.classe || (tela.menu ? "" : "sem-menu");
@@ -54,7 +55,8 @@ export async function desenhar() {
   if (tela.menu) { $menu.hidden = false; $menu.innerHTML = menuInferior(tela.menu); }
   window.scrollTo(0, rolagem);
 }
-export const redesenhar = () => { if (ctx.situacao === "pronto" && !document.querySelector(".folha")) desenhar(); };
+// Dados novos chegaram: redesenha, menos telas com formulário (vivo: false) e folhas abertas.
+export const redesenhar = () => { if (ctx.situacao === "pronto" && telaAtual?.vivo !== false && !document.querySelector(".folha")) desenhar(); };
 
 window.addEventListener("hashchange", desenhar);
 let diaDoDesenho = hojeISO();

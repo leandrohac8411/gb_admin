@@ -172,7 +172,7 @@ Várias telas têm as abas **Adultos | Kids**, e a escolha fica lembrada ao troc
 **Cronogramas**
 - O que se ensina em cada uma das 16 semanas do ciclo, para GB1 e GB2.
 - Aula A (segunda e terça) e Aula B (quarta e quinta). Sexta e sábado revisam as duas.
-- **Importar currículo (JSON)**, no formato do Diário de Tatame.
+- **Importar currículo (JSON)**, no formato do Diário de Tatame. As semanas do arquivo substituem as que existem, e as semanas que ainda são iguais ao **cronograma de exemplo** (de qualquer programa) saem: importando só o GB1, o GB2 de exemplo some e fica "tema ainda não cadastrado" até a academia preencher. Semana editada à mão fica. O currículo real do GB1 está em `diario-tatame/tools/carga/curriculo.json` (fora do git).
 - **Ajustar semana atual**: diz em que semana o programa está a partir desta segunda.
 
 **Modelos de aula**

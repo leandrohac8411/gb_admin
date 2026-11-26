@@ -23,14 +23,10 @@ const TEMAS = [
 // Próxima data (depois de hoje) que cai no dia da semana pedido (0 = domingo).
 const proximo = (hojeISO, dia) => { let x = somarDias(hojeISO, 1); while (diaSemana(x) !== dia) x = somarDias(x, 1); return x; };
 
-export function gerarExtras(hojeISO, alunos, turmas = []) {
-  const d = n => somarDias(hojeISO, -n);
-  const comp = n => { let [a, m] = hojeISO.slice(0, 7).split("-").map(Number); m -= n; while (m < 1) { m += 12; a--; } return `${a}-${String(m).padStart(2, "0")}`; };
-  const kidsAtivos = alunos.filter(a => a.categoria === "kids" && a.status === "ativo");
-  const adultosAtivos = alunos.filter(a => a.categoria !== "kids" && a.status === "ativo");
-  const turmaId = (dia, hora) => turmas.find(t => t.diaSemana === dia && t.horario === hora)?.id || null;
-  // Cronograma fictício: cada semana com Aula A (seg/ter) e Aula B (qua/qui), tema e técnicas.
-  const cronograma = ["GB1", "GB2"].flatMap(programa => TEMAS.map(([categoria, tema], i) => {
+// Cronograma fictício: cada semana com Aula A (seg/ter) e Aula B (qua/qui), tema e técnicas.
+// Exportado para a importação do currículo real reconhecer (e tirar) as semanas que ainda são de exemplo.
+export function cronogramaExemplo() {
+  return ["GB1", "GB2"].flatMap(programa => TEMAS.map(([categoria, tema], i) => {
     const t = programa === "GB2" ? `${tema} (avançado)` : tema;
     const tec = (...nomes) => nomes.map(nome => ({ nome, categoria }));
     return {
@@ -39,6 +35,15 @@ export function gerarExtras(hojeISO, alunos, turmas = []) {
       aulaB: { tema: `${t}: variações e defesa`, tecnicas: tec(`${tema}: variação`, `Defesa contra ${tema.toLowerCase()}`, "Rola específico da posição") }
     };
   }));
+}
+
+export function gerarExtras(hojeISO, alunos, turmas = []) {
+  const d = n => somarDias(hojeISO, -n);
+  const comp = n => { let [a, m] = hojeISO.slice(0, 7).split("-").map(Number); m -= n; while (m < 1) { m += 12; a--; } return `${a}-${String(m).padStart(2, "0")}`; };
+  const kidsAtivos = alunos.filter(a => a.categoria === "kids" && a.status === "ativo");
+  const adultosAtivos = alunos.filter(a => a.categoria !== "kids" && a.status === "ativo");
+  const turmaId = (dia, hora) => turmas.find(t => t.diaSemana === dia && t.horario === hora)?.id || null;
+  const cronograma = cronogramaExemplo();
   return {
     planos: [
       { id: "Mensal", nome: "Mensal", meses: 1, valor: 280, ativo: true, descricao: "Treinos livres na grade adulta." },

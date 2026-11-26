@@ -5,7 +5,7 @@ import { hojeISO, somarDias, segundaDaSemana, diasEntre } from "../logica/datas.
 import { semanaDoCiclo, CICLO_SEMANAS } from "../logica/ciclo.js";
 import { aptidao } from "../logica/graduacao.js";
 import { CATEGORIAS_TECNICAS } from "../dados-extras.js";
-import { lerCurriculo, diaDeReferencia } from "../logica/tema.js";
+import { lerCurriculo, diaDeReferencia, aplicarCurriculo } from "../logica/tema.js";
 import { icone } from "../menu.js";
 import { cabecalho, pessoa, faixaCelula, etiquetaPrograma, porId, DIAS_CURTOS, daAba, abasCategoria, ligarAbas } from "./comum.js";
 import { aulas30 } from "./alunos.js";
@@ -232,13 +232,10 @@ export const cronogramas = {
       let semanasNovas;
       try { semanasNovas = lerCurriculo(await arq.text()); } catch (err) { toast(err.message); return; }
       const progs = [...new Set(semanasNovas.map(s => s.programa))];
-      if (!await perguntar("Importar currículo?", `${semanasNovas.length} semana(s) de ${progs.join(" e ")} vão substituir o que está no cronograma dessas semanas.`, "Importar", "Cancelar")) return;
-      for (const s of semanasNovas) {
-        const atualS = d.cronograma.find(x => x.programa === s.programa && x.semana === s.semana);
-        if (atualS) Object.assign(atualS, { aulaA: s.aulaA, aulaB: s.aulaB });
-        else d.cronograma.push({ id: `${s.programa}-${s.semana}`, ...s });
-      }
-      if (!store.salvar()) { toast("Sem espaço no navegador para salvar o currículo."); return; }
+      if (!await perguntar("Importar currículo?", `${semanasNovas.length} semana(s) de ${progs.join(" e ")} vão substituir o que está no cronograma dessas semanas. Os temas de exemplo que ainda estiverem no cronograma (de qualquer programa) saem; o que foi cadastrado à mão fica.`, "Importar", "Cancelar")) return;
+      const antes = d.cronograma;
+      d.cronograma = aplicarCurriculo(d.cronograma, semanasNovas);
+      if (!store.salvar()) { d.cronograma = antes; toast("Sem espaço no navegador para salvar o currículo."); return; }
       toast(`Currículo importado: ${semanasNovas.length} semana(s)`); ctx.redesenhar();
     };
     el.querySelector("#ajustar").onclick = () => abrirFolha((f, fechar) => {

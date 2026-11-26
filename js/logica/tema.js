@@ -1,6 +1,7 @@
 // Aula do dia: semana do ciclo de cada currículo da turma → Aula A (seg/ter) ou B (qua/qui) no Cronograma.
 // Sexta e sábado (sem aula padrão) mostram A e B, como revisão. Turma com "aula" fixa usa a dela.
 import { semanaDoCiclo, aulaPadrao, CICLO_SEMANAS } from "./ciclo.js";
+import { cronogramaExemplo } from "../dados-extras.js";
 
 export function temaDaAula(d, turma, dataISO) {
   const programas = turma?.programa === "GB1+GB2" ? ["GB1", "GB2"] : ["GB1", "GB2"].includes(turma?.programa) ? [turma.programa] : [];
@@ -42,4 +43,19 @@ export function diaDeReferencia(hojeISO) {
   if (data.getUTCDay() !== 0) return hojeISO;
   data.setUTCDate(data.getUTCDate() + 1);
   return data.toISOString().slice(0, 10);
+}
+
+// Importar o currículo real: as semanas do arquivo entram (ou atualizam), e as semanas que ainda são
+// iguaizinhas ao cronograma de exemplo saem (o exemplo do GB2 sumiria só importando o GB1). Semana
+// editada à mão fica. "exemplo" vem de cronogramaExemplo() (dados-extras.js).
+export function aplicarCurriculo(cronograma, semanasNovas, exemplo = cronogramaExemplo()) {
+  const ehExemplo = s => exemplo.some(x => x.programa === s.programa && x.semana === s.semana
+    && JSON.stringify(x.aulaA) === JSON.stringify(s.aulaA) && JSON.stringify(x.aulaB) === JSON.stringify(s.aulaB));
+  const r = (cronograma || []).filter(s => !ehExemplo(s)).map(s => ({ ...s }));
+  for (const s of semanasNovas) {
+    const atual = r.find(x => x.programa === s.programa && x.semana === s.semana);
+    if (atual) Object.assign(atual, { aulaA: s.aulaA, aulaB: s.aulaB });
+    else r.push({ id: `${s.programa}-${s.semana}`, ...s });
+  }
+  return r;
 }

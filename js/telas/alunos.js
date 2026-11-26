@@ -8,6 +8,7 @@ import { inadimplentes } from "../logica/financeiro.js";
 import { idadeEm } from "../logica/graduacao.js";
 import { irmaos, valorComDesconto } from "../logica/familia.js";
 import { telefoneValido } from "../logica/regras-cadastro.js";
+import { problemaNoEmail, emailValido } from "../logica/portal.js";
 import { icone } from "../menu.js";
 import { cabecalho, pessoa, faixaCelula, PILL_STATUS, aba, definirAba, daAba, abasCategoria, ligarAbas, anosTexto } from "./comum.js";
 
@@ -33,7 +34,8 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
         <div class="field"><label for="f-sexo">Sexo</label>${sel("f-sexo", "sexo", [["M", "Masculino"], ["F", "Feminino"]], a.sexo)}</div>
         <div class="field"><label for="f-nasc">Nascimento</label><input class="input" type="date" id="f-nasc" name="nascimento" value="${esc(a.nascimento || "")}" max="${hoje}"></div>
         <div class="field"><label for="f-peso">Peso (kg)</label><input class="input" type="number" inputmode="decimal" step="0.1" min="${kids ? 10 : 20}" max="250" id="f-peso" name="peso" value="${esc(a.peso ?? "")}"></div>
-        ${kids ? "" : `<div class="field"><label for="f-tel">Telefone</label><input class="input" id="f-tel" name="telefone" value="${esc(a.telefone || "")}" inputmode="tel"></div>`}
+        ${kids ? "" : `<div class="field"><label for="f-tel">Telefone</label><input class="input" id="f-tel" name="telefone" value="${esc(a.telefone || "")}" inputmode="tel"></div>
+        <div class="field cheio"><label for="f-email">E-mail <small class="muted">(é o login dele no portal do aluno)</small></label><input class="input" type="email" id="f-email" name="email" value="${esc(a.emailPortal || "")}" autocomplete="off" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="Opcional"></div>`}
         ${novo ? `<div class="field"><label for="f-faixa">Faixa</label>${sel("f-faixa", "faixa", faixasDe(categoria).map(f => [f, nomeFaixa(f)]), a.faixa)}</div>
         <div class="field"><label for="f-graus">Graus</label>${sel("f-graus", "graus", [0, 1, 2, 3, 4].map(g => [String(g), String(g)]), String(a.graus))}</div>` : ""}
         <div class="field cheio"><label for="f-plano">Plano</label>${sel("f-plano", "plano", planos.map(p => [p.id, `${p.nome} · R$ ${p.valor}`]), a.plano)}</div>
@@ -83,6 +85,7 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
         : kids && (f.rnome || "").trim().length < 3 ? "Escreva o nome do responsável."
         : kids && (f.rtelefone || "").replace(/\D/g, "").length < 8 ? "Informe o telefone do responsável."
         : !telefoneValido(kids ? f.rtelefone : f.telefone) ? "Confira o telefone: só números, com DDD (8 a 13 dígitos)."
+        : !kids && problemaNoEmail(f.email, aluno?.id || null, store.dados.alunos) ? problemaNoEmail(f.email, aluno?.id || null, store.dados.alunos)
         : foto ? problemaNaFoto(foto.files?.[0]) : "";
       if (falha) { erro.textContent = falha; erro.hidden = false; return; }
       const campos = { nome, sexo: f.sexo, nascimento: f.nascimento || "", peso: f.peso ? Number(f.peso) : null, plano: f.plano,
@@ -91,7 +94,12 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
         telefone: f.rtelefone.trim(), saude: f.saude.trim(), autorizaImagem: !!f.autorizaImagem,
         responsavel: { nome: f.rnome.trim(), parentesco: f.rparentesco, telefone: f.rtelefone.trim(), buscam: f.rbuscam.trim() }
       });
-      else campos.telefone = (f.telefone || "").trim();
+      else {
+        campos.telefone = (f.telefone || "").trim();
+        // E-mail = login no portal do aluno: preenchido, o acesso é liberado (o espelho grava acessos/{email}).
+        const email = emailValido(f.email);
+        if (email) campos.emailPortal = email; else if (aluno) delete aluno.emailPortal;
+      }
       const d = store.dados;
       let alvo = aluno;
       if (novo) {

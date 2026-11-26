@@ -904,3 +904,8 @@ h1 .etq-exemplo{font-size:10px;letter-spacing:.08em}
 /* Presença pela foto (painel logado): guardar a foto da aula. */
 .af-guardar{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}
 .af-guardar .aviso{margin:0}
+
+/* Ficha do aluno: cartão "Portal do aluno". */
+.portal-liberar{display:flex;gap:8px;flex-wrap:wrap}
+.portal-liberar .input{flex:1 1 220px;min-width:0}
+.portal-cartao .aviso{margin:8px 0 0}

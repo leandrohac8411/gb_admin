@@ -6,7 +6,7 @@
 import http.server, json, os, sys, posixpath, urllib.parse
 
 # O que pode ser servido: só o app.
-PERMITIDO = ("index.html", "css/", "js/", "img/", "vendor/")
+PERMITIDO = ("index.html", "css/", "js/", "img/", "vendor/", "aluno/")
 
 def cabecalhos_da_vercel():
     # Os mesmos cabeçalhos de segurança do site publicado (vercel.json), para o teste local
@@ -28,18 +28,24 @@ def permitido(caminho_url):
     partes = caminho.split("/")
     if any(p.startswith(".") for p in partes):  # .git, .env, .gitignore...
         return False
-    return caminho == "index.html" or any(caminho.startswith(p) for p in PERMITIDO if p.endswith("/"))
+    return caminho in ("index.html", "aluno") or any(caminho.startswith(p) for p in PERMITIDO if p.endswith("/"))
 
 
 class Seguro(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
+        aluno = urllib.parse.urlsplit(self.path).path.startswith("/aluno")
         for k, v in CABECALHOS.items():
+            # Portal do aluno: o GPS do check-in é liberado só no /aluno (igual ao vercel.json).
+            if aluno and k == "Permissions-Policy":
+                v = v.replace("geolocation=()", "geolocation=(self)")
             self.send_header(k, v)
         super().end_headers()
 
     def do_GET(self):
         if not permitido(self.path):
             return self.send_error(404)
+        if urllib.parse.urlsplit(self.path).path == "/aluno":  # igual ao rewrite da Vercel
+            self.path = "/aluno/index.html"
         return super().do_GET()
 
     def do_HEAD(self):

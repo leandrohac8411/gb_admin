@@ -338,3 +338,16 @@ textarea.input{min-height:72px;resize:vertical}
 .local.ruim{background:var(--red-soft);color:var(--red)}
 .local.buscando,.local.neutro{background:var(--soft);color:var(--muted2)}
 .local-tentar{margin-left:auto;font-size:12px;font-weight:800;color:var(--red);background:#fff;border:1px solid #f0c9c7;border-radius:10px;padding:6px 10px}
+
+/* ===== Portal do aluno: tela da aula (#turma) ===== */
+.turma-topo{display:flex;align-items:center;gap:12px}
+.turma-topo small{display:block;font-size:12px;color:var(--muted)}
+.turma-topo b{display:block;font-size:20px;line-height:1.2;font-weight:800}
+.turma-foto{display:block;width:100%;padding:0;border:0;border-radius:18px;overflow:hidden;background:#111;cursor:zoom-in;box-shadow:0 6px 18px #0000001f}
+.turma-foto img{display:block;width:100%;height:auto}
+.presentes{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column}
+.presentes li{display:flex;align-items:center;gap:10px;min-width:0;font-size:14px;font-weight:600;padding:8px 0;border-top:1px solid var(--line)}
+.presentes li:first-child{border-top:0}
+.presentes li span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.presentes .av{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff;background:linear-gradient(140deg,#3a3a40,#16161a)}
+.turma-corpo{display:flex;flex-direction:column;gap:12px}

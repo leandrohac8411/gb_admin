@@ -1,8 +1,7 @@
 // Eventos: graduações, seminários, campeonatos e confraternizações, com lista de inscritos.
 import { esc, abrirFolha, perguntar, toast, dataLonga, horaTexto } from "../ui/util.js";
-import { normalizar } from "../ui/util-admin.js";
 import { hojeISO, dataValida, diasEntre, diaSemana } from "../logica/datas.js";
-import { aptidao } from "../logica/graduacao.js";
+import { temMedalhas } from "../logica/eventos.js";
 import { icone } from "../menu.js";
 import { cabecalho, pessoa, faixaCelula, porId, DIAS_LONGOS } from "./comum.js";
 import { inscritosDoPublico } from "../logica/regras-cadastro.js";
@@ -10,10 +9,10 @@ import { inscritosDoPublico } from "../logica/regras-cadastro.js";
 const TIPOS = ["Graduação", "Seminário", "Campeonato", "Confraternização"];
 const PUBLICOS = [["todos", "Todos"], ["adulto", "Adultos"], ["kids", "Kids"]];
 const estado = { quando: "Próximos" };
-const podeIr = (ev, a) => a.status === "ativo" && (ev.publico === "todos" || (a.categoria || "adulto") === ev.publico);
-const pillPublico = p => (p === "kids" ? '<span class="tag kids">Kids</span>' : p === "adulto" ? '<span class="tag">Adultos</span>' : '<span class="tag">Todos</span>');
+export const podeIr = (ev, a) => a.status === "ativo" && (ev.publico === "todos" || (a.categoria || "adulto") === ev.publico);
+export const pillPublico = p => (p === "kids" ? '<span class="tag kids">Kids</span>' : p === "adulto" ? '<span class="tag">Adultos</span>' : '<span class="tag">Todos</span>');
 
-function formEvento(store, ev, pronto) {
+export function formEvento(store, ev, pronto) {
   const x = ev || { titulo: "", tipo: "Graduação", publico: "todos", data: hojeISO(), hora: "10:00", local: "Tatame principal", vagas: 30, descricao: "" };
   const op = (lista, atual) => lista.map(v => Array.isArray(v) ? v : [v, v]).map(([v, t]) => `<option value="${esc(v)}"${v === atual ? " selected" : ""}>${esc(t)}</option>`).join("");
   abrirFolha((el, fechar) => {
@@ -33,7 +32,8 @@ function formEvento(store, ev, pronto) {
     el.querySelector("#e-x").onclick = fechar;
     el.querySelector("#e-del")?.addEventListener("click", async () => {
       fechar();
-      if (!await perguntar("Excluir evento?", ev.titulo, "Excluir", "Cancelar")) return;
+      const perde = [temMedalhas(ev) ? "as medalhas (somem da ficha dos alunos)" : "", ev.tipo === "Confraternização" && Object.values(ev.detalhes || {}).some(x => x.pago) ? "os pagamentos marcados" : ""].filter(Boolean);
+      if (!await perguntar("Excluir evento?", `${ev.titulo}${perde.length ? `. Junto com ele vão ${perde.join(" e ")}.` : ""}${ev.graduados?.length ? " As graduações já confirmadas continuam na ficha." : ""}`, "Excluir", "Cancelar")) return;
       store.dados.eventos = store.dados.eventos.filter(y => y !== ev); store.salvar(); toast("Evento excluído"); pronto();
     });
     el.querySelector("form").onsubmit = e => {
@@ -60,38 +60,6 @@ function formEvento(store, ev, pronto) {
   });
 }
 
-function abrirInscritos(store, ev, pronto) {
-  const d = store.dados, hoje = hojeISO();
-  abrirFolha((el, fechar) => {
-    const desenhar = () => {
-      const alunos = porId(d.alunos), q = normalizar(el.querySelector("#i-busca")?.value || "");
-      const inscritos = ev.inscritos.map(id => alunos[id]).filter(Boolean).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-      const livres = d.alunos.filter(a => podeIr(ev, a) && !ev.inscritos.includes(a.id) && (!q || normalizar(a.nome).includes(q))).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")).slice(0, 30);
-      const aptosFora = ev.tipo === "Graduação" ? d.alunos.filter(a => podeIr(ev, a) && !ev.inscritos.includes(a.id) && aptidao(a, d.checkins, hoje).tipo) : [];
-      const cheio = ev.inscritos.length >= ev.vagas, passado = ev.data < hoje;
-      el.innerHTML = `<h3>${esc(ev.titulo)}</h3><p class="muted" style="margin:0">${esc(dataLonga(ev.data))} · ${esc(horaTexto(ev.hora))} · ${ev.inscritos.length}/${Number(ev.vagas)} inscritos</p>
-        ${!passado && aptosFora.length && !cheio ? `<button class="btn sec bloco" id="i-aptos">Inscrever ${Math.min(aptosFora.length, ev.vagas - ev.inscritos.length)} apto${Math.min(aptosFora.length, ev.vagas - ev.inscritos.length) === 1 ? "" : "s"} a graduar${aptosFora.length > ev.vagas - ev.inscritos.length ? ` (de ${aptosFora.length}; faltam vagas)` : ""}</button>` : ""}
-        <div class="lista" style="max-height:30vh;overflow:auto">${inscritos.length ? inscritos.map(a => `<div>${pessoa(a)}${faixaCelula(a)}${passado ? "" : `<button class="btn sec peq" data-tirar="${esc(a.id)}" aria-label="Tirar ${esc(a.nome)}">Tirar</button>`}</div>`).join("") : '<div class="vazio">Ninguém inscrito ainda.</div>'}</div>
-        ${passado ? "" : `<label class="busca" style="max-width:none">${icone("alunos")}<input id="i-busca" type="search" placeholder="Inscrever aluno" value="${esc(q)}" aria-label="Buscar aluno para inscrever" autocomplete="off"></label>
-        <div class="lista" style="max-height:25vh;overflow:auto">${cheio ? '<div class="vazio">Vagas esgotadas.</div>' : livres.map(a => `<button data-pôr="${esc(a.id)}" style="text-align:left;width:100%">${pessoa(a)}<span class="link" style="margin-left:auto">Inscrever</span></button>`).join("") || '<div class="vazio">Ninguém com essa busca.</div>'}</div>`}
-        <button class="btn ghost bloco" id="i-x">Fechar</button>`;
-      el.querySelector("#i-x").onclick = () => { fechar(); pronto(); };
-      const busca = el.querySelector("#i-busca");
-      if (busca) { busca.oninput = () => { const pos = busca.selectionStart; desenhar(); const b = el.querySelector("#i-busca"); b.focus(); b.setSelectionRange(pos, pos); }; }
-      el.querySelector("#i-aptos")?.addEventListener("click", () => {
-        const espaco = ev.vagas - ev.inscritos.length;
-        ev.inscritos.push(...aptosFora.slice(0, espaco).map(a => a.id)); store.salvar(); toast("Aptos inscritos"); desenhar();
-      });
-      el.querySelectorAll("[data-tirar]").forEach(b => b.onclick = () => { ev.inscritos = ev.inscritos.filter(id => id !== b.dataset.tirar); store.salvar(); desenhar(); });
-      el.querySelectorAll("[data-pôr]").forEach(b => b.onclick = () => {
-        if (ev.inscritos.length >= ev.vagas) { toast("Vagas esgotadas"); return; }
-        ev.inscritos.push(b.dataset.pôr); store.salvar(); desenhar();
-      });
-    };
-    desenhar();
-  }, pronto);
-}
-
 export default {
   titulo: "Eventos",
   montar(el, params, ctx) {
@@ -114,11 +82,13 @@ export default {
             ${e.descricao ? `<p class="muted" style="margin:6px 0 0;font-size:12.5px">${esc(e.descricao)}</p>` : ""}
             <div class="progresso" style="margin-top:10px"><i style="width:${Math.min(100, Math.round(e.inscritos.length / e.vagas * 100))}%"></i></div>
             <small class="muted">${e.inscritos.length} de ${Number(e.vagas)} vagas${e.inscritos.length >= e.vagas ? " · esgotado" : ""}</small>
-            <div style="display:flex;gap:8px;margin-top:10px"><button class="btn peq" data-inscritos="${esc(e.id)}">${e.data < hoje ? "Ver participantes" : "Inscritos"}</button><button class="btn sec peq" data-editar="${esc(e.id)}">Editar</button></div>
+            <div style="display:flex;gap:8px;margin-top:10px"><a class="btn peq" href="#evento/${encodeURIComponent(e.id)}">${e.data < hoje ? "Ver resultado" : "Abrir evento"}</a><button class="btn sec peq" data-editar="${esc(e.id)}">Editar</button></div>
           </div></div>`).join("")}</div>` : `<div class="card vazio">${estado.quando === "Próximos" ? "Nenhum evento marcado." : "Nenhum evento passado."}</div>`}`;
     el.querySelectorAll("[data-q]").forEach(b => b.onclick = () => { estado.quando = b.dataset.q; ctx.redesenhar(); });
     el.querySelector("#novo").onclick = () => formEvento(store, null, ctx.redesenhar);
     el.querySelectorAll("[data-editar]").forEach(b => b.onclick = () => formEvento(store, d.eventos.find(e => e.id === b.dataset.editar), ctx.redesenhar));
-    el.querySelectorAll("[data-inscritos]").forEach(b => b.onclick = () => abrirInscritos(store, d.eventos.find(e => e.id === b.dataset.inscritos), ctx.redesenhar));
+    // O cartão inteiro abre a página do evento (menos o botão Editar).
+    el.querySelectorAll(".card.evento").forEach(c => { c.classList.add("clica"); c.onclick = e => { if (!e.target.closest("button, a")) location.hash = c.querySelector("a[href^='#evento/']").getAttribute("href"); }; });
+    if (prox) { const dest = el.querySelector(".destaque-evento"); dest.classList.add("clica"); dest.onclick = () => { location.hash = `#evento/${encodeURIComponent(prox.id)}`; }; }
   }
 };

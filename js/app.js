@@ -80,7 +80,7 @@ export function desenhar() {
   const { rota, params } = lerRota(location.hash);
   const doMenu = itemDoMenu(rota);
   const tela_ = (Object.hasOwn(TELAS, rota) && TELAS[rota]) || (doMenu ? embreve : naoEncontrada);
-  const ativa = rota === "aluno" ? "alunos" : rota;
+  const ativa = rota === "aluno" ? "alunos" : rota === "evento" ? "eventos" : rota;
   const d = ctx.store?.dados, cfg = d?.config;
   // Quem entrou (Permissões › Usuários, pelo e-mail do login) dá o nome e o Bem-vindo/Bem-vinda.
   const u = usuarioDaSaudacao(d?.usuarios, emailLogado, cfg?.usuario);

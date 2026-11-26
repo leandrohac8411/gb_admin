@@ -24,6 +24,7 @@ import * as gestao from "./gestao.js";
 import * as operacao from "./operacao.js";
 import * as admin from "./admin.js";
 import eventos from "./eventos.js";
+import evento from "./evento.js";
 
 const elLogin = document.getElementById("login");
 const elAdmin = document.getElementById("admin");
@@ -142,7 +143,7 @@ function abrirDemo(fb) {
 }
 
 function registrarTelas() {
-  Object.entries({ dashboard, alunos, aluno, agenda, checkins, graduacoes, financeiro, eventos,
+  Object.entries({ dashboard, alunos, aluno, agenda, checkins, graduacoes, financeiro, eventos, evento,
     professores: gestao.professores, acompanhamentos: gestao.acompanhamentos, cronogramas: gestao.cronogramas,
     "modelos-aula": gestao.modelosAula, habilidades: gestao.habilidades,
     planos: operacao.planos, contratos: operacao.contratos, prospects: operacao.prospects,

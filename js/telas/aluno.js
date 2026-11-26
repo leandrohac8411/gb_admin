@@ -8,6 +8,7 @@ import { categoriaIdade, categoriaPeso } from "../logica/categorias.js";
 import { aptidao, regrasDe, mesesEntre, idadeEm, passaParaAdulto, ehKids, progressoGraduacao } from "../logica/graduacao.js";
 import { statusMensalidade, inadimplentes } from "../logica/financeiro.js";
 import { noCartaoRecorrente } from "../logica/cobranca.js";
+import { medalhasDoAluno, MEDALHAS, EMOJI_MEDALHA } from "../logica/eventos.js";
 import { icone } from "../menu.js";
 import { etiquetaPrograma, porId, PILL_STATUS, DIAS_CURTOS, estrelas, marcaAluno } from "./comum.js";
 import { aulas30, abrirFormAluno } from "./alunos.js";
@@ -104,6 +105,8 @@ export default {
         <div class="card"><div class="card-cab"><h3>Graduações</h3><small>${grads.length}</small></div>
           ${grads.length ? `<div class="lista">${grads.map(g => `<div>${faixaSVG(g.faixa, g.graus, { mini: true })}<div class="cresce"><b>${nomeFaixa(g.faixa)}${g.graus ? ` · ${g.graus}º grau` : ""}</b><small>${dataLonga(g.data)}</small></div></div>`).join("")}</div>`
             : `<div class="vazio">Ainda sem graduações registradas.</div>`}</div>
+        ${(med => med.length ? `<div class="card"><div class="card-cab"><h3>Medalhas</h3><small>🥇 ${med.filter(m => m.medalha === "ouro").length} · 🥈 ${med.filter(m => m.medalha === "prata").length} · 🥉 ${med.filter(m => m.medalha === "bronze").length}</small></div>
+          <div class="lista">${med.map(m => `<a href="#evento/${encodeURIComponent(m.eventoId)}" style="color:inherit;text-decoration:none"><span class="medalha-ic" aria-hidden="true">${EMOJI_MEDALHA[m.medalha]}</span><div class="cresce"><b>${MEDALHAS[m.medalha]} · ${esc(m.titulo)}</b><small>${dataLonga(m.data)}${m.categoria ? ` · ${esc(m.categoria)}` : ""}</small></div></a>`).join("")}</div></div>` : "")(medalhasDoAluno(d.eventos, a.id))}
         <div class="card"><div class="card-cab"><h3>Últimos check-ins</h3><small>${d.checkins.filter(c => c.alunoId === a.id).length} no total</small></div>
           ${ultimos.length ? `<div class="lista">${ultimos.map(c => { const t = turmas[c.turmaId]; return `<div><span class="hora">${horaTexto(c.hora)}</span><div class="cresce"><b>${dataCurta(c.data)}</b><small>${t ? DIAS_CURTOS[t.diaSemana] : ""}</small></div>${t ? etiquetaPrograma(t.programa) : ""}</div>`; }).join("")}</div>`
             : `<div class="vazio">Nenhum check-in ainda.</div>`}</div>

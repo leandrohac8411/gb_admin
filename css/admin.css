@@ -939,3 +939,43 @@ h1 .etq-exemplo{font-size:10px;letter-spacing:.08em}
   .cfg-quatro{grid-template-columns:repeat(2,minmax(0,1fr))}
   .cfg-dados{grid-template-columns:1fr}
 }
+/* Página do evento */
+.card.clica{cursor:pointer}
+.ev-pagina{display:flex;flex-direction:column;gap:16px}
+.ev-corpo{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+.ev-secoes{display:flex;flex-direction:column;gap:16px}
+.ev-inscricoes{display:flex;flex-direction:column;gap:10px;position:sticky;top:12px}
+.ev-rolagem{max-height:34vh;overflow:auto}
+.ev-confirmar{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.ev-quadro{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center}
+.ev-quadro span{font-size:28px;display:block}.ev-quadro b{font-size:26px;display:block}.ev-quadro small{color:var(--muted)}
+.ev-cat{min-width:180px}
+.ev-num{width:80px}
+.ev-valor{display:flex;align-items:center;gap:8px;font-size:13px}.ev-valor .input{width:110px}
+.cabecalho a.btn,.cab a.btn{text-decoration:none}
+.medalha-ic{font-size:22px;width:32px;text-align:center;flex:none}
+@media (max-width:1100px){.ev-corpo{grid-template-columns:1fr}.ev-inscricoes{position:static}}
+@media (max-width:899px){.ev-cat{min-width:0;width:100%}}
+/* Relatório: só aparece na impressão */
+.relatorio{display:none}
+@media print{
+  body{background:#fff!important}
+  body>*:not(#admin),#rodape,#fundo-menu{display:none!important}
+  #lateral,#hero,.toast,.folha{display:none!important}
+  #admin,#principal{display:block!important;margin:0!important;padding:0!important}
+  #tela>*:not(.relatorio){display:none!important}
+  #tela{padding:0!important;margin:0!important}
+  .relatorio{display:block;color:#000;font:12px/1.4 Arial,sans-serif}
+  .relatorio header{border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:12px}
+  .relatorio header h2{margin:2px 0;font-size:20px}.relatorio header p{margin:0}
+  .relatorio h3{font-size:14px;margin:16px 0 6px}.relatorio h3 small{font-weight:400}
+  .relatorio table{width:100%;border-collapse:collapse;page-break-inside:auto}
+  .relatorio tr{page-break-inside:avoid}
+  .relatorio th,.relatorio td{border:1px solid #999;padding:5px 6px;text-align:left}
+  .relatorio th{background:#eee}
+  .relatorio td:first-child,.relatorio th:first-child{width:28px;text-align:center}
+  .rel-caixa{display:inline-block;width:14px;height:14px;border:1.5px solid #000}
+  .rel-linha{display:inline-block;width:100%;min-width:160px;border-bottom:1px solid #000;height:14px}
+  .rel-quadro{font-size:13px;font-weight:700}
+  @page{margin:14mm}
+}

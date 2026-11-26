@@ -154,7 +154,13 @@ Várias telas têm as abas **Adultos | Kids**, e a escolha fica lembrada ao troc
 - Cada evento tem público, vagas e lista de inscritos.
 - Se o público mudar (por exemplo, de Todos para Kids), quem não é do público novo sai da lista e o aviso diz quantos saíram.
 - "Inscrever aptos" preenche as vagas com os aptos.
-- Evento passado mostra "Ver participantes".
+- Clicar no evento abre a página dele (`#evento/<id>`, `js/telas/evento.js`). A lógica fica em `js/logica/eventos.js` e os dados de cada participante em `ev.detalhes[alunoId]`.
+  - **Graduação:** os inscritos aparecem em três grupos: troca de faixa, grau e ainda não aptos. A partir do dia do evento, "Confirmar graduações marcadas" muda a ficha, grava em `graduacoes` (com `eventoId`) e guarda em `ev.graduados`. Ninguém é graduado duas vezes.
+  - **Campeonato:** os atletas aparecem agrupados por faixa (adultos, depois kids). A categoria vem do cadastro (faixa, idade IBJJF e peso) e pode ser escrita à mão. Depois da data entra o resultado (ouro, prata, bronze ou participou). As medalhas aparecem na ficha do aluno, lidas dos eventos.
+  - **Confraternização:** valor por pessoa (`ev.valorPessoa`), acompanhantes e pagamento de cada inscrito, com o total de pessoas, o recebido e o que falta.
+  - **Seminário:** presença no dia.
+  - **Imprimir relatório:** só o relatório vai para a impressão (`@media print`). Graduação sai agrupada com uma coluna para conferir a entrega. Campeonato sai por faixa e categoria, com o quadro de medalhas. Confraternização sai como lista de entrada. Seminário sai como lista de presença com assinatura.
+- Excluir um evento com medalhas ou pagamentos avisa antes. As graduações confirmadas continuam na ficha.
 
 **Professores**
 - Equipe, com faixa, graus, turmas e alunos atendidos.

@@ -24,6 +24,8 @@ export function mediaComportamento(avaliacoes, alunoId, comp) {
 
 // Reajuste do plano ("aplicar aos alunos atuais"): o irmão que já pagava com desconto continua com desconto.
 export function valorReajustado(aluno, alunos, valorAntigo, valorNovo, pct) {
+  // Valor combinado com o dono (ex.: plano família) não muda com o reajuste do plano.
+  if (aluno.valorCombinado) return Number(aluno.valor);
   const tinhaDesconto = Number(aluno.valor) < Number(valorAntigo) && irmaos(aluno, alunos).length > 0;
   return tinhaDesconto ? valorComDesconto(valorNovo, 1, pct) : valorNovo;
 }

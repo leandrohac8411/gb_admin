@@ -7,7 +7,7 @@ import { hojeISO, somarDias, dataValida } from "../logica/datas.js";
 import { inadimplentes } from "../logica/financeiro.js";
 import { idadeEm } from "../logica/graduacao.js";
 import { irmaos, valorComDesconto } from "../logica/familia.js";
-import { telefoneValido } from "../logica/regras-cadastro.js";
+import { telefoneValido, valorDoAluno } from "../logica/regras-cadastro.js";
 import { problemaNoEmail, emailValido } from "../logica/portal.js";
 import { icone } from "../menu.js";
 import { cabecalho, pessoa, faixaCelula, PILL_STATUS, aba, definirAba, daAba, abasCategoria, ligarAbas, anosTexto } from "./comum.js";
@@ -38,7 +38,9 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
         <div class="field cheio"><label for="f-email">E-mail <small class="muted">(é o login dele no portal do aluno)</small></label><input class="input" type="email" id="f-email" name="email" value="${esc(a.emailPortal || "")}" autocomplete="off" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="Opcional"></div>`}
         ${novo ? `<div class="field"><label for="f-faixa">Faixa</label>${sel("f-faixa", "faixa", faixasDe(categoria).map(f => [f, nomeFaixa(f)]), a.faixa)}</div>
         <div class="field"><label for="f-graus">Graus</label>${sel("f-graus", "graus", [0, 1, 2, 3, 4].map(g => [String(g), String(g)]), String(a.graus))}</div>` : ""}
-        <div class="field cheio"><label for="f-plano">Plano</label>${sel("f-plano", "plano", planos.map(p => [p.id, `${p.nome} · R$ ${p.valor}`]), a.plano)}</div>
+        <div class="field"><label for="f-plano">Plano</label>${sel("f-plano", "plano", planos.map(p => [p.id, `${p.nome} · R$ ${p.valor}`]), a.plano)}</div>
+        <div class="field"><label for="f-valor">Valor combinado (R$) <small class="muted">opcional</small></label><input class="input" type="text" inputmode="decimal" id="f-valor" name="valorAluno" value="${a.valorCombinado ? esc(String(a.valor).replace(".", ",")) : ""}" placeholder="Vazio = valor do plano"></div>
+        <small class="muted cheio" style="margin-top:-6px">Para um valor diferente só deste aluno (ex.: família toda com desconto, de R$ 220 por R$ 170 cada). Reajuste do plano não muda esse valor.</small>
         ${kids ? `<div class="secao">Responsável</div>
         <div class="field"><label for="f-rnome">Nome do responsável</label><input class="input" id="f-rnome" name="rnome" value="${esc(r.nome || "")}" autocomplete="off"></div>
         <div class="field"><label for="f-rpar">Parentesco</label>${sel("f-rpar", "rparentesco", ["mãe", "pai", "avó", "avô", "tia", "tio", "outro"].map(x => [x, x[0].toUpperCase() + x.slice(1)]), r.parentesco || "mãe")}</div>
@@ -88,8 +90,11 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
         : !kids && problemaNoEmail(f.email, aluno?.id || null, store.dados.alunos) ? problemaNoEmail(f.email, aluno?.id || null, store.dados.alunos)
         : foto ? problemaNaFoto(foto.files?.[0]) : "";
       if (falha) { erro.textContent = falha; erro.hidden = false; return; }
+      const valorPlano = !novo && aluno.plano === f.plano && !aluno.valorCombinado ? aluno.valor : (planos.find(p => p.id === f.plano)?.valor ?? 0);
+      const vAluno = valorDoAluno(f.valorAluno, valorPlano);
+      if (!vAluno) { erro.textContent = "Confira o valor combinado: entre R$ 0,01 e R$ 100.000, com até 2 casas para os centavos."; erro.hidden = false; return; }
       const campos = { nome, sexo: f.sexo, nascimento: f.nascimento || "", peso: f.peso ? Number(f.peso) : null, plano: f.plano,
-        valor: !novo && aluno.plano === f.plano ? aluno.valor : (planos.find(p => p.id === f.plano)?.valor ?? 0) };
+        valor: vAluno.valor, valorCombinado: vAluno.combinado };
       if (kids) Object.assign(campos, {
         telefone: f.rtelefone.trim(), saude: f.saude.trim(), autorizaImagem: !!f.autorizaImagem,
         responsavel: { nome: f.rnome.trim(), parentesco: f.rparentesco, telefone: f.rtelefone.trim(), buscam: f.rbuscam.trim() }
@@ -108,7 +113,7 @@ export function abrirFormAluno(store, aluno, aoSalvar, inicial = {}) {
         // No painel logado todo aluno novo é real (vai para o banco); a etiqueta "Real" o separa dos de exemplo.
         if (store.modo === "painel") alvo.real = true;
         const manos = irmaos(alvo, d.alunos);
-        if (manos.length) { alvo.valor = valorComDesconto(alvo.valor, manos.length, d.config.descontoIrmaos ?? 10); toast(`Irmão de ${manos.map(x => x.nome.split(" ")[0]).join(", ")}: desconto de ${d.config.descontoIrmaos ?? 10}%`); }
+        if (manos.length && !alvo.valorCombinado) { alvo.valor = valorComDesconto(alvo.valor, manos.length, d.config.descontoIrmaos ?? 10); toast(`Irmão de ${manos.map(x => x.nome.split(" ")[0]).join(", ")}: desconto de ${d.config.descontoIrmaos ?? 10}%`); }
         d.alunos.unshift(alvo);
         if (f.faixa !== "branca" || graus) d.graduacoes.push({ alunoId: alvo.id, data: hoje, faixa: f.faixa, graus });
         const comp = hoje.slice(0, 7), dv = String(alvo.vencimentoDia).padStart(2, "0"), venc = `${comp}-${dv}` < hoje ? hoje : `${comp}-${dv}`;

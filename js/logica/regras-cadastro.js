@@ -32,3 +32,12 @@ export function inscritosDoPublico(inscritos, publico, alunosPorId) {
   }
   return { ficam, saem };
 }
+
+// Valor da mensalidade do aluno: vazio ou igual ao do plano = segue o plano; diferente = valor combinado
+// com o dono (ex.: família toda com desconto). null = valor inválido.
+export function valorDoAluno(texto, valorPlano) {
+  if (!String(texto ?? "").trim()) return { valor: valorPlano, combinado: false };
+  const v = valorReais(texto, 100000);
+  if (v == null) return null;
+  return { valor: v, combinado: v !== Number(valorPlano) };
+}

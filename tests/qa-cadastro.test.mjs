@@ -56,3 +56,18 @@ test("reajuste do plano mantém o desconto de irmão de quem já tinha", () => {
   assert.equal(valorReajustado(so, todos, 220, 230, 10), 230);
   assert.equal(valorReajustado(adulto, todos, 280, 300, 10), 300);
 });
+
+import { valorDoAluno } from "../js/logica/regras-cadastro.js";
+test("valor combinado: o dono escolhe o valor do aluno (ex.: família 220 -> 170); vazio = valor do plano", () => {
+  assert.deepEqual(valorDoAluno("170", 220), { valor: 170, combinado: true });
+  assert.deepEqual(valorDoAluno("", 220), { valor: 220, combinado: false });
+  assert.deepEqual(valorDoAluno("220", 220), { valor: 220, combinado: false });
+  assert.deepEqual(valorDoAluno("170,50", 220), { valor: 170.5, combinado: true });
+  assert.equal(valorDoAluno("abc", 220), null);
+  assert.equal(valorDoAluno("0", 220), null);
+});
+
+test("reajuste do plano não mexe no valor combinado com o aluno", () => {
+  const fam = { id: "f1", categoria: "adulto", status: "ativo", plano: "Mensal", valor: 170, valorCombinado: true };
+  assert.equal(valorReajustado(fam, [fam], 220, 240, 10), 170);
+});

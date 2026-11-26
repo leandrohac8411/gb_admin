@@ -52,6 +52,8 @@ export default {
     lerFoto(e.uid, `aula:${turmaId}_${data}`).then(dados => {
       const foto = fotoSegura(dados), box = el.querySelector("#foto");
       if (!foto || !box) return;
+      // Moldura de altura fixa: a foto aparece inteira (sem cortar ninguém) e as sobras levam a mesma foto desfocada.
+      box.style.setProperty("--fundo", `url(${foto})`);
       box.innerHTML = `<img src="${foto}" alt="Foto da aula de ${esc(dataLonga(data))}">`;
       box.hidden = false;
       box.onclick = () => {

@@ -33,7 +33,7 @@ test("espelhoAluno: presenças do aluno, mais recente primeiro, e aula de turma 
   assert.deepEqual({ nome: e.nome, faixa: e.faixa, graus: e.graus, desdeFaixa: e.desdeFaixa, ultimaGraduacao: e.ultimaGraduacao },
     { nome: "Ana Souza", faixa: "azul", graus: 1, desdeFaixa: "2026-01-10", ultimaGraduacao: "2026-06-01" });
   assert.deepEqual(e.proximoPasso, aptidao(ana, d.checkins, "2026-11-25"));
-  assert.ok(!("telefone" in e) && !("valor" in e), "nada de telefone ou mensalidade no espelho");
+  assert.ok(!("valor" in e), "nada de mensalidade no espelho");
 });
 
 test("espelhoAcesso: trancado perde o acesso (ativo false) e volta ao reativar", () => {
@@ -91,4 +91,26 @@ test("problemaNoEmail: vazio pode; formato e e-mail repetido de outro aluno não
   assert.equal(problemaNoEmail("ana@x.com", "a2", alunos), "Esse e-mail já é de outro aluno.");
   assert.equal(problemaNoEmail("ana@", "a2", alunos), "Confira o e-mail.");
   assert.equal(problemaNoEmail("novo@x.com", null, alunos), "", "aluno novo");
+});
+
+test("espelhoAluno leva também peso, telefone e plano do cadastro (o aluno não digita nada)", () => {
+  const dd = { ...d, planos: [{ id: "Mensal", nome: "Mensal" }] };
+  const e = espelhoAluno(dd, { ...ana, peso: 77.8, telefone: "61 99999-0000", plano: "Mensal" }, "2026-11-25");
+  assert.equal(e.peso, 77.8);
+  assert.equal(e.telefone, "61 99999-0000");
+  assert.equal(e.plano, "Mensal");
+  const vazio = espelhoAluno(d, { ...ana, telefone: "", peso: null }, "2026-11-25");
+  assert.equal(vazio.peso, null);
+  assert.equal(vazio.telefone, "");
+  assert.ok(!("valor" in e), "valor da mensalidade não vai para o portal");
+});
+
+test("espelhoAluno leva a foto cadastrada no GB Admin (miniatura do rosto) para o perfil do portal", () => {
+  const mini = "data:image/jpeg;base64,AAAA";
+  const dd = { ...d, rostos: new Map([["a1", { mini, descritores: [[1]] }]]) };
+  const e = espelhoAluno(dd, ana, "2026-11-25");
+  assert.equal(e.foto, mini);
+  assert.ok(!("descritores" in e), "os números do rosto não vão para o portal");
+  assert.equal(espelhoAluno(d, ana, "2026-11-25").foto, null, "sem foto cadastrada");
+  assert.equal(espelhoAluno({ ...d, rostos: new Map([["a1", { mini: "javascript:alert(1)" }]]) }, ana, "2026-11-25").foto, null, "só JPEG");
 });

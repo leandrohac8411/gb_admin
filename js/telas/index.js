@@ -75,7 +75,8 @@ async function abrirPainelLogado(fb, usuario) {
   let primeira;
   const pronta = new Promise(ok => { primeira = ok; });
   // Leitura sem o painel/meta é do cache ainda vazio: espera a do servidor.
-  ouvirPainel(leitura => { if (!leitura.docs.meta) return; sincronia.receber(leitura); if (store.base) primeira(); }, falhaBanco);
+  // Mudança vinda do banco (outro aparelho, rosto novo): o espelho do portal também acompanha (só grava o que mudou).
+  ouvirPainel(leitura => { if (!leitura.docs.meta) return; sincronia.receber(leitura); if (store.base) primeira(); store.portal?.aposSalvar().catch(e => console.error(e)); }, falhaBanco);
   await pronta;
   store.pronto = true;
   // Portal do aluno: depois de cada salvar, o espelho acompanha; ao abrir, os check-ins feitos pelos

@@ -3,7 +3,7 @@ import { aulaPrevista, semanaDoCiclo } from "../logica/ciclo.js";
 import { progressoRoxa, progressoSemana, progressoMes, horasTatame } from "../logica/metas.js";
 import { faixaSVG, CORES, NOMES, corDaFaixa, proximaFaixa } from "../ui/faixa.js";
 import { anelSVG } from "../ui/graficos.js";
-import { esc, temaCurto, saudacao, iniciais, horaTexto, numero } from "../ui/util.js";
+import { esc, temaCurto, saudacao, iniciais, horaTexto, numero, fotoSegura } from "../ui/util.js";
 import { turmasDoDia, conteudoPrevisto, pintarFoto, minutosAgora, minutosDe } from "./comum.js";
 
 const CAL = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M7.5 14h3M13.5 14h3M7.5 17.5h3"/></svg>';
@@ -56,7 +56,7 @@ export default {
         <div class="hrow">
           <div class="logo" role="img" aria-label="GB Sobradinho"></div>
           <div class="who"><small>${saudacao()}</small><b>${esc(String(perfil.nome || "").split(" ")[0])}</b></div>
-          <a href="#perfil" class="foto" id="foto" aria-label="Perfil"><span class="ini">${esc(iniciais(perfil.nome))}</span></a>
+          <a href="#perfil" class="foto" id="foto" aria-label="Perfil"${fotoSegura(perfil.foto) ? ` style="background-image:url(${fotoSegura(perfil.foto)});background-size:cover;background-position:center"` : ""}>${fotoSegura(perfil.foto) ? "" : `<span class="ini">${esc(iniciais(perfil.nome))}</span>`}</a>
         </div>
       </header>
       <div class="beltwrap">${faixaSVG(graus, { cor })}<div class="lbl"><span>Faixa ${NOMES[cor]}</span><span>${graus} de 4 graus</span></div></div>

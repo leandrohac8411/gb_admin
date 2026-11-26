@@ -3,6 +3,7 @@
 import { aptidao } from "./graduacao.js";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const fotoDoRosto = mini => (typeof mini === "string" && mini.length < 20000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(mini) ? mini : null);
 
 // Kids fica para depois: só adulto pode ter acesso ao portal.
 export const podeTerAcesso = aluno => (aluno?.categoria || "adulto") === "adulto";
@@ -21,6 +22,10 @@ export function espelhoAluno(d, aluno, hojeISO) {
     .sort((x, y) => y.data.localeCompare(x.data) || y.hora.localeCompare(x.hora));
   return {
     nome: aluno.nome, nascimento: aluno.nascimento || null, sexo: ["M", "F"].includes(aluno.sexo) ? aluno.sexo : null,
+    peso: Number.isFinite(Number(aluno.peso)) && aluno.peso != null && aluno.peso !== "" ? Number(aluno.peso) : null,
+    telefone: aluno.telefone || "", plano: (d.planos || []).find(p => p.id === aluno.plano)?.nome || aluno.plano || "",
+    // Foto do perfil = a miniatura do rosto cadastrado no GB Admin (só a imagem; os números do rosto não vão).
+    foto: fotoDoRosto(d.rostos?.get?.(aluno.id)?.mini),
     faixa: aluno.faixa, graus: Number(aluno.graus) || 0,
     desdeFaixa: aluno.desdeFaixa || "", ultimaGraduacao: aluno.ultimaGraduacao || "",
     presencas, proximoPasso: aptidao(aluno, d.checkins || [], hojeISO)

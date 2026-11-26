@@ -8,7 +8,7 @@ const grade = {
   cronograma: [{ programa: "GB1", semana: 13, aulaB: { tema: "Costas: gola", tecnicas: [{ nome: "Gola", categoria: "Costas" }] } }],
   ancoras: [{ programa: "GB1", data: "2026-11-16", semana: 12 }], modelosAula: []
 };
-const portal = { nome: "Ana Souza", nascimento: "1990-05-01", sexo: "F", faixa: "roxa", graus: 2, desdeFaixa: "2026-03-10", ultimaGraduacao: "2026-06-01",
+const portal = { nome: "Ana Souza", nascimento: "1990-05-01", sexo: "F", peso: 61.5, telefone: "61 9999-0000", plano: "Mensal", foto: "data:image/jpeg;base64,AAAA", faixa: "roxa", graus: 2, desdeFaixa: "2026-03-10", ultimaGraduacao: "2026-06-01",
   presencas: [{ data: "2026-11-25", turmaId: "t1", hora: "12:31", horario: "12:30", programa: "GB1" },
     { data: "2026-11-11", turmaId: "velha", hora: "07:00", horario: "07:00", programa: "GB2" }], proximoPasso: { faltamAulas: 10 } };
 const base = { portal, grade, diario: [], pendentes: [], prefs: {}, email: "ana@x.com", alunoId: "a1" };
@@ -17,6 +17,10 @@ test("perfil vem do GB Admin (nome, nascimento, sexo, faixa e graus) e as metas 
   const e = montarEstadoDiario({ ...base, prefs: { metaSemanal: 3, nascimento: "2000-01-01", sexo: "M" } });
   assert.equal(e.perfil.nascimento, "1990-05-01");
   assert.equal(e.perfil.sexo, "F");
+  assert.equal(e.perfil.peso, 61.5);
+  assert.equal(e.perfil.telefone, "61 9999-0000");
+  assert.equal(e.perfil.plano, "Mensal");
+  assert.equal(e.perfil.foto, "data:image/jpeg;base64,AAAA");
   assert.equal(e.perfil.nome, "Ana Souza");
   assert.deepEqual(e.perfil.faixa, { cor: "roxa", desde: "2026-03" });
   assert.equal(e.perfil.graus.length, 2);

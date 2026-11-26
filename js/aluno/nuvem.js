@@ -5,7 +5,7 @@ import {
 import {
   doc, getDoc, setDoc, getDocs, onSnapshot, collection, query, where, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { auth, db, configurado } from "../nuvem/firebase.js";
+import { auth, db, configurado } from "./firebase.js";
 import { idFotoAula } from "../logica/foto-aula.js";
 import { codificarTecnicas, lerTecnicas } from "../logica/portal-aluno.js";
 

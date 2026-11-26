@@ -61,7 +61,7 @@ const textoSeguro = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;
 
 export function alternarGrupo(nome) { abertos.has(nome) ? abertos.delete(nome) : abertos.add(nome); }
 
-export function desenharMenu(ativa, usuario = {}, { sair = false, restaurar = "Restaurar dados de exemplo" } = {}) {
+export function desenharMenu(ativa, usuario = {}, { sair = false, restaurar = "Restaurar dados de exemplo", logo = "img/logo-sobradinho.png", academia = "GB Sobradinho" } = {}) {
   const grupoAtivo = MENU.find(g => g.itens.some(i => i.rota === ativa))?.grupo;
   // Ao trocar de tela, fica aberto só o grupo dela (sanfona); clicar num grupo abre/fecha à mão.
   if (ativa !== ultimaAtiva) { abertos.clear(); ultimaAtiva = ativa; }
@@ -70,7 +70,7 @@ export function desenharMenu(ativa, usuario = {}, { sair = false, restaurar = "R
     `${icone(i.rota)}<span>${i.nome}</span>${i.pronto ? "" : "<em>em breve</em>"}</a>`;
   const [principal, ...grupos] = MENU;
   const nome = textoSeguro((usuario.nome || "").trim() || "Visitante");
-  return `<a class="lat-marca" href="#dashboard" aria-label="GB Sobradinho — início"><img src="img/logo-sobradinho.png" alt="GB Sobradinho"></a>` +
+  return `<a class="lat-marca" href="#dashboard" aria-label="${textoSeguro(academia)} — início"><img src="${textoSeguro(logo)}" alt="${textoSeguro(academia)}"></a>` +
     `<nav class="lat-nav">${principal.itens.map(link).join("")}` +
     grupos.map(g => {
       const aberto = abertos.has(g.grupo);

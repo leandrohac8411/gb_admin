@@ -1,5 +1,6 @@
 // Portal do aluno: entrar, primeiro acesso, esqueci a senha e os avisos de e-mail não confirmado / não liberado.
 import { esc, toast } from "./ui/util.js";
+import { academiaLembrada } from "../ui/logo.js";
 import { mensagemDeErroLogin } from "../logica/portal-aluno.js";
 import { registrarFalha, registrarSucesso, esperaRestante, normalizar } from "../logica/tentativas.js";
 
@@ -9,18 +10,22 @@ const gravarT = t => { try { localStorage.setItem(CHAVE, JSON.stringify(t)); } c
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 let modo = "entrar", ultimoEnvio = 0;
 
-const marca = `<div class="lp-fundo" aria-hidden="true"></div>
+// Logo e nome da academia lembrados no aparelho (o banco só pode ser lido depois de entrar).
+const marca = () => {
+  const a = academiaLembrada("../img/logo-sobradinho.png");
+  return `<div class="lp-fundo" aria-hidden="true"></div>
   <header class="lp-marca"><div class="lp-linha-marca">
-    <div class="lp-gb"><img class="lp-logo" src="../img/logo-sobradinho.png" alt="GB Sobradinho"><div class="lp-gb-texto"><strong>GRACIE BARRA</strong><span>GB SOBRADINHO</span></div></div>
+    <div class="lp-gb"><img class="lp-logo" src="${esc(a.logo)}" alt=""><div class="lp-gb-texto"><strong>${esc(a.nome)}</strong></div></div>
     <span class="lp-separador" aria-hidden="true"></span><h1 class="lp-app">Portal do<br>Aluno</h1></div>
     <div class="lp-regua" aria-hidden="true"></div></header>`;
+};
 
 export default {
   montar(el, ctx) {
     const n = ctx.nuvem;
     if (ctx.situacao === "verificar" || ctx.situacao === "naoLiberado") {
       const verificar = ctx.situacao === "verificar";
-      el.innerHTML = `${marca}<div class="lp-conteudo"><div class="lp-form">
+      el.innerHTML = `${marca()}<div class="lp-conteudo"><div class="lp-form">
         <p class="lp-frase">${verificar ? `Confirme o e-mail que enviamos para <b>${esc(ctx.usuario.email)}</b>. Depois toque em <em>Já confirmei</em>.`
           : `O e-mail <b>${esc(ctx.usuario.email)}</b> ainda não foi liberado pela academia. Fale com o professor ou a recepção.`}</p>
         ${verificar ? '<button class="lp-entrar" id="ja"><span>JÁ CONFIRMEI</span></button><button class="lp-bio" id="reenviar" type="button"><span>Reenviar o e-mail</span></button>' : ""}
@@ -42,7 +47,7 @@ export default {
     }
 
     const primeiro = modo === "primeiro", esqueci = modo === "esqueci";
-    el.innerHTML = `${marca}<div class="lp-conteudo">
+    el.innerHTML = `${marca()}<div class="lp-conteudo">
       <p class="lp-frase">${primeiro ? "Crie sua senha com o e-mail que a academia liberou." : esqueci ? "Enviamos um link para criar uma senha nova." : "Acesse suas aulas no <em>tatame</em>"}</p>
       <form id="f" class="lp-form" novalidate>
         <div class="lp-grupo"><label for="email">E-mail</label><div class="lp-campo"><input id="email" type="email" placeholder="seu@email.com" autocomplete="username" inputmode="email" maxlength="254" autocapitalize="none" spellcheck="false"></div></div>

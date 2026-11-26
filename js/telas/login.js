@@ -2,6 +2,7 @@
 import { entrar, redefinirSenha } from "../nuvem/firebase.js";
 import { toast, esc } from "../ui/util.js";
 import { icone } from "../menu.js";
+import { academiaLembrada } from "../ui/logo.js";
 import { vigiarInatividade } from "../logica/inatividade.js";
 import { registrarFalha, registrarSucesso, esperaRestante, tentativasRestantes, normalizar } from "../logica/tentativas.js";
 
@@ -26,11 +27,12 @@ const ic = {
 
 // aviso: mensagem inicial (ex.: "Este e-mail não tem acesso").
 export function montarLogin(el, { aviso = "" } = {}) {
+  const { logo, nome } = academiaLembrada();
   el.innerHTML = `
     <div class="lp">
       <div class="lp-poster">
       <aside class="lp-lado">
-        <div class="lp-lado-marca"><img src="img/logo-sobradinho.png" alt="GB Sobradinho"><div><strong>GB Sobradinho</strong><span>Admin</span></div></div>
+        <div class="lp-lado-marca"><img src="${esc(logo)}" alt=""><div><strong>${esc(nome)}</strong><span>Admin</span></div></div>
         <span class="lp-lado-regua" aria-hidden="true"></span>
         <h2>Gestão completa da sua <em>academia</em></h2>
         <p>Alunos, presenças, mensalidades, graduações e muito mais em um só lugar.</p>
@@ -44,9 +46,9 @@ export function montarLogin(el, { aviso = "" } = {}) {
       <div class="lp-conteudo">
         <header class="lp-marca">
           <div class="lp-linha-marca">
-            <img class="lp-logo" src="img/logo-sobradinho.png" alt="GB Sobradinho">
+            <img class="lp-logo" src="${esc(logo)}" alt="">
             <span class="lp-separador" aria-hidden="true"></span>
-            <h1 class="lp-app">GB Sobradinho<span>Admin</span></h1>
+            <h1 class="lp-app">${esc(nome)}<span>Admin</span></h1>
           </div>
           <div class="lp-regua" aria-hidden="true"></div>
           <p class="lp-frase">Gestão da academia, do <em>tatame</em> ao caixa</p>

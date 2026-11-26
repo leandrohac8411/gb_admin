@@ -135,3 +135,14 @@ test("espelhoAluno leva a meta de aulas da faixa pela regra da academia (4 graus
   assert.equal(espelhoAluno(d, ana, "2026-11-25").metaFaixa, REGRAS.aulasPorGrau * 5);
   assert.equal(espelhoAluno(d, { ...ana, faixa: "preta" }, "2026-11-25").metaFaixa, null, "faixa preta não tem próxima");
 });
+
+import { logoValida } from "../js/logica/portal.js";
+test("espelhoGrade leva o nome e a logo da academia (cada academia com a sua)", () => {
+  const logo = "data:image/png;base64,iVBORw0KGgo=";
+  const g = espelhoGrade({ ...d, config: { ...d.config, academia: { nome: "Alliance Centro", logo, telefone: "61 9999" } } });
+  assert.deepEqual(g.academia, { nome: "Alliance Centro", logo });
+  assert.deepEqual(espelhoGrade(d).academia, { nome: "", logo: null });
+  assert.equal(logoValida("javascript:alert(1)"), null);
+  assert.equal(logoValida("data:image/jpeg;base64,AAAA"), "data:image/jpeg;base64,AAAA");
+  assert.equal(logoValida("data:image/png;base64," + "A".repeat(300000)), null, "grande demais");
+});

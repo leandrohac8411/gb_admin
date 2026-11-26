@@ -10,6 +10,7 @@ import { aptidao, aplicarRegras, regrasDe } from "../logica/graduacao.js";
 import { statusMensalidade } from "../logica/financeiro.js";
 import { aulasNosUltimos } from "../logica/relatorios.js";
 import { MODULOS } from "../dados-extras.js";
+import { logoAcademia, reduzirLogo } from "../ui/logo.js";
 import { validarDados, limparImportado } from "../store.js";
 import { aplicarGrade, temExemplos } from "../logica/baldes.js";
 import { irmaos, mediaComportamento } from "../logica/familia.js";
@@ -97,6 +98,7 @@ function formUsuario(store, u, pronto) {
     el.innerHTML = `<h3>${u ? "Editar usuário" : "Novo usuário"}</h3><form class="campos" novalidate>
       <div class="field cheio"><label for="us-nome">Nome</label><input class="input" id="us-nome" value="${esc(x.nome)}"></div>
       <div class="field cheio"><label for="us-email">E-mail</label><input class="input" type="email" id="us-email" value="${esc(x.email)}" autocomplete="off"></div>
+      <div class="field cheio"><label for="us-sexo">Saudação no painel</label><select class="input" id="us-sexo">${opcoes([["M", "Bem-vindo (masculino)"], ["F", "Bem-vinda (feminino)"]], x.sexo || "M")}</select></div>
       <div class="field cheio"><label for="us-perfil">Perfil</label><select class="input" id="us-perfil">${opcoes(d.perfis.map(p => [p.id, p.nome]), x.perfilId)}</select></div>
       <p class="aviso cheio" id="us-erro" hidden></p>
       <div class="acoes cheio"><button type="button" class="btn ghost" id="us-x">Cancelar</button><button class="btn">Salvar</button></div></form>`;
@@ -107,7 +109,7 @@ function formUsuario(store, u, pronto) {
       if (nome.length < 3) return erroEm(el, "#us-erro", "Escreva o nome.");
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return erroEm(el, "#us-erro", "E-mail inválido.");
       if (d.usuarios.some(y => y !== u && y.email === email)) return erroEm(el, "#us-erro", "Já existe um usuário com esse e-mail.");
-      const campos = { nome, email, perfilId: el.querySelector("#us-perfil").value };
+      const campos = { nome, email, sexo: el.querySelector("#us-sexo").value === "F" ? "F" : "M", perfilId: el.querySelector("#us-perfil").value };
       if (u && u.perfilId === "admin" && campos.perfilId !== "admin" && u.ativo && d.usuarios.filter(y => y.ativo && y.perfilId === "admin").length === 1) return erroEm(el, "#us-erro", "Precisa haver pelo menos um administrador ativo.");
       if (u) Object.assign(u, campos); else d.usuarios.push({ id: store.novoId("u"), ativo: true, ...campos });
       store.salvar(); fechar(); toast("Usuário salvo"); pronto();
@@ -153,17 +155,18 @@ export const config = {
     const num = (id, rot, val, min, max) => `<div class="field"><label for="${id}">${rot}</label><input class="input" type="number" inputmode="numeric" id="${id}" min="${min}" max="${max}" step="1" value="${esc(val)}"></div>`;
     el.innerHTML = cabecalho("Configurações", "Dados da academia e regras usadas em todo o painel.") +
       `<form id="cfg" novalidate class="grade2">
-        <div class="card"><div class="card-cab"><h3>Quem usa o painel</h3></div><div class="campos">
-          <div class="field"><label for="cf-unome">Seu nome</label><input class="input" id="cf-unome" value="${esc(c.usuario?.nome ?? "Leandro")}"></div>
-          <div class="field"><label for="cf-usexo">Saudação</label><select class="input" id="cf-usexo"><option value="M"${(c.usuario?.sexo ?? "M") === "M" ? " selected" : ""}>Bem-vindo</option><option value="F"${c.usuario?.sexo === "F" ? " selected" : ""}>Bem-vinda</option></select></div>
-          <small class="muted cheio">Aparece no topo do Dashboard. Com login de verdade, viria do usuário que entrou.</small>
-        </div></div>
         <div class="card"><div class="card-cab"><h3>Portal do aluno</h3></div><div class="campos">
-          <p class="muted cheio" style="margin:0">O portal do aluno é o <b>Diário de Tatame</b>: o app no celular onde o aluno faz check-in, registra as aulas e acompanha a faixa.</p>
-          <div class="field cheio"><label for="cf-diario">Endereço do Diário de Tatame</label><input class="input" id="cf-diario" inputmode="url" value="${esc(c.diarioUrl || "https://gracie-taupe.vercel.app")}"></div>
-          <a class="btn sec cheio" href="${esc(/^https:\/\//.test(c.diarioUrl || "") ? c.diarioUrl : "https://gracie-taupe.vercel.app")}" target="_blank" rel="noopener noreferrer">Abrir o Diário de Tatame ↗</a>
+          <p class="muted cheio" style="margin:0">Os alunos entram em <b>${esc(location.origin)}/aluno</b> com o e-mail liberado na ficha (ou no cadastro). Lá eles fazem check-in, veem as aulas, a foto e escrevem o diário.</p>
+          <a class="btn sec cheio" href="/aluno" target="_blank" rel="noopener">Abrir o portal do aluno ↗</a>
         </div></div>
         <div class="card"><div class="card-cab"><h3>Academia</h3></div><div class="campos">
+          <div class="field cheio"><span class="rotulo">Logo da academia</span>
+            <div class="foto-escolha">
+              <span class="rosto-mini${logoAcademia(c) ? "" : " vazio-mini"}" id="cf-logo-previa" aria-hidden="true">${logoAcademia(c) ? `<img src="${esc(logoAcademia(c))}" alt="">` : icone("config")}</span>
+              <div class="cresce"><b id="cf-logo-nome">${c.academia.logo ? "Logo cadastrada" : "Usando a logo padrão"}</b><small class="muted">Aparece no menu, no topo, no login e no portal do aluno. PNG com fundo transparente fica melhor.</small></div>
+              <label class="btn sec peq" for="cf-logo">${c.academia.logo ? "Trocar" : "Escolher logo"}</label><input type="file" accept="image/png,image/jpeg,image/webp" id="cf-logo" hidden>
+            </div>
+            ${c.academia.logo ? '<button type="button" class="btn ghost peq" id="cf-logo-tirar" style="align-self:flex-start">Voltar para a logo padrão</button>' : ""}</div>
           <div class="field cheio"><label for="cf-nome">Nome</label><input class="input" id="cf-nome" value="${esc(c.academia.nome)}"></div>
           <div class="field cheio"><label for="cf-end">Endereço</label><input class="input" id="cf-end" value="${esc(c.academia.endereco)}"></div>
           <div class="field"><label for="cf-tel">Telefone</label><input class="input" id="cf-tel" value="${esc(c.academia.telefone)}"></div>
@@ -238,6 +241,21 @@ export const config = {
       if (store.salvar() !== false) toast(`${lida.turmas.length} turmas importadas${lida.descartadas ? `, ${lida.descartadas} descartadas` : ""}`);
       ctx.redesenhar();
     });
+    // Logo: undefined = não mexeu; null = voltar para a padrão; texto = logo nova (já reduzida no aparelho).
+    let logoNova;
+    el.querySelector("#cf-logo").onchange = async ev => {
+      const arq = ev.target.files?.[0]; ev.target.value = "";
+      if (!arq) return;
+      try { logoNova = await reduzirLogo(arq); } catch { toast("Não consegui abrir essa imagem."); return; }
+      el.querySelector("#cf-logo-previa").innerHTML = `<img src="${logoNova}" alt="">`;
+      el.querySelector("#cf-logo-previa").classList.remove("vazio-mini");
+      el.querySelector("#cf-logo-nome").textContent = "Logo nova (salva ao tocar em Salvar configurações)";
+    };
+    el.querySelector("#cf-logo-tirar")?.addEventListener("click", () => {
+      logoNova = null;
+      el.querySelector("#cf-logo-previa").innerHTML = `<img src="img/logo-sobradinho.png" alt="">`;
+      el.querySelector("#cf-logo-nome").textContent = "Volta para a logo padrão ao salvar";
+    });
     el.querySelector("#cfg").onsubmit = e => {
       e.preventDefault();
       const v = id => el.querySelector(id).value.trim(), n = id => Number(v(id));
@@ -248,11 +266,7 @@ export const config = {
       if (ruim) return erroEm(el, "#cf-erro", `Confira o campo "${el.querySelector(`label[for="${ruim.slice(1)}"]`).textContent}".`);
       const ik = ["cinza", "amarela", "laranja", "verde"].map(f => n(`#cf-k-${f}`));
       if (!ik.every((v, i) => i === 0 || ik[i - 1] <= v)) return erroEm(el, "#cf-erro", "As idades mínimas kids precisam subir: cinza ≤ amarela ≤ laranja ≤ verde.");
-      const diario = v("#cf-diario");
-      if (diario && !/^https:\/\/[^\s"'<>]+$/.test(diario)) return erroEm(el, "#cf-erro", "O endereço do Diário precisa começar com https://");
-      c.diarioUrl = diario || "https://gracie-taupe.vercel.app";
-      c.usuario = { nome: v("#cf-unome") || "Leandro", sexo: el.querySelector("#cf-usexo").value };
-      c.academia = { nome: v("#cf-nome"), endereco: v("#cf-end"), telefone: v("#cf-tel"), email: v("#cf-email") };
+      c.academia = { nome: v("#cf-nome"), endereco: v("#cf-end"), telefone: v("#cf-tel"), email: v("#cf-email"), logo: logoNova !== undefined ? logoNova : (c.academia.logo || null) };
       c.vencimentoPadrao = n("#cf-venc"); c.metaAulas30 = n("#cf-meta");
       c.regras = { aulasPorGrau: n("#cf-aulas"), mesesPorGrau: n("#cf-meses"), mesesMinFaixa: Object.fromEntries(["branca", "azul", "roxa", "marrom"].map(f => [f, n(`#cf-min-${f}`)])) };
       c.regrasKids = { aulasPorGrau: n("#cf-k-aulas"), mesesPorGrau: n("#cf-k-meses"), mesesMinFaixa: n("#cf-k-faixa"),

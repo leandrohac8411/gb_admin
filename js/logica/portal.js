@@ -4,6 +4,8 @@ import { aptidao, regrasDe } from "./graduacao.js";
 import { somarDias } from "./datas.js";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// Logo da academia (Configurações): imagem PNG/JPEG/WebP em data URL, até ~200 KB.
+export const logoValida = l => (typeof l === "string" && l.length < 280000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(l) ? l : null);
 const fotoDoRosto = mini => (typeof mini === "string" && mini.length < 20000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(mini) ? mini : null);
 
 // Kids fica para depois: só adulto pode ter acesso ao portal.
@@ -53,7 +55,8 @@ export function espelhoGrade(d) {
     if ((t.categoria || "adulto") !== "adulto") continue;
     turmas[t.id] = { diaSemana: t.diaSemana, horario: t.horario, programa: t.programa, professor: profs[t.professorId] || "", modeloAulaId: t.modeloAulaId || "", aula: t.aula || "", duracaoMin: Number(t.duracaoMin) || 60 };
   }
-  return { turmas, cronograma: d.cronograma || [], ancoras: d.config?.ancoras || [], modelosAula: d.modelosAula || [] };
+  return { turmas, cronograma: d.cronograma || [], ancoras: d.config?.ancoras || [], modelosAula: d.modelosAula || [],
+    academia: { nome: d.config?.academia?.nome || "", logo: logoValida(d.config?.academia?.logo) } };
 }
 
 // Quem participou de cada aula adulta dos últimos DIAS_AULAS dias: id "turma_data" -> { turmaId, data, presentes }.

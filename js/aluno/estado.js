@@ -10,7 +10,7 @@ export function iniciarEstado(usuario, acesso, onMudar) {
   definirAluno({ alunoId: acesso.alunoId, presente: (turmaId, data) => (e.aulas || []).some(a => a.turmaId === turmaId && a.data === data) });
   const montar = () => {
     if (fontes.portal === undefined || fontes.grade === undefined) return;
-    Object.assign(e, montarEstadoDiario(fontes), { pronto: true });
+    Object.assign(e, montarEstadoDiario(fontes), { pronto: true, academia: fontes.grade?.academia || null });
     onMudar();
   };
   const falhou = err => {

@@ -4,6 +4,7 @@ import * as nuvem from "./nuvem.js";
 import { menuInferior } from "./ui/icones.js";
 import { esc } from "./ui/util.js";
 import { hojeISO } from "./logica/datas.js";
+import { lembrarAcademia } from "../ui/logo.js";
 
 const $tela = document.getElementById("tela");
 const $menu = document.getElementById("menu");
@@ -58,6 +59,12 @@ export async function desenhar() {
   $tela.className = tela.classe || (tela.menu ? "" : "sem-menu");
   $tela.innerHTML = "";
   limparAtual = await tela.montar($tela, params, ctx);
+  // Logo da academia (do GB Admin) no lugar da padrão, e lembrada no aparelho para a tela de entrar.
+  const academia = ctx.estado?.academia;
+  if (academia) {
+    lembrarAcademia({ academia });
+    if (academia.logo) $tela.querySelectorAll(".logo").forEach(x => { x.style.backgroundImage = `url("${academia.logo}")`; });
+  }
   $menu.hidden = !tela.menu;
   if (tela.menu) $menu.innerHTML = menuInferior(tela.menu);
   window.scrollTo(0, rolagem);

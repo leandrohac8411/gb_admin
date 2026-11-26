@@ -3,6 +3,8 @@ import { desenharMenu, itemDoMenu, alternarGrupo, icone } from "./menu.js";
 import { resumoDashboard } from "./logica/indicadores.js";
 import { hojeISO } from "./logica/datas.js";
 import { esc, fecharFolhas, limitarCampos } from "./ui/util.js";
+import { usuarioDaSaudacao } from "./logica/usuarios.js";
+import { urlDaLogo, lembrarAcademia } from "./ui/logo.js";
 import embreve from "./telas/embreve.js";
 import { lerRota } from "./rota.js";
 
@@ -79,14 +81,20 @@ export function desenhar() {
   const doMenu = itemDoMenu(rota);
   const tela_ = (Object.hasOwn(TELAS, rota) && TELAS[rota]) || (doMenu ? embreve : naoEncontrada);
   const ativa = rota === "aluno" ? "alunos" : rota;
-  const u = ctx.store?.dados.config?.usuario || {};
-  lateral.innerHTML = desenharMenu(ativa, u, { sair: !!aoSair, restaurar: !mostrarRestaurar || mostrarRestaurar() ? rotuloRestaurar : "" });
+  const d = ctx.store?.dados, cfg = d?.config;
+  // Quem entrou (Permissões › Usuários, pelo e-mail do login) dá o nome e o Bem-vindo/Bem-vinda.
+  const u = usuarioDaSaudacao(d?.usuarios, emailLogado, cfg?.usuario);
+  const logo = urlDaLogo(cfg);
+  if (cfg) lembrarAcademia(cfg);
+  lateral.innerHTML = desenharMenu(ativa, u, { sair: !!aoSair, restaurar: !mostrarRestaurar || mostrarRestaurar() ? rotuloRestaurar : "", logo, academia: cfg?.academia?.nome || "GB Sobradinho" });
+  const mini = document.querySelector(".logo-mini img");
+  if (mini && mini.getAttribute("src") !== logo) mini.src = logo;
   lateral.querySelectorAll("[data-grupo]").forEach(b => b.onclick = () => {
     alternarGrupo(b.dataset.grupo);
     const g = b.parentElement, aberto = g.classList.toggle("aberto");
     b.setAttribute("aria-expanded", String(aberto));
   });
-  ola.innerHTML = `${u.sexo === "F" ? "Bem-vinda" : "Bem-vindo"}, <b>${esc((u.nome || "").trim() || "visitante")}</b>`;
+  ola.innerHTML = `${u.sexo === "F" ? "Bem-vinda" : "Bem-vindo"}, <b>${esc(String(u.nome || "").trim().split(/\s+/)[0] || "visitante")}</b>`;
   fecharAvisos();
   document.getElementById("sino-ponto").hidden = !pendencias().length;
   lateral.querySelector("#restaurar")?.addEventListener("click", () => aoRestaurar?.());
@@ -112,6 +120,8 @@ export function desenhar() {
 let aoRestaurar = null, aoSair = null, rotuloRestaurar = "Restaurar dados de exemplo", mostrarRestaurar = null;
 export function quandoRestaurar(fn, rotulo = "Restaurar dados de exemplo", mostrar = null) { aoRestaurar = fn; rotuloRestaurar = rotulo; mostrarRestaurar = mostrar; }
 export function definirSair(fn) { aoSair = fn; }
+let emailLogado = "";
+export function definirEmailLogado(email) { emailLogado = String(email || "").toLowerCase(); }
 
 window.addEventListener("hashchange", desenhar);
 // As telas se registram em js/telas/index.js, que chama desenhar() no fim.

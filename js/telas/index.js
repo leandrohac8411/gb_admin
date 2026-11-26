@@ -1,5 +1,5 @@
 // Decide o que abrir (login, demonstração ou painel), cria o store, registra as telas e desenha.
-import { registrar, desenhar, definirStore, quandoRestaurar, definirSair } from "../app.js";
+import { registrar, desenhar, definirStore, quandoRestaurar, definirSair, definirEmailLogado } from "../app.js";
 import { criarStore } from "../store.js";
 import { hojeISO } from "../logica/datas.js";
 import { aplicarRegras } from "../logica/graduacao.js";
@@ -94,6 +94,7 @@ async function abrirPainelLogado(fb, usuario) {
   });
   // Saiu em outra aba ou a sessão expirou: volta para o login.
   fb.aoMudarUsuario(u2 => { if (!u2) location.reload(); });
+  definirEmailLogado(usuario.email);
   definirStore(store);
   quandoRestaurar(async () => {
     if (!temExemplos(store.dados)) { toast("Não há mais dados de exemplo."); return; }

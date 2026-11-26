@@ -20,10 +20,19 @@ export function espelhoAluno(d, aluno, hojeISO) {
     .map(c => ({ data: c.data, turmaId: c.turmaId, hora: c.hora || "", horario: turmas[c.turmaId]?.horario || "", programa: turmas[c.turmaId]?.programa || "" }))
     .sort((x, y) => y.data.localeCompare(x.data) || y.hora.localeCompare(x.hora));
   return {
-    nome: aluno.nome, faixa: aluno.faixa, graus: Number(aluno.graus) || 0,
+    nome: aluno.nome, nascimento: aluno.nascimento || null, sexo: ["M", "F"].includes(aluno.sexo) ? aluno.sexo : null,
+    faixa: aluno.faixa, graus: Number(aluno.graus) || 0,
     desdeFaixa: aluno.desdeFaixa || "", ultimaGraduacao: aluno.ultimaGraduacao || "",
     presencas, proximoPasso: aptidao(aluno, d.checkins || [], hojeISO)
   };
+}
+
+// E-mail do cadastro (é o login do aluno no portal): vazio pode; precisa ser válido e não ser de outro aluno.
+export function problemaNoEmail(texto, alunoId, alunos) {
+  if (!String(texto ?? "").trim()) return "";
+  const email = emailValido(texto);
+  if (!email) return "Confira o e-mail.";
+  return (alunos || []).some(a => a.id !== alunoId && a.emailPortal === email) ? "Esse e-mail já é de outro aluno." : "";
 }
 
 export const espelhoAcesso = (aluno, email) => ({ alunoId: aluno.id, nome: aluno.nome, ativo: aluno.status === "ativo" });

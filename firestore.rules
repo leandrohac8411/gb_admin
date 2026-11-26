@@ -97,7 +97,7 @@ service cloud.firestore {
       allow write: if permitido();
     }
     // Diário de cada aluno: só ele lê e escreve (nem o painel lê).
-    // Metas, nascimento e sexo (para as categorias): do próprio aluno.
+    // Metas do próprio aluno (nome, nascimento, sexo, faixa e graus vêm do GB Admin, pelo espelho).
     match /diarios/{alunoId} {
       allow read: if aluno() && alunoId == meuAlunoId();
       allow create, update: if aluno() && alunoId == meuAlunoId() && prefsOk(request.resource.data);
@@ -123,11 +123,9 @@ service cloud.firestore {
         && checkinOk(request.resource.data);
     }
     function prefsOk(d) {
-      return d.keys().hasOnly(['metaSemanal', 'metaAulasRoxa', 'nascimento', 'sexo'])
+      return d.keys().hasOnly(['metaSemanal', 'metaAulasRoxa'])
         && (!('metaSemanal' in d) || (d.metaSemanal is int && d.metaSemanal >= 1 && d.metaSemanal <= 7))
-        && (!('metaAulasRoxa' in d) || (d.metaAulasRoxa is int && d.metaAulasRoxa >= 1 && d.metaAulasRoxa <= 2000))
-        && (!('nascimento' in d) || d.nascimento == null || dataISO(d.nascimento))
-        && (!('sexo' in d) || d.sexo == null || d.sexo in ['M', 'F']);
+        && (!('metaAulasRoxa' in d) || (d.metaAulasRoxa is int && d.metaAulasRoxa >= 1 && d.metaAulasRoxa <= 2000));
     }
     function pesoOk(d) {
       return d.keys().hasOnly(['data', 'kg']) && dataISO(d.data) && d.kg is number && d.kg > 20 && d.kg < 250;

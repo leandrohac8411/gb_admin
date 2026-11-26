@@ -75,3 +75,20 @@ test("mudancasEspelho: grava só o que mudou e apaga o que sumiu", () => {
   assert.deepEqual(r2.gravar.map(([id]) => id), ["a2"]);
   assert.deepEqual(r2.apagar, ["a3"]);
 });
+
+import { problemaNoEmail } from "../js/logica/portal.js";
+test("espelhoAluno leva nascimento e sexo do cadastro (o portal não pede de novo)", () => {
+  const e = espelhoAluno(d, { ...ana, nascimento: "1990-05-01", sexo: "F" }, "2026-11-25");
+  assert.equal(e.nascimento, "1990-05-01");
+  assert.equal(e.sexo, "F");
+  assert.equal(espelhoAluno(d, ana, "2026-11-25").nascimento, null);
+});
+
+test("problemaNoEmail: vazio pode; formato e e-mail repetido de outro aluno não", () => {
+  const alunos = [{ id: "a1", emailPortal: "ana@x.com" }, { id: "a2" }];
+  assert.equal(problemaNoEmail("", "a2", alunos), "");
+  assert.equal(problemaNoEmail(" Ana@X.com ", "a1", alunos), "", "o próprio e-mail dele");
+  assert.equal(problemaNoEmail("ana@x.com", "a2", alunos), "Esse e-mail já é de outro aluno.");
+  assert.equal(problemaNoEmail("ana@", "a2", alunos), "Confira o e-mail.");
+  assert.equal(problemaNoEmail("novo@x.com", null, alunos), "", "aluno novo");
+});

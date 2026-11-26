@@ -8,13 +8,11 @@ let aluno = null; // { alunoId, presente(turmaId, data) }
 export const definirAluno = a => { aluno = a; };
 const daAcademia = () => Promise.reject(new Error("A grade e o currículo são da academia: quem muda é o GB Admin."));
 
-/* ---------- Perfil: metas, nascimento e sexo são do aluno (nome, faixa e graus vêm da academia) ---------- */
+/* ---------- Perfil: só as metas são do aluno (nome, nascimento, sexo, faixa e graus vêm da academia) ---------- */
 export function salvarPerfil(uid, parcial) {
   const p = {};
   if (Number.isInteger(parcial.metaSemanal)) p.metaSemanal = parcial.metaSemanal;
   if (Number.isInteger(parcial.metaAulasRoxa)) p.metaAulasRoxa = parcial.metaAulasRoxa;
-  if ("nascimento" in parcial) p.nascimento = /^\d{4}-\d{2}-\d{2}$/.test(parcial.nascimento || "") ? parcial.nascimento : null;
-  if ("sexo" in parcial) p.sexo = ["M", "F"].includes(parcial.sexo) ? parcial.sexo : null;
   return Object.keys(p).length ? n.salvarPreferencias(aluno.alunoId, p) : Promise.resolve();
 }
 

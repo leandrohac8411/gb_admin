@@ -30,8 +30,8 @@ export default {
       <div class="beltwrap">${faixaSVG(graus, { cor })}<div class="lbl"><span>Faixa ${NOMES[cor]}${p.faixa?.desde ? ` desde ${nomeMes(am).slice(0, 3)}/${ay}` : ""}</span><span>${graus} de 4 graus</span></div></div>
       <p class="muted" style="font-size:12.5px;text-align:center;margin:0">Faixa e graus são registrados pela academia no GB Admin.</p>
       <div class="cats">
-        <button class="cat" id="catIdade"><small>Categoria de idade</small><b>${ci ? ci.nome : "—"}</b><span>${ci ? `${ci.idadeNoAno} anos no ano` : p.nascimento ? "abaixo de 16 anos" : "Informe o nascimento"}</span></button>
-        <button class="cat" id="catPeso"><small>Categoria de peso</small><b>${cp ? cp.nome : "—"}</b><span>${cp ? `${numero(ultimo.kg)} kg${cp.limite ? " · até " + numero(cp.limite) : ""}` : !p.sexo ? "Informe o sexo" : "Informe o peso"}</span></button>
+        <button class="cat" id="catIdade"><small>Categoria de idade</small><b>${ci ? ci.nome : "—"}</b><span>${ci ? `${ci.idadeNoAno} anos no ano` : p.nascimento ? "abaixo de 16 anos" : "sem nascimento no cadastro"}</span></button>
+        <button class="cat" id="catPeso"><small>Categoria de peso</small><b>${cp ? cp.nome : "—"}</b><span>${cp ? `${numero(ultimo.kg)} kg${cp.limite ? " · até " + numero(cp.limite) : ""}` : !p.sexo ? "sem sexo no cadastro" : "Informe o peso"}</span></button>
       </div>
       <div class="card kv">
         <div><span>Peso</span><span class="step"><b>${ultimo ? numero(ultimo.kg) + " kg" : "—"}</b><button class="link" id="peso" style="width:auto;height:auto;background:none">Atualizar</button></span></div>
@@ -53,7 +53,7 @@ export default {
       toast("Peso registrado.");
     });
     $("peso").onclick = pedirPeso;
-    $("catPeso").onclick = () => (p.sexo ? pedirPeso() : abrirDados());
+    $("catPeso").onclick = () => pedirPeso();
     $("catIdade").onclick = () => abrirDados();
 
     const mudarMeta = d => salvarPerfil(e.uid, { metaSemanal: Math.max(1, Math.min(7, p.metaSemanal + d)) });
@@ -67,14 +67,15 @@ export default {
       await salvarPerfil(e.uid, { metaAulasRoxa: n });
     });
 
-    const abrirDados = () => formulario("Dados pessoais", [
-      { id: "nome", rotulo: "Nome (vem da academia)", valor: p.nome, somenteLeitura: true },
-      { id: "nasc", rotulo: "Nascimento", tipo: "date", valor: p.nascimento || "" },
-      { id: "sexo", rotulo: "Sexo (para a categoria de peso)", tipo: "select", opcoes: [["", "—"], ["M", "Masculino"], ["F", "Feminino"]], valor: p.sexo || "" },
-      { id: "email", rotulo: "E-mail", valor: e.email, somenteLeitura: true }
-    ], async v => {
-      await salvarPerfil(e.uid, { nascimento: v.nasc || null, sexo: v.sexo || null });
-      toast("Dados salvos.");
+    // Dados pessoais vêm do cadastro na academia (GB Admin): aqui só para ver.
+    const abrirDados = () => abrirFolha((folha, fechar) => {
+      const linha = (rotulo, valor) => `<div class="field"><label>${esc(rotulo)}</label><input class="input" value="${esc(valor || "—")}" readonly></div>`;
+      folha.innerHTML = `<h3>Dados pessoais</h3>
+        ${linha("Nome", p.nome)}${linha("Nascimento", p.nascimento ? p.nascimento.split("-").reverse().join("/") : "")}
+        ${linha("Sexo", p.sexo === "M" ? "Masculino" : p.sexo === "F" ? "Feminino" : "")}${linha("E-mail", e.email)}
+        <p class="muted" style="font-size:12.5px;margin:0">Esses dados vêm do seu cadastro na academia. Para corrigir, fale com o professor ou a recepção.</p>
+        <button class="btn ghost" id="fechar">Fechar</button>`;
+      folha.querySelector("#fechar").onclick = fechar;
     });
     $("dados").onclick = abrirDados;
     $("sair").onclick = async () => { if (await perguntar("Sair do portal?", "Para entrar de novo, use seu e-mail e senha.", "Sair", "Cancelar")) sair(); };

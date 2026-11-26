@@ -17,7 +17,7 @@ export function montarEstadoDiario({ portal, grade: g, diario, pendentes, prefs 
     // Só o último grau tem data conhecida (a da última graduação no GB Admin).
     graus: Array.from({ length: nGraus }, (_, i) => (i === nGraus - 1 && p.ultimaGraduacao ? { numero: i + 1, data: p.ultimaGraduacao } : { numero: i + 1 })),
     metaSemanal: prefs?.metaSemanal || 2, metaAulasRoxa: prefs?.metaAulasRoxa || 175,
-    proximoPasso: p.proximoPasso || null, nascimento: prefs?.nascimento || null, sexo: prefs?.sexo || null, telefone: "", fotoPerfilId: null
+    proximoPasso: p.proximoPasso || null, nascimento: p.nascimento || null, sexo: p.sexo || null, telefone: "", fotoPerfilId: null
   };
 
   // Uma aula por presença (do painel) ou check-in ainda pendente; o diário do aluno entra por cima.

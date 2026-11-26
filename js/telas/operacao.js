@@ -12,6 +12,7 @@ import { cabecalho, pessoa, porId, DIAS_CURTOS, aba, daAba, abasCategoria, ligar
 import { abrirFormAluno } from "./alunos.js";
 import { valorReais, categoriaDoProspect } from "../logica/regras-cadastro.js";
 import { valorReajustado } from "../logica/familia.js";
+import { COBRANCAS, cobrancaDoPlano } from "../logica/cobranca.js";
 
 const erroEm = (el, sel, msg) => { const e = el.querySelector(sel); e.textContent = msg; e.hidden = false; };
 const opcoes = (lista, atual) => lista.map(v => Array.isArray(v) ? v : [v, v]).map(([v, t]) => `<option value="${esc(v)}"${v === atual ? " selected" : ""}>${esc(t)}</option>`).join("");
@@ -38,17 +39,20 @@ function formPlano(store, plano, pronto) {
       <div class="field"><label for="pl-meses">Duração</label><select class="input" id="pl-meses">${opcoes([["1", "Mensal"], ["3", "Trimestral"], ["6", "Semestral"], ["12", "Anual"]], String(p.meses))}</select></div>
       <div class="field"><label for="pl-valor">Valor (R$)</label><input class="input" type="number" min="1" step="0.01" inputmode="decimal" id="pl-valor" value="${esc(p.valor)}"></div>
       <div class="field cheio"><label for="pl-desc">Descrição</label><input class="input" id="pl-desc" value="${esc(p.descricao)}"></div>
+      <div class="field cheio"><label for="pl-cobranca">Cobrança</label><select class="input" id="pl-cobranca">${opcoes(Object.entries(COBRANCAS), cobrancaDoPlano(p))}</select>
+        <small class="muted" id="pl-cob-nota"${cobrancaDoPlano(p) === "cartao" ? "" : " hidden"}>A cobrança automática no cartão entra com a integração da maquininha (em breve). Até lá, dê baixa no Financeiro conferindo o extrato.</small></div>
       ${plano ? `<label class="cheio" style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="pl-aplicar"> Aplicar o novo valor aos alunos atuais deste plano</label>` : ""}
       <p class="aviso cheio" id="pl-erro" hidden></p>
       <div class="acoes cheio"><button type="button" class="btn ghost" id="pl-x">Cancelar</button><button class="btn">Salvar</button></div></form>`;
     el.querySelector("#pl-x").onclick = fechar;
+    el.querySelector("#pl-cobranca").onchange = ev => { el.querySelector("#pl-cob-nota").hidden = ev.target.value !== "cartao"; };
     el.querySelector("form").onsubmit = e => {
       e.preventDefault();
       const d = store.dados, nome = el.querySelector("#pl-nome").value.trim(), valor = valorReais(el.querySelector("#pl-valor").value, 100000);
       if (!plano && nome.length < 3) return erroEm(el, "#pl-erro", "Dê um nome ao plano.");
       if (!plano && d.planos.some(x => x.id.toLowerCase() === nome.toLowerCase())) return erroEm(el, "#pl-erro", "Já existe um plano com esse nome.");
       if (valor == null) return erroEm(el, "#pl-erro", "Informe um valor entre R$ 0,01 e R$ 100.000 (no máximo 2 casas para os centavos).");
-      const campos = { meses: Number(el.querySelector("#pl-meses").value), valor, descricao: el.querySelector("#pl-desc").value.trim() };
+      const campos = { meses: Number(el.querySelector("#pl-meses").value), valor, descricao: el.querySelector("#pl-desc").value.trim(), cobranca: el.querySelector("#pl-cobranca").value === "cartao" ? "cartao" : "manual" };
       if (plano) {
         const antigo = plano.valor;
         Object.assign(plano, campos);
@@ -71,6 +75,7 @@ export const planos = {
           <div class="card-cab" style="margin:0"><h3>${esc(p.nome)}</h3>${p.ativo ? '<span class="pill ok">Ativo</span>' : '<span class="pill">Inativo</span>'}</div>
           <b style="font-size:26px">${reais(p.valor)}</b><small class="muted">${p.meses === 1 ? "por mês" : `a cada ${p.meses} meses · ${reais(p.valor / p.meses)}/mês`}</small>
           <p class="muted" style="margin:0;font-size:12.5px">${esc(p.descricao || "")}</p>
+          ${cobrancaDoPlano(p) === "cartao" ? '<span class="pill alerta" style="align-self:flex-start" title="Cobrança automática chega com a integração da maquininha">Cartão recorrente · em breve automático</span>' : ""}
           <div class="dados" style="grid-template-columns:1fr 1fr"><div><small>Alunos ativos</small><b>${r.alunos}</b></div><div><small>Por mês</small><b>${reais(r.mensal)}</b></div></div>
           <div style="display:flex;gap:8px"><button class="btn sec peq" data-editar="${esc(p.id)}">Editar</button><button class="btn sec peq" data-ativar="${esc(p.id)}">${p.ativo ? "Desativar" : "Ativar"}</button></div></div>`;
       }).join("")}</div>`;

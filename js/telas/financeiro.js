@@ -7,13 +7,14 @@ import { icone } from "../menu.js";
 import { cabecalho, pessoa, porId, PILL_STATUS, aba, daAba, abasCategoria, ligarAbas } from "./comum.js";
 import { fluxoDoMes, CATEGORIAS_DESPESA } from "../logica/caixa.js";
 import { valorReais } from "../logica/regras-cadastro.js";
+import { formaPadrao } from "../logica/cobranca.js";
 
 const estado = { comp: null, filtro: "Todos", visao: "Mensalidades" };
-const FORMAS = ["Pix", "Cartão", "Dinheiro"];
+const FORMAS = ["Pix", "Cartão", "Dinheiro", "Cartão recorrente"];
 
 function abrirPagamento(store, m, aluno, aoSalvar) {
   const hoje = hojeISO();
-  let forma = "Pix";
+  let forma = formaPadrao(aluno, store.dados.planos);
   abrirFolha((el, fechar) => {
     el.innerHTML = `<h3>Marcar como pago</h3><p class="muted" style="margin:0">${esc(aluno?.nome || "")} · ${competenciaTexto(m.competencia)} · <b>${reais(m.valor)}</b></p>
       <div class="field"><label for="p-data">Pago em</label><input class="input" type="date" id="p-data" value="${hoje}" max="${hoje}"></div>

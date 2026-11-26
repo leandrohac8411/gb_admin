@@ -7,6 +7,7 @@ import { hojeISO } from "../logica/datas.js";
 import { categoriaIdade, categoriaPeso } from "../logica/categorias.js";
 import { aptidao, regrasDe, mesesEntre, idadeEm, passaParaAdulto, ehKids, progressoGraduacao } from "../logica/graduacao.js";
 import { statusMensalidade, inadimplentes } from "../logica/financeiro.js";
+import { noCartaoRecorrente } from "../logica/cobranca.js";
 import { icone } from "../menu.js";
 import { etiquetaPrograma, porId, PILL_STATUS, DIAS_CURTOS, estrelas, marcaAluno } from "./comum.js";
 import { aulas30, abrirFormAluno } from "./alunos.js";
@@ -67,7 +68,7 @@ export default {
         <div><small>Peso</small><b>${a.peso ? `${String(a.peso).replace(".", ",")} kg` : "—"}</b></div>`
         : `<div><small>Idade · categoria</small><b>${idade ? `${idade.idadeNoAno} anos · ${idade.nome}` : "—"}</b></div>
         <div><small>Peso · categoria</small><b>${a.peso ? `${String(a.peso).replace(".", ",")} kg · ${peso?.nome || "—"}` : "—"}</b></div>`}
-        <div><small>Plano</small><b>${esc(a.plano)} · ${reais(a.valor)}</b></div>
+        <div><small>Plano</small><b>${esc(a.plano)} · ${reais(a.valor)}${noCartaoRecorrente(a, d.planos) ? " · cartão recorrente" : ""}</b></div>
         <div><small>${kids ? "Telefone do responsável" : "Telefone"}</small><b>${esc(a.telefone || "—")}</b></div>
         <div><small>Na faixa desde</small><b>${dataLonga(a.desdeFaixa)}</b></div>
         <div><small>Última graduação</small><b>${dataLonga(a.ultimaGraduacao)}</b></div>
